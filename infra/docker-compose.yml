@@ -1,0 +1,24 @@
+networks:
+  sida_net:
+    driver: bridge
+
+services:
+  clp-opcua:
+    image: digitalpetri/opc-ua-demo-server:latest
+    container_name: sida-sim-opcua
+    hostname: localhost
+    ports:
+      - "12686:12686"
+    networks:
+      - sida_net
+    restart: unless-stopped
+
+  clp-modbus:
+    image: tuttas/openplc_v3:latest
+    container_name: sida-sim-modbus
+    ports:
+      - "8080:8080" # Painel Web
+      - "502:502"   # Porta Modbus TCP
+    networks:
+      - sida_net
+    restart: unless-stopped
