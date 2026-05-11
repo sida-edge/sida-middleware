@@ -3,7 +3,7 @@ networks:
     driver: bridge
 
 services:
-  clp-opcua:
+  plc-opcua:
     image: digitalpetri/opc-ua-demo-server:latest
     container_name: sida-sim-opcua
     hostname: localhost
@@ -13,7 +13,7 @@ services:
       - sida_net
     restart: unless-stopped
 
-  clp-modbus:
+  plc-modbus:
     image: tuttas/openplc_v3:latest
     container_name: sida-sim-modbus
     ports:
@@ -21,4 +21,13 @@ services:
       - "502:502"   # Porta Modbus TCP
     networks:
       - sida_net
+    restart: unless-stopped
+
+  plc-simulator:
+    image: ghcr.io/sida-edge/simulador:latest
+    container_name: sida-simulator
+    environment:
+      - DISPLAY=host.docker.internal:0
+    ports:
+      - "5020:5020"
     restart: unless-stopped
