@@ -1,0 +1,57 @@
+networks:
+  sida-net:
+    driver: bridge
+
+services:
+  poc-ingestion:
+    image: nodered/node-red:latest
+    container_name: sida-poc-ingestion
+    environment:
+      - TZ=America/Recife
+      - FLOWS=flows.json
+    ports:
+      - "1881:1880"
+    volumes:
+      - ./core/ingestion:/data
+    networks:
+      - sida-net
+    restart: unless-stopped
+  
+  poc-context:
+    image: nodered/node-red:latest
+    container_name: sida-poc-context
+    environment:
+      - TZ=America/Recife
+      - FLOWS=flows.json
+    ports:
+      - "1882:1880"
+    volumes:
+      - ./core/context:/data
+    networks:
+      - sida-net
+    restart: unless-stopped
+
+  poc-delivery:
+    image: nodered/node-red:latest
+    container_name: sida-poc-delivery
+    environment:
+      - TZ=America/Recife
+      - FLOWS=flows.json
+    ports:
+      - "1883:1880"
+    volumes:
+      - ./core/delivery:/data
+    networks:
+      - sida-net
+    restart: unless-stopped
+
+  plc-simulator:
+    image: ghcr.io/sida-edge/simulador:latest
+    container_name: sida-simulator
+    profiles:
+      - "sim"
+    environment:
+      - DISPLAY=host.docker.internal:0
+    ports:
+      - "5020:5020"
+    restart: unless-stopped
