@@ -1,10 +1,10 @@
 networks:
-  sida-net:
+  sida_network:
     driver: bridge
 
 services:
   poc-ingestion:
-    image: nodered/node-red:latest
+    build: .
     container_name: sida-poc-ingestion
     environment:
       - TZ=America/Recife
@@ -14,7 +14,7 @@ services:
     volumes:
       - ./core/ingestion:/data
     networks:
-      - sida-net
+      - sida_network
     restart: unless-stopped
   
   poc-context:
@@ -28,7 +28,7 @@ services:
     volumes:
       - ./core/context:/data
     networks:
-      - sida-net
+      - sida_network
     restart: unless-stopped
 
   poc-delivery:
@@ -42,7 +42,7 @@ services:
     volumes:
       - ./core/delivery:/data
     networks:
-      - sida-net
+      - sida_network
     restart: unless-stopped
 
   plc-simulator:
