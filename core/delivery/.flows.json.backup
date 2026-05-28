@@ -27,45 +27,6 @@
         "x": 193,
         "y": 138,
         "wires": [
-            [
-                "a2c12bcdbb991cf7",
-                "37bd32b8920a67c6"
-            ]
-        ]
-    },
-    {
-        "id": "a2c12bcdbb991cf7",
-        "type": "function",
-        "z": "f4a91dd7bfc833e7",
-        "name": "spbTopicGenerator",
-        "func": "const isa_context = msg.payload.isa95_context;\n\nconst groupId = `${isa_context.enterprise}_${isa_context.site}_${isa_context.area}`;\nconst edgeId = isa_context.line;\nconst deviceId = isa_context.equipment;\n\nconst topicSpb = {\n    payload: {\n        group_id: groupId,\n        edge_id: edgeId,\n        device_id: deviceId\n    }\n}\n\nreturn topicSpb;",
-        "outputs": 1,
-        "timeout": 0,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 430,
-        "y": 140,
-        "wires": [
-            []
-        ]
-    },
-    {
-        "id": "37bd32b8920a67c6",
-        "type": "function",
-        "z": "f4a91dd7bfc833e7",
-        "name": "spbPayloadGenerator",
-        "func": "let seqCount = context.get('seq_count' || 0);\n\nconst dataTimestamp = msg.payload.timestamp;\nconst dataRaw = msg.payload.data;\nconst dataSeq = seqCount;\n\nconst dataMetrics = [];\n\nfor (const [dataName, dataValue] of Object.entries(dataRaw)) {\n    dataMetrics.push({\n        name: dataName,\n        value: dataValue,\n        timestamp: dataTimestamp\n    });\n}\n\nconst payload = {\n    timestamp: Date.now(),\n    seq: dataSeq,\n    metrics: dataMetrics\n}\n\ncontext.set('seq_count', ((++seqCount) & 255));\n\nreturn payload;",
-        "outputs": 1,
-        "timeout": 0,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 440,
-        "y": 180,
-        "wires": [
             []
         ]
     }

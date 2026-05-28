@@ -27,6 +27,26 @@
         "x": 193,
         "y": 138,
         "wires": [
+            [
+                "a2c12bcdbb991cf7"
+            ]
+        ]
+    },
+    {
+        "id": "a2c12bcdbb991cf7",
+        "type": "function",
+        "z": "f4a91dd7bfc833e7",
+        "name": "spbTopicGenerator",
+        "func": "const isa_context = msg.payload.isa95_context;\n\nconst groupId = `${isa_context.enterprise}_${isa_context.site}_${isa_context.area}`;\nconst edgeId = isa_context.line;\nconst deviceId = isa_context.equipment;\n\nconst topicSpb = {\n    payload: {\n        group_id: groupId,\n        edge_id: edgeId,\n        device_id: deviceId\n    }\n}\n\nreturn topicSpb;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 430,
+        "y": 140,
+        "wires": [
             []
         ]
     }
