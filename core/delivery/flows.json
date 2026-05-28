@@ -1,0 +1,33 @@
+[
+    {
+        "id": "f4a91dd7bfc833e7",
+        "type": "tab",
+        "label": "Flow 1",
+        "disabled": false,
+        "info": "",
+        "env": []
+    },
+    {
+        "id": "0b6e40380fc4820f",
+        "type": "inject",
+        "z": "f4a91dd7bfc833e7",
+        "name": "Semantic Data ",
+        "props": [
+            {
+                "p": "payload"
+            }
+        ],
+        "repeat": "1",
+        "crontab": "",
+        "once": true,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "{\"timestamp\":1684512000000,\"gateway_id\":\"sida_edge_001\",\"isa95_context\":{\"enterprise\":\"SENAI\",\"site\":\"Recife\",\"area\":\"Producao\",\"line\":\"Envase\",\"equipment\":\"Esteira_A\"},\"data\":{\"velocidade_motor\":45.5,\"motor_ligado\":true}}",
+        "payloadType": "json",
+        "x": 193,
+        "y": 138,
+        "wires": [
+            []
+        ]
+    }
+]
