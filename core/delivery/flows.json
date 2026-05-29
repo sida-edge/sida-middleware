@@ -8,6 +8,66 @@
         "env": []
     },
     {
+        "id": "65eb713d429814a4",
+        "type": "tab",
+        "label": "Sniffer / MQTT Monitor",
+        "disabled": false,
+        "info": "",
+        "env": []
+    },
+    {
+        "id": "2312654bef2ae844",
+        "type": "mqtt-broker",
+        "name": "MQTT GCP",
+        "broker": "34.134.241.250",
+        "port": 1883,
+        "clientid": "",
+        "autoConnect": true,
+        "usetls": false,
+        "protocolVersion": 4,
+        "keepalive": 60,
+        "cleansession": true,
+        "autoUnsubscribe": true,
+        "birthTopic": "",
+        "birthQos": "0",
+        "birthRetain": "false",
+        "birthPayload": "",
+        "birthMsg": {},
+        "closeTopic": "",
+        "closeQos": "0",
+        "closeRetain": "false",
+        "closePayload": "",
+        "closeMsg": {},
+        "willTopic": "",
+        "willQos": "0",
+        "willRetain": "false",
+        "willPayload": "",
+        "willMsg": {},
+        "userProps": "",
+        "sessionExpiry": ""
+    },
+    {
+        "id": "97528de95b131960",
+        "type": "mqtt-sparkplug-broker",
+        "name": "",
+        "deviceGroup": "",
+        "eonName": "",
+        "broker": "34.134.241.250",
+        "port": 1883,
+        "clientid": "",
+        "usetls": false,
+        "protocolVersion": 4,
+        "keepalive": 60,
+        "cleansession": true,
+        "enableStoreForward": false,
+        "compressAlgorithm": "",
+        "aliasMetrics": false,
+        "useTemplates": true,
+        "templates": [],
+        "manualEoNBirth": false,
+        "primaryScada": ""
+    },
+    {
         "id": "0b6e40380fc4820f",
         "type": "inject",
         "z": "f4a91dd7bfc833e7",
@@ -24,12 +84,11 @@
         "topic": "",
         "payload": "{\"timestamp\":1684512000000,\"gateway_id\":\"sida_edge_001\",\"isa95_context\":{\"enterprise\":\"SENAI\",\"site\":\"Recife\",\"area\":\"Producao\",\"line\":\"Envase\",\"equipment\":\"Esteira_A\"},\"data\":{\"velocidade_motor\":45.5,\"motor_ligado\":true}}",
         "payloadType": "json",
-        "x": 193,
-        "y": 138,
+        "x": 200,
+        "y": 140,
         "wires": [
             [
-                "a2c12bcdbb991cf7",
-                "37bd32b8920a67c6"
+                "50b1232778c14788"
             ]
         ]
     },
@@ -37,26 +96,249 @@
         "id": "a2c12bcdbb991cf7",
         "type": "function",
         "z": "f4a91dd7bfc833e7",
-        "name": "spbTopicGenerator",
-        "func": "const isa_context = msg.payload.isa95_context;\n\nconst groupId = `${isa_context.enterprise}_${isa_context.site}_${isa_context.area}`;\nconst edgeId = isa_context.line;\nconst deviceId = isa_context.equipment;\n\nconst topicSpb = {\n    payload: {\n        group_id: groupId,\n        edge_id: edgeId,\n        device_id: deviceId\n    }\n}\n\nreturn topicSpb;",
+        "name": "spbGenerator",
+        "func": "const isa_context = msg.payload.isa95_context;\nconst dataRaw = msg.payload.data;\nconst dataTimestamp = msg.payload.timestamp;\n\nconst groupId = `${isa_context.enterprise}_${isa_context.site}_${isa_context.area}`;\nconst nodeId = isa_context.line;\nconst deviceId = isa_context.equipment;\n\nconst dataMetrics = [];\nfor (const [dataName, dataValue] of Object.entries(dataRaw)) {\n    let dataType = \"String\";\n\n    if (typeof dataValue === \"number\") \n        dataType = Number.isInteger(dataValue) ? \"Int32\" : \"Double\";\n    else if (typeof dataValue === \"boolean\")\n        dataType = \"Boolean\"\n        \n    dataMetrics.push({\n        name: dataName,\n        value: dataValue,\n        type: dataType,\n        timestamp: dataTimestamp\n    });\n}\n\nmsg.topic = `spBv1.0/${groupId}/DDATA/${nodeId}/${deviceId}`;\nmsg.payload = {\n    metrics: dataMetrics\n};\n\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 430,
+        "x": 560,
         "y": 140,
+        "wires": [
+            [
+                "0ef6473adffcd429",
+                "f0158cfd43983707",
+                "bb9d3d5d27646cc2",
+                "4b39ced9533d7a88"
+            ]
+        ]
+    },
+    {
+        "id": "0ef6473adffcd429",
+        "type": "mqtt sparkplug out",
+        "z": "f4a91dd7bfc833e7",
+        "name": "",
+        "topic": "",
+        "qos": "",
+        "retain": "",
+        "broker": "97528de95b131960",
+        "x": 750,
+        "y": 140,
+        "wires": []
+    },
+    {
+        "id": "f0158cfd43983707",
+        "type": "function",
+        "z": "f4a91dd7bfc833e7",
+        "d": true,
+        "name": "JSON Length",
+        "func": "const jsonText = JSON.stringify(msg.payload);\nconst jsonLength = Buffer.byteLength(jsonText, 'utf8');\n\nnode.warn(\"📊 Tamanho do JSON bruto: \" + jsonLength + \" bytes\");\n\nreturn null;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 780,
+        "y": 200,
+        "wires": [
+            []
+        ],
+        "icon": "node-red/alert.svg"
+    },
+    {
+        "id": "9aa980bc751693fa",
+        "type": "inject",
+        "z": "f4a91dd7bfc833e7",
+        "name": "Semantic Data ",
+        "props": [
+            {
+                "p": "payload"
+            }
+        ],
+        "repeat": "2",
+        "crontab": "",
+        "once": true,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "{   \"timestamp\": 1779982840000,   \"gateway_id\": \"sida_edge_002\",   \"isa95_context\": {     \"enterprise\": \"SENAI\",     \"site\": \"Recife\",     \"area\": \"Manufatura\",     \"line\": \"Montagem\",     \"equipment\": \"Braco_Robotico_G1\"   },   \"data\": {     \"posicao_z_mm\": 145.5,     \"torque_motor\": 12.4,     \"pecas_produzidas\": 42,     \"em_movimento\": true   } }",
+        "payloadType": "json",
+        "x": 200,
+        "y": 180,
+        "wires": [
+            [
+                "50b1232778c14788"
+            ]
+        ]
+    },
+    {
+        "id": "c1ccb8bad067a7b8",
+        "type": "inject",
+        "z": "f4a91dd7bfc833e7",
+        "name": "Semantic Data ",
+        "props": [
+            {
+                "p": "payload"
+            }
+        ],
+        "repeat": "3",
+        "crontab": "",
+        "once": true,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "{   \"timestamp\": 1779982835000,   \"gateway_id\": \"sida_edge_001\",   \"isa95_context\": {     \"enterprise\": \"SENAI\",     \"site\": \"Recife\",     \"area\": \"Producao\",     \"line\": \"Mistura\",     \"equipment\": \"Tanque_Misturador\"   },   \"data\": {     \"temperatura_interna\": 82.3,     \"pressao_bar\": 1.2,     \"nivel_litros\": 850,     \"valvula_aberta\": true   } }",
+        "payloadType": "json",
+        "x": 200,
+        "y": 100,
+        "wires": [
+            [
+                "50b1232778c14788"
+            ]
+        ]
+    },
+    {
+        "id": "50b1232778c14788",
+        "type": "function",
+        "z": "f4a91dd7bfc833e7",
+        "name": "Start",
+        "func": "msg.startTime = Date.now();\n\nreturn msg",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 390,
+        "y": 140,
+        "wires": [
+            [
+                "a2c12bcdbb991cf7"
+            ]
+        ]
+    },
+    {
+        "id": "bb9d3d5d27646cc2",
+        "type": "function",
+        "z": "f4a91dd7bfc833e7",
+        "name": "Process Monitor",
+        "func": "if (msg.startTime) {\n    const totalTime = Date.now() - msg.startTime;\n    \n    msg.payload = `${Date.now()},${totalTime}\\n`;\n    msg.filename = \"/data/log/process_time.csv\";\n    \n    return msg;\n}\n\nreturn null;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 780,
+        "y": 240,
+        "wires": [
+            [
+                "d3c7a3bda6911916"
+            ]
+        ]
+    },
+    {
+        "id": "d3c7a3bda6911916",
+        "type": "file",
+        "z": "f4a91dd7bfc833e7",
+        "name": "",
+        "filename": "filename",
+        "filenameType": "msg",
+        "appendNewline": false,
+        "createDir": true,
+        "overwriteFile": "false",
+        "encoding": "none",
+        "x": 960,
+        "y": 240,
         "wires": [
             []
         ]
     },
     {
-        "id": "37bd32b8920a67c6",
+        "id": "4b39ced9533d7a88",
         "type": "function",
         "z": "f4a91dd7bfc833e7",
-        "name": "spbPayloadGenerator",
-        "func": "let seqCount = context.get('seq_count' || 0);\n\nconst dataTimestamp = msg.payload.timestamp;\nconst dataRaw = msg.payload.data;\nconst dataSeq = seqCount;\n\nconst dataMetrics = [];\n\nfor (const [dataName, dataValue] of Object.entries(dataRaw)) {\n    dataMetrics.push({\n        name: dataName,\n        value: dataValue,\n        timestamp: dataTimestamp\n    });\n}\n\nconst payload = {\n    timestamp: Date.now(),\n    seq: dataSeq,\n    metrics: dataMetrics\n}\n\ncontext.set('seq_count', ((++seqCount) & 255));\n\nreturn payload;",
+        "name": "Latency Monitor",
+        "func": "let filaLatencia = global.get('latency_queue') || [];\n\nfilaLatencia.push(Date.now());\nglobal.set('fila_latencia', filaLatencia);\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 780,
+        "y": 280,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "7de90c1fbd8c9941",
+        "type": "mqtt in",
+        "z": "65eb713d429814a4",
+        "name": "sniffer",
+        "topic": "spBv1.0/#",
+        "qos": "2",
+        "datatype": "buffer",
+        "broker": "2312654bef2ae844",
+        "nl": false,
+        "rap": true,
+        "rh": 0,
+        "inputs": 0,
+        "x": 230,
+        "y": 60,
+        "wires": [
+            [
+                "5db3f49eb9f068a9",
+                "034a9c34b6088376",
+                "8a61850ff2292cbd"
+            ]
+        ]
+    },
+    {
+        "id": "5db3f49eb9f068a9",
+        "type": "function",
+        "z": "65eb713d429814a4",
+        "d": true,
+        "name": "SPB Length",
+        "func": "const protoLength = msg.payload.length;\n\nnode.warn(\"📦 Tamanho trafegado (Protobuf): \" + protoLength + \" bytes\");\n\nreturn null;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 450,
+        "y": 60,
+        "wires": [
+            []
+        ],
+        "icon": "node-red/alert.svg"
+    },
+    {
+        "id": "034a9c34b6088376",
+        "type": "debug",
+        "z": "65eb713d429814a4",
+        "name": "Proto Debug",
+        "active": false,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 450,
+        "y": 140,
+        "wires": []
+    },
+    {
+        "id": "8a61850ff2292cbd",
+        "type": "function",
+        "z": "65eb713d429814a4",
+        "name": "Latency",
+        "func": "let latencyQueue = global.get('latency_queue') || [];\n\nif (latencyQueue.length >= 0) {\n    const sendTime = latencyQueue.shift(); \n    global.set('latency_queue', latencyQueue); \n    \n    const latency = Date.now() - sendTime;\n    const protobufLength = msg.payload.length;\n    \n    // node.warn(`Latência: ${latency}ms | Tamanho: ${tamanhoProtobuf} bytes`);\n    \n    msg.payload = `${Date.now()},${latency},${protobufLength}\\n`;\n    \n    msg.filename = \"/data/log/network_latency.csv\";\n    \n    return msg;\n}\n\nreturn null;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
@@ -64,7 +346,26 @@
         "finalize": "",
         "libs": [],
         "x": 440,
-        "y": 180,
+        "y": 100,
+        "wires": [
+            [
+                "2bb5773bc7dd5ad5"
+            ]
+        ]
+    },
+    {
+        "id": "2bb5773bc7dd5ad5",
+        "type": "file",
+        "z": "65eb713d429814a4",
+        "name": "",
+        "filename": "filename",
+        "filenameType": "msg",
+        "appendNewline": false,
+        "createDir": true,
+        "overwriteFile": "false",
+        "encoding": "none",
+        "x": 600,
+        "y": 100,
         "wires": [
             []
         ]
