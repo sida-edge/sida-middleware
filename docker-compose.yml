@@ -16,6 +16,8 @@ services:
       - sida_ipc:/tmp/.ipc
     networks:
       - sida_network
+    extra_hosts:
+     - "host.docker.internal:host-gateway"
     restart: unless-stopped
   
   poc-context:
