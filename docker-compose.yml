@@ -5,6 +5,7 @@ networks:
 services:
   poc-ingestion:
     build: ./infra
+    image: sida-nodered:latest
     container_name: sida-poc-ingestion
     environment:
       - TZ=America/Recife
@@ -22,6 +23,7 @@ services:
   
   poc-context:
     build: ./infra
+    image: sida-nodered:latest
     container_name: sida-poc-context
     environment:
       - TZ=America/Recife
@@ -37,6 +39,7 @@ services:
 
   poc-delivery:
     build: ./infra
+    image: sida-nodered:latest
     container_name: sida-poc-delivery
     environment:
       - TZ=America/Recife
