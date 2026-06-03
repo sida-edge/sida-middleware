@@ -1,5 +1,5 @@
 {
-    "name": "node-red-project",
+    "name": "sida-ingestion",
     "description": "A Node-RED Project",
     "version": "0.0.1",
     "private": true,

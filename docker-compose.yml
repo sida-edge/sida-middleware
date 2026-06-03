@@ -4,8 +4,11 @@ networks:
 
 services:
   poc-ingestion:
-    build: ./infra
-    image: sida-nodered:latest
+    build:
+      context: .
+      dockerfile: ./infra/Dockerfile
+      args:
+        - PROJECT_DIR=./core/ingestion
     container_name: sida-poc-ingestion
     environment:
       - TZ=America/Recife
@@ -22,8 +25,11 @@ services:
     restart: unless-stopped
   
   poc-context:
-    build: ./infra
-    image: sida-nodered:latest
+    build:
+      context: .
+      dockerfile: ./infra/Dockerfile
+      args:
+        - PROJECT_DIR=./core/context
     container_name: sida-poc-context
     environment:
       - TZ=America/Recife
@@ -38,8 +44,11 @@ services:
     restart: unless-stopped
 
   poc-delivery:
-    build: ./infra
-    image: sida-nodered:latest
+    build:
+      context: .
+      dockerfile: ./infra/Dockerfile
+      args:
+        - PROJECT_DIR=./core/delivery
     container_name: sida-poc-delivery
     environment:
       - TZ=America/Recife
