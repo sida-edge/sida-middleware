@@ -4,7 +4,8 @@ networks:
 
 services:
   poc-ingestion:
-    build: .
+    build: ./infra
+    image: sida-nodered:latest
     container_name: sida-poc-ingestion
     environment:
       - TZ=America/Recife
@@ -13,6 +14,7 @@ services:
       - "1881:1880"
     volumes:
       - ./core/ingestion:/data
+      - sida_ipc:/tmp/.ipc
     networks:
       - sida_network
     extra_hosts:
@@ -20,7 +22,8 @@ services:
     restart: unless-stopped
   
   poc-context:
-    image: nodered/node-red:latest
+    build: ./infra
+    image: sida-nodered:latest
     container_name: sida-poc-context
     environment:
       - TZ=America/Recife
@@ -29,12 +32,14 @@ services:
       - "1882:1880"
     volumes:
       - ./core/context:/data
+      - sida_ipc:/tmp/.ipc
     networks:
       - sida_network
     restart: unless-stopped
 
   poc-delivery:
-    image: nodered/node-red:latest
+    build: ./infra
+    image: sida-nodered:latest
     container_name: sida-poc-delivery
     environment:
       - TZ=America/Recife
@@ -43,6 +48,7 @@ services:
       - "1883:1880"
     volumes:
       - ./core/delivery:/data
+      - sida_ipc:/tmp/.ipc
     networks:
       - sida_network
     restart: unless-stopped
@@ -57,3 +63,6 @@ services:
     ports:
       - "5020:5020"
     restart: unless-stopped
+
+volumes:
+  sida_ipc:
