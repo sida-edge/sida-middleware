@@ -1,0 +1,145 @@
+[
+    {
+        "id": "9e19e885c5971d19",
+        "type": "tab",
+        "label": "Flow 1",
+        "disabled": false,
+        "info": "",
+        "env": []
+    },
+    {
+        "id": "937213232cd58bf4",
+        "type": "modbus-client",
+        "name": "ClienteModBus",
+        "clienttype": "tcp",
+        "bufferCommands": true,
+        "stateLogEnabled": false,
+        "queueLogEnabled": false,
+        "failureLogEnabled": true,
+        "tcpHost": "host.docker.internal",
+        "tcpPort": "502",
+        "tcpType": "DEFAULT",
+        "serialPort": "/dev/ttyUSB",
+        "serialType": "RTU-BUFFERD",
+        "serialBaudrate": 9600,
+        "serialDatabits": 8,
+        "serialStopbits": 1,
+        "serialParity": "none",
+        "serialConnectionDelay": 100,
+        "serialAsciiResponseStartDelimiter": "0x3A",
+        "unit_id": 1,
+        "commandDelay": 1,
+        "clientTimeout": 1000,
+        "reconnectOnTimeout": true,
+        "reconnectTimeout": 2000,
+        "parallelUnitIdsAllowed": true,
+        "showErrors": false,
+        "showWarnings": true,
+        "showLogs": true
+    },
+    {
+        "id": "7b02c3c4a8ee2acb",
+        "type": "modbus-read",
+        "z": "9e19e885c5971d19",
+        "name": "LeitorPLC_ModBus",
+        "topic": "polling",
+        "showStatusActivities": true,
+        "logIOActivities": false,
+        "showErrors": true,
+        "showWarnings": true,
+        "unitid": "1",
+        "dataType": "HoldingRegister",
+        "adr": "0",
+        "quantity": "9",
+        "rate": "1",
+        "rateUnit": "s",
+        "delayOnStart": false,
+        "enableDeformedMessages": true,
+        "startDelayTime": "",
+        "server": "937213232cd58bf4",
+        "useIOFile": false,
+        "ioFile": "",
+        "useIOForPayload": false,
+        "emptyMsgOnFail": true,
+        "x": 210,
+        "y": 240,
+        "wires": [
+            [
+                "029762e2e14db32f"
+            ],
+            [
+                "f87ace90293c1c4e"
+            ]
+        ]
+    },
+    {
+        "id": "029762e2e14db32f",
+        "type": "debug",
+        "z": "9e19e885c5971d19",
+        "name": "debug 1",
+        "active": true,
+        "tosidebar": true,
+        "console": true,
+        "tostatus": true,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "counter",
+        "x": 530,
+        "y": 180,
+        "wires": []
+    },
+    {
+        "id": "f87ace90293c1c4e",
+        "type": "function",
+        "z": "9e19e885c5971d19",
+        "name": "modbusToJson",
+        "func": "var rawData = msg.payload.data;\n\nmsg.payload = {\n    \"temperature\": rawData[0],\n    \"humidity\": rawData[1],\n    \"timestamp\": new Date().toISOString()\n};\n\nreturn msg;\n",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 490,
+        "y": 300,
+        "wires": [
+            [
+                "33923757fec61704"
+            ]
+        ]
+    },
+    {
+        "id": "33923757fec61704",
+        "type": "json",
+        "z": "9e19e885c5971d19",
+        "name": "JSON Anotado",
+        "property": "payload",
+        "action": "str",
+        "pretty": false,
+        "x": 690,
+        "y": 300,
+        "wires": [
+            [
+                "22f8671443f9fb70"
+            ]
+        ]
+    },
+    {
+        "id": "22f8671443f9fb70",
+        "type": "debug",
+        "z": "9e19e885c5971d19",
+        "name": "debug 2",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": true,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "payload",
+        "statusType": "auto",
+        "x": 910,
+        "y": 280,
+        "wires": []
+    }
+]

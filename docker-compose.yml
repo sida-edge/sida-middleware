@@ -4,7 +4,11 @@ networks:
 
 services:
   poc-ingestion:
-    build: .
+    build:
+      context: .
+      dockerfile: ./infra/Dockerfile
+      args:
+        - PROJECT_DIR=./core/ingestion
     container_name: sida-poc-ingestion
     environment:
       - TZ=America/Recife
@@ -13,12 +17,19 @@ services:
       - "1881:1880"
     volumes:
       - ./core/ingestion:/data
+      - sida_ipc:/tmp/.ipc
     networks:
       - sida_network
+    extra_hosts:
+     - "host.docker.internal:host-gateway"
     restart: unless-stopped
   
   poc-context:
-    image: nodered/node-red:latest
+    build:
+      context: .
+      dockerfile: ./infra/Dockerfile
+      args:
+        - PROJECT_DIR=./core/context
     container_name: sida-poc-context
     environment:
       - TZ=America/Recife
@@ -27,12 +38,17 @@ services:
       - "1882:1880"
     volumes:
       - ./core/context:/data
+      - sida_ipc:/tmp/.ipc
     networks:
       - sida_network
     restart: unless-stopped
 
   poc-delivery:
-    image: nodered/node-red:latest
+    build:
+      context: .
+      dockerfile: ./infra/Dockerfile
+      args:
+        - PROJECT_DIR=./core/delivery
     container_name: sida-poc-delivery
     environment:
       - TZ=America/Recife
@@ -41,6 +57,7 @@ services:
       - "1883:1880"
     volumes:
       - ./core/delivery:/data
+      - sida_ipc:/tmp/.ipc
     networks:
       - sida_network
     restart: unless-stopped
@@ -55,3 +72,6 @@ services:
     ports:
       - "5020:5020"
     restart: unless-stopped
+
+volumes:
+  sida_ipc:

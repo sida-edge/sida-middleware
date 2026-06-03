@@ -1,9 +1,9 @@
 {
-    "name": "sida-delivery",
+    "name": "sida-ingestion",
     "description": "A Node-RED Project",
     "version": "0.0.1",
     "private": true,
     "dependencies": {
-        "node-red-contrib-mqtt-sparkplug-plus": "~2.2.3"
+        "node-red-contrib-modbus": "~5.45.2"
     }
 }
