@@ -8,6 +8,8 @@ RUN apk update && apk add --no-cache \
     g++ \
     zeromq-dev
 
+RUN mkdir -p /tmp/.ipc && chown -R node-red:node-red /tmp/.ipc
+
 USER node-red
 
 RUN npm install node-red-contrib-zeromq
