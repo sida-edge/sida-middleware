@@ -82,7 +82,7 @@
         "once": true,
         "onceDelay": 0.1,
         "topic": "",
-        "payload": "{\"timestamp\":1684512000000,\"gateway_id\":\"sida_edge_001\",\"isa95_context\":{\"enterprise\":\"SENAI\",\"site\":\"Recife\",\"area\":\"Producao\",\"line\":\"Envase\",\"equipment\":\"Esteira_A\"},\"data\":{\"velocidade_motor\":45.5,\"motor_ligado\":true}}",
+        "payload": "{\"timestamp\":1684512000000,\"source\":{\"type\":\"edge_gateway\",\"id\":\"sida_edge_001\"},\"asset_context\":{\"standard\":\"ISA-95\",\"path\":[{\"type\":\"enterprise\",\"id\":\"senai\"},{\"type\":\"site\",\"id\":\"recife\"},{\"type\":\"area\",\"id\":\"producao\"},{\"type\":\"line\",\"id\":\"linha_envase\"},{\"type\":\"equipment\",\"id\":\"esteira_a\"}]},\"data\":[{\"name\":\"motor_velocity\",\"value\":45.5,\"unit\":\"RPM\",\"data_type\":\"float\"},{\"name\":\"motor_running\",\"value\":true,\"unit\":null,\"data_type\":\"boolean\"}]}",
         "payloadType": "json",
         "x": 200,
         "y": 140,
@@ -97,7 +97,7 @@
         "type": "function",
         "z": "f4a91dd7bfc833e7",
         "name": "spbGenerator",
-        "func": "const isa_context = msg.payload.isa95_context;\nconst dataRaw = msg.payload.data;\nconst dataTimestamp = msg.payload.timestamp;\n\nconst groupId = `${isa_context.enterprise}_${isa_context.site}_${isa_context.area}`;\nconst nodeId = isa_context.line;\nconst deviceId = isa_context.equipment;\n\nconst dataMetrics = [];\nfor (const [dataName, dataValue] of Object.entries(dataRaw)) {\n    let dataType = \"String\";\n\n    if (typeof dataValue === \"number\") \n        dataType = Number.isInteger(dataValue) ? \"Int32\" : \"Double\";\n    else if (typeof dataValue === \"boolean\")\n        dataType = \"Boolean\"\n        \n    dataMetrics.push({\n        name: dataName,\n        value: dataValue,\n        type: dataType,\n        timestamp: dataTimestamp\n    });\n}\n\nmsg.topic = `spBv1.0/${groupId}/DDATA/${nodeId}/${deviceId}`;\nmsg.payload = {\n    metrics: dataMetrics\n};\n\nreturn msg;",
+        "func": "const payloadIn = msg.payload;\nconst dataTimestamp = payloadIn.timestamp;\nconst pathArray = payloadIn.asset_context.path;\nconst dataRaw = payloadIn.data;\n\nconst getContextId = (targetType) => {\n    const item = pathArray.find(p => p.type === targetType);\n    return item ? item.id : \"unknown\";\n};\n\nconst enterprise = getContextId(\"enterprise\");\nconst site = getContextId(\"site\");\nconst area = getContextId(\"area\");\n\nconst groupId = `${enterprise}_${site}_${area}`;\nconst nodeId = getContextId(\"line\");\nconst deviceId = getContextId(\"equipment\");\n\nconst dataMetrics = dataRaw.map(item => {\n    let sparkplugType = \"String\";\n    const explicitType = item.data_type ? item.data_type.toLowerCase() : \"\";\n\n    if (explicitType === \"float\" || explicitType === \"double\") {\n        sparkplugType = \"Float\";\n    } else if (explicitType === \"boolean\" || explicitType === \"bool\") {\n        sparkplugType = \"Boolean\";\n    } else if (explicitType === \"int\" || explicitType === \"integer\") {\n        sparkplugType = \"Int32\";\n    } else {\n        if (typeof item.value === \"number\") {\n            sparkplugType = Number.isInteger(item.value) ? \"Int32\" : \"Double\";\n        } else if (typeof item.value === \"boolean\") {\n            sparkplugType = \"Boolean\";\n        }\n    }\n\n    const metric = {\n        name: item.name,\n        value: item.value,\n        type: sparkplugType,\n        timestamp: dataTimestamp\n    };\n\n    if (item.unit) {\n        metric.properties = {\n            engUnit: { type: \"String\", value: item.unit }\n        };\n    }\n\n    return metric;\n});\n\nmsg.topic = `spBv1.0/${groupId}/DDATA/${nodeId}/${deviceId}`;\nmsg.payload = {\n    metrics: dataMetrics\n};\n\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
@@ -111,7 +111,8 @@
                 "0ef6473adffcd429",
                 "f0158cfd43983707",
                 "bb9d3d5d27646cc2",
-                "4b39ced9533d7a88"
+                "4b39ced9533d7a88",
+                "bdcd2d6f38e3b341"
             ]
         ]
     },
@@ -163,7 +164,7 @@
         "once": true,
         "onceDelay": 0.1,
         "topic": "",
-        "payload": "{   \"timestamp\": 1779982840000,   \"gateway_id\": \"sida_edge_002\",   \"isa95_context\": {     \"enterprise\": \"SENAI\",     \"site\": \"Recife\",     \"area\": \"Manufatura\",     \"line\": \"Montagem\",     \"equipment\": \"Braco_Robotico_G1\"   },   \"data\": {     \"posicao_z_mm\": 145.5,     \"torque_motor\": 12.4,     \"pecas_produzidas\": 42,     \"em_movimento\": true   } }",
+        "payload": "{\"timestamp\":1684512000000,\"source\":{\"type\":\"edge_gateway\",\"id\":\"sida_edge_001\"},\"asset_context\":{\"standard\":\"ISA-95\",\"path\":[{\"type\":\"enterprise\",\"id\":\"senai\"},{\"type\":\"site\",\"id\":\"recife\"},{\"type\":\"area\",\"id\":\"producao\"},{\"type\":\"line\",\"id\":\"linha_envase\"},{\"type\":\"equipment\",\"id\":\"esteira_a\"}]},\"data\":[{\"name\":\"motor_velocity\",\"value\":45.5,\"unit\":\"RPM\",\"data_type\":\"float\"},{\"name\":\"motor_running\",\"value\":true,\"unit\":null,\"data_type\":\"boolean\"}]}",
         "payloadType": "json",
         "x": 200,
         "y": 180,
@@ -188,7 +189,7 @@
         "once": true,
         "onceDelay": 0.1,
         "topic": "",
-        "payload": "{   \"timestamp\": 1779982835000,   \"gateway_id\": \"sida_edge_001\",   \"isa95_context\": {     \"enterprise\": \"SENAI\",     \"site\": \"Recife\",     \"area\": \"Producao\",     \"line\": \"Mistura\",     \"equipment\": \"Tanque_Misturador\"   },   \"data\": {     \"temperatura_interna\": 82.3,     \"pressao_bar\": 1.2,     \"nivel_litros\": 850,     \"valvula_aberta\": true   } }",
+        "payload": "{\"timestamp\":1684512000000,\"source\":{\"type\":\"edge_gateway\",\"id\":\"sida_edge_001\"},\"asset_context\":{\"standard\":\"ISA-95\",\"path\":[{\"type\":\"enterprise\",\"id\":\"senai\"},{\"type\":\"site\",\"id\":\"recife\"},{\"type\":\"area\",\"id\":\"producao\"},{\"type\":\"line\",\"id\":\"linha_envase\"},{\"type\":\"equipment\",\"id\":\"esteira_a\"}]},\"data\":[{\"name\":\"motor_velocity\",\"value\":45.5,\"unit\":\"RPM\",\"data_type\":\"float\"},{\"name\":\"motor_running\",\"value\":true,\"unit\":null,\"data_type\":\"boolean\"}]}",
         "payloadType": "json",
         "x": 200,
         "y": 100,
@@ -272,6 +273,23 @@
         "wires": [
             []
         ]
+    },
+    {
+        "id": "bdcd2d6f38e3b341",
+        "type": "debug",
+        "z": "f4a91dd7bfc833e7",
+        "name": "debug 1",
+        "active": false,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 760,
+        "y": 320,
+        "wires": []
     },
     {
         "id": "7de90c1fbd8c9941",
