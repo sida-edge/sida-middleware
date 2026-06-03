@@ -14,6 +14,7 @@ import (
 	"sida-core/internal/adapters/repository"
 
 	"github.com/gin-gonic/gin"
+	"github.com/joho/godotenv"
 )
 
 func CORSMiddleware() gin.HandlerFunc {
@@ -30,8 +31,33 @@ func CORSMiddleware() gin.HandlerFunc {
 	}
 }
 
+func RequireAuth() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		token := c.GetHeader("Authorization")
+		expectedPIN := os.Getenv("EDGE_ENGINEER_PIN")
+		
+		expectedToken := "Bearer session_" + expectedPIN
+
+		log.Printf("🔒 [Segurança] Tentativa de Escrita - Token Recebido: '%s' | Token Esperado: '%s'\n", token, expectedToken)
+
+		if expectedPIN == "" {
+			log.Println("⚠️ ERRO CRÍTICO: O PIN no servidor está VAZIO. O godotenv não carregou a memória.")
+		}
+
+		if token != expectedToken {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Acesso não autorizado pelo Go. Tokens não coincidem."})
+			c.Abort()
+			return
+		}
+		
+		c.Next()
+	}
+}
+
 func main() {
 	log.Println("Iniciando SIDA-Core...")
+
+	_ = godotenv.Load("/app/data/.env")
 
 	dbPath := "./data/sida_config.db"
 	os.MkdirAll(filepath.Dir(dbPath), os.ModePerm)
@@ -63,11 +89,33 @@ func main() {
 		})
 	})
 
+	router.POST("/api/auth/unlock", func(c *gin.Context) {
+		var login struct { PIN string `json:"pin"` }
+		if err := c.ShouldBindJSON(&login); err != nil {
+			c.JSON(400, gin.H{"error": "Dados inválidos"})
+			return
+		}
+
+		expectedPIN := os.Getenv("EDGE_ENGINEER_PIN")
+		
+		if expectedPIN != "" && login.PIN == expectedPIN {
+			c.JSON(200, gin.H{
+				"status": "unlocked",
+				"token": "session_" + expectedPIN, 
+			})
+		} else {
+			c.JSON(401, gin.H{"error": "PIN incorreto"})
+		}
+	})
+
 	api := router.Group("/api/config")
 	{
-		api.POST("/manifest", manifestHandler.UploadManifest)
 		api.GET("/manifest", manifestHandler.GetManifest)
+		api.POST("/manifest", RequireAuth(), manifestHandler.UploadManifest)
 	}
+
+	router.GET("/api/system/info", handler.GetSystemInfo)
+	router.POST("/api/system/setup", handler.SetupEdgeGateway)
 
 	srv := &http.Server{
 		Addr:    ":8000",
