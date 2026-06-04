@@ -1,11 +1,40 @@
 [
     {
-        "id": "9e19e885c5971d19",
+        "id": "bf8d16b5667222e0",
         "type": "tab",
-        "label": "Flow 1",
+        "label": "Messaging",
         "disabled": false,
         "info": "",
         "env": []
+    },
+    {
+        "id": "9e19e885c5971d19",
+        "type": "tab",
+        "label": "Processing",
+        "disabled": false,
+        "info": "",
+        "env": []
+    },
+    {
+        "id": "4372056093a7dc1b",
+        "type": "group",
+        "z": "bf8d16b5667222e0",
+        "name": "ZMQ Sender",
+        "style": {
+            "stroke": "#3f93cf",
+            "label": true,
+            "color": "#000000"
+        },
+        "nodes": [
+            "abab80c8e67aac5c",
+            "02d9ff725ecbb71c",
+            "54734105d5a65c14",
+            "7491cbfe6b0b41dc"
+        ],
+        "x": 64,
+        "y": 99,
+        "w": 542,
+        "h": 142
     },
     {
         "id": "937213232cd58bf4",
@@ -36,6 +65,74 @@
         "showErrors": false,
         "showWarnings": true,
         "showLogs": true
+    },
+    {
+        "id": "abab80c8e67aac5c",
+        "type": "link in",
+        "z": "bf8d16b5667222e0",
+        "g": "4372056093a7dc1b",
+        "name": "Message In",
+        "links": [
+            "e49bd44efe452f73"
+        ],
+        "x": 105,
+        "y": 200,
+        "wires": [
+            [
+                "02d9ff725ecbb71c"
+            ]
+        ]
+    },
+    {
+        "id": "02d9ff725ecbb71c",
+        "type": "json",
+        "z": "bf8d16b5667222e0",
+        "g": "4372056093a7dc1b",
+        "name": "ToString",
+        "property": "payload",
+        "action": "str",
+        "pretty": false,
+        "x": 200,
+        "y": 200,
+        "wires": [
+            [
+                "54734105d5a65c14",
+                "7491cbfe6b0b41dc"
+            ]
+        ]
+    },
+    {
+        "id": "54734105d5a65c14",
+        "type": "zeromq out",
+        "z": "bf8d16b5667222e0",
+        "g": "4372056093a7dc1b",
+        "name": "ZQM Output",
+        "topic": "",
+        "fields": "topic,payload",
+        "server": "ipc:///tmp/.ipc/ingestion.ipc",
+        "isserver": true,
+        "intype": "push",
+        "x": 390,
+        "y": 200,
+        "wires": []
+    },
+    {
+        "id": "7491cbfe6b0b41dc",
+        "type": "debug",
+        "z": "bf8d16b5667222e0",
+        "g": "4372056093a7dc1b",
+        "name": "Messaging Output Monitor",
+        "active": true,
+        "tosidebar": false,
+        "console": false,
+        "tostatus": true,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "counter",
+        "x": 440,
+        "y": 140,
+        "wires": []
     },
     {
         "id": "7b02c3c4a8ee2acb",
@@ -85,7 +182,7 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "counter",
-        "x": 530,
+        "x": 430,
         "y": 180,
         "wires": []
     },
@@ -101,8 +198,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 490,
-        "y": 300,
+        "x": 440,
+        "y": 240,
         "wires": [
             [
                 "33923757fec61704"
@@ -115,13 +212,14 @@
         "z": "9e19e885c5971d19",
         "name": "JSON Anotado",
         "property": "payload",
-        "action": "",
-        "pretty": true,
-        "x": 690,
-        "y": 300,
+        "action": "str",
+        "pretty": false,
+        "x": 640,
+        "y": 240,
         "wires": [
             [
-                "22f8671443f9fb70"
+                "22f8671443f9fb70",
+                "e49bd44efe452f73"
             ]
         ]
     },
@@ -138,8 +236,21 @@
         "targetType": "msg",
         "statusVal": "payload",
         "statusType": "auto",
-        "x": 910,
-        "y": 280,
+        "x": 840,
+        "y": 180,
+        "wires": []
+    },
+    {
+        "id": "e49bd44efe452f73",
+        "type": "link out",
+        "z": "9e19e885c5971d19",
+        "name": "Sender Queue",
+        "mode": "link",
+        "links": [
+            "abab80c8e67aac5c"
+        ],
+        "x": 795,
+        "y": 240,
         "wires": []
     }
 ]

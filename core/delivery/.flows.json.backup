@@ -1,8 +1,16 @@
 [
     {
+        "id": "20080e9522dba17a",
+        "type": "tab",
+        "label": "Messaging",
+        "disabled": false,
+        "info": "",
+        "env": []
+    },
+    {
         "id": "f4a91dd7bfc833e7",
         "type": "tab",
-        "label": "Flow 1",
+        "label": "Processing",
         "disabled": false,
         "info": "",
         "env": []
@@ -14,6 +22,27 @@
         "disabled": false,
         "info": "",
         "env": []
+    },
+    {
+        "id": "b169a9f9f2fdc84c",
+        "type": "group",
+        "z": "20080e9522dba17a",
+        "name": "ZMQ Receiver",
+        "style": {
+            "stroke": "#3f93cf",
+            "label": true,
+            "color": "#000000"
+        },
+        "nodes": [
+            "36da8bea1959fbca",
+            "d0396c344ab22f9c",
+            "b6034584ef370295",
+            "a90949c5da48bfdc"
+        ],
+        "x": 74,
+        "y": 99,
+        "w": 492,
+        "h": 142
     },
     {
         "id": "2312654bef2ae844",
@@ -68,6 +97,123 @@
         "primaryScada": ""
     },
     {
+        "id": "36da8bea1959fbca",
+        "type": "zeromq in",
+        "z": "20080e9522dba17a",
+        "g": "b169a9f9f2fdc84c",
+        "name": "ZMQ Receiver",
+        "topic": "",
+        "fields": "topic,payload",
+        "server": "ipc:///tmp/.ipc/context.ipc",
+        "output": "json",
+        "isserver": false,
+        "intype": "pull",
+        "x": 170,
+        "y": 200,
+        "wires": [
+            [
+                "d0396c344ab22f9c",
+                "a90949c5da48bfdc"
+            ]
+        ]
+    },
+    {
+        "id": "d0396c344ab22f9c",
+        "type": "json",
+        "z": "20080e9522dba17a",
+        "g": "b169a9f9f2fdc84c",
+        "name": "ToObject",
+        "property": "payload",
+        "action": "",
+        "pretty": false,
+        "x": 360,
+        "y": 200,
+        "wires": [
+            [
+                "b6034584ef370295"
+            ]
+        ]
+    },
+    {
+        "id": "b6034584ef370295",
+        "type": "link out",
+        "z": "20080e9522dba17a",
+        "g": "b169a9f9f2fdc84c",
+        "name": "Message Out",
+        "mode": "link",
+        "links": [
+            "1eed795d89c44e79"
+        ],
+        "x": 455,
+        "y": 200,
+        "wires": []
+    },
+    {
+        "id": "a90949c5da48bfdc",
+        "type": "debug",
+        "z": "20080e9522dba17a",
+        "g": "b169a9f9f2fdc84c",
+        "name": "Messaging Input Monitor",
+        "active": true,
+        "tosidebar": false,
+        "console": false,
+        "tostatus": true,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "counter",
+        "x": 410,
+        "y": 140,
+        "wires": []
+    },
+    {
+        "id": "d1928eef1a094621",
+        "type": "link in",
+        "z": "20080e9522dba17a",
+        "name": "link in 1",
+        "links": [
+            "a16033606934f38c"
+        ],
+        "x": 145,
+        "y": 360,
+        "wires": [
+            [
+                "a88317af959e8167",
+                "215475b220f7c97d"
+            ]
+        ]
+    },
+    {
+        "id": "a88317af959e8167",
+        "type": "mqtt sparkplug out",
+        "z": "20080e9522dba17a",
+        "name": "UNS Broker (GCP)",
+        "topic": "",
+        "qos": "0",
+        "retain": "",
+        "broker": "97528de95b131960",
+        "x": 310,
+        "y": 360,
+        "wires": []
+    },
+    {
+        "id": "215475b220f7c97d",
+        "type": "debug",
+        "z": "20080e9522dba17a",
+        "name": "Messaging Output Monitor",
+        "active": true,
+        "tosidebar": false,
+        "console": false,
+        "tostatus": true,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "counter",
+        "x": 340,
+        "y": 300,
+        "wires": []
+    },
+    {
         "id": "0b6e40380fc4820f",
         "type": "inject",
         "z": "f4a91dd7bfc833e7",
@@ -108,26 +254,13 @@
         "y": 140,
         "wires": [
             [
-                "0ef6473adffcd429",
                 "f0158cfd43983707",
                 "bb9d3d5d27646cc2",
                 "4b39ced9533d7a88",
-                "bdcd2d6f38e3b341"
+                "bdcd2d6f38e3b341",
+                "a16033606934f38c"
             ]
         ]
-    },
-    {
-        "id": "0ef6473adffcd429",
-        "type": "mqtt sparkplug out",
-        "z": "f4a91dd7bfc833e7",
-        "name": "",
-        "topic": "",
-        "qos": "",
-        "retain": "",
-        "broker": "97528de95b131960",
-        "x": 750,
-        "y": 140,
-        "wires": []
     },
     {
         "id": "f0158cfd43983707",
@@ -289,6 +422,35 @@
         "statusType": "auto",
         "x": 760,
         "y": 320,
+        "wires": []
+    },
+    {
+        "id": "1eed795d89c44e79",
+        "type": "link in",
+        "z": "f4a91dd7bfc833e7",
+        "name": "Receiver Queue",
+        "links": [
+            "b6034584ef370295"
+        ],
+        "x": 265,
+        "y": 240,
+        "wires": [
+            [
+                "50b1232778c14788"
+            ]
+        ]
+    },
+    {
+        "id": "a16033606934f38c",
+        "type": "link out",
+        "z": "f4a91dd7bfc833e7",
+        "name": "Sender Queue",
+        "mode": "link",
+        "links": [
+            "d1928eef1a094621"
+        ],
+        "x": 715,
+        "y": 140,
         "wires": []
     },
     {

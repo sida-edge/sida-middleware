@@ -1,5 +1,7 @@
 {
   "name": "sida-context",
   "version": "1.0.0",
-  "dependencies": {}
+  "dependencies": {
+    "node-red-contrib-zeromq": "~0.0.10"
+  }
 }

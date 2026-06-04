@@ -426,27 +426,5 @@
                 "file": "/usr/src/node-red/node_modules/@node-red/nodes/core/storage/23-watch.js"
             }
         }
-    },
-    "node-red-contrib-mqtt-sparkplug-plus": {
-        "name": "node-red-contrib-mqtt-sparkplug-plus",
-        "version": "2.2.3",
-        "local": false,
-        "user": false,
-        "nodes": {
-            "mqtt-sparkplug-plus": {
-                "name": "mqtt-sparkplug-plus",
-                "types": [
-                    "mqtt-sparkplug-broker",
-                    "mqtt sparkplug device",
-                    "mqtt sparkplug in",
-                    "mqtt sparkplug out"
-                ],
-                "enabled": true,
-                "local": false,
-                "user": false,
-                "module": "node-red-contrib-mqtt-sparkplug-plus",
-                "file": "/usr/src/node-red/node_modules/node-red-contrib-mqtt-sparkplug-plus/mqtt-sparkplug-plus.js"
-            }
-        }
     }
 }
