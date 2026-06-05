@@ -22,7 +22,7 @@ export default function LockController({ isUnlocked, onUnlock, onLock }) {
   return (
     <>
       <button onClick={() => isUnlocked ? onLock() : setShowModal(true)} style={styles.lockBtn(isUnlocked)}>
-        {isUnlocked ? '🔓 Modo Edição Ativo' : '🔒 Bloqueado (PIN)'}
+        {isUnlocked ? 'Modo Edição Ativo' : 'Bloqueado (PIN)'}
       </button>
 
       {showModal && (

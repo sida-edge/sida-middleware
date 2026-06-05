@@ -38,14 +38,12 @@ func RequireAuth() gin.HandlerFunc {
 		
 		expectedToken := "Bearer session_" + expectedPIN
 
-		log.Printf("🔒 [Segurança] Tentativa de Escrita - Token Recebido: '%s' | Token Esperado: '%s'\n", token, expectedToken)
-
 		if expectedPIN == "" {
-			log.Println("⚠️ ERRO CRÍTICO: O PIN no servidor está VAZIO. O godotenv não carregou a memória.")
+			log.Println("ERROR: O PIN no servidor está VAZIO. O godotenv não carregou a memória.")
 		}
 
 		if token != expectedToken {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "Acesso não autorizado pelo Go. Tokens não coincidem."})
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Acesso não autorizado"})
 			c.Abort()
 			return
 		}

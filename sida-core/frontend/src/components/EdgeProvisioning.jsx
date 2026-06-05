@@ -12,7 +12,6 @@ export default function EdgeProvisioning({ onProvisioned }) {
     setErro('')
 
     try {
-      // 1. Regista a identidade física do Edge
       const resSetup = await fetch('/api/system/setup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -22,7 +21,6 @@ export default function EdgeProvisioning({ onProvisioned }) {
       if (!resSetup.ok) throw new Error('Falha ao registar identidade no Edge.')
       const setupData = await resSetup.json()
 
-      // 2. Faz o login automático imediatamente para obter o Token de sessão
       const resAuth = await fetch('/api/auth/unlock', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -32,7 +30,6 @@ export default function EdgeProvisioning({ onProvisioned }) {
       if (!resAuth.ok) throw new Error('Falha na autenticação automática.')
       const authData = await resAuth.json()
 
-      // 3. Avisa o App.jsx que o sistema acordou e já tem a chave
       onProvisioned(setupData.gateway_id, authData.token)
     } catch (error) {
       setErro(error.message)

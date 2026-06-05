@@ -3,15 +3,13 @@ import DeviceForm from './DeviceForm'
 import DeviceCard from './DeviceCard' 
 
 export default function Dashboard({ config, onSave, gatewayId, token, setToken }) {
-  // Estado para saber exatamente EM QUE linha clicámos para adicionar o equipamento
   const [deviceTarget, setDeviceTarget] = useState(null) // { areaId, lineId } ou null
   
   const [showPinPrompt, setShowPinPrompt] = useState(false)
   const [pinInput, setPinInput] = useState('')
   const [activeTab, setActiveTab] = useState('all') 
 
-  // --- ESTADOS DO NOVO MODAL ---
-  const [modalConfig, setModalConfig] = useState({ isOpen: false, type: null }) // type: 'area' ou 'line'
+  const [modalConfig, setModalConfig] = useState({ isOpen: false, type: null })
   const [modalInput, setModalInput] = useState('')
   const [modalSelectArea, setModalSelectArea] = useState('')
 
@@ -45,7 +43,6 @@ export default function Dashboard({ config, onSave, gatewayId, token, setToken }
     setModalConfig({ isOpen: false, type: null })
   }
 
-  // --- ABRIR MODAIS ---
   const openAreaModal = () => {
     setModalInput('')
     setModalConfig({ isOpen: true, type: 'area' })
@@ -61,23 +58,22 @@ export default function Dashboard({ config, onSave, gatewayId, token, setToken }
     setModalConfig({ isOpen: false, type: null })
   }
 
-  // --- GRAVAR DADOS DOS MODAIS ---
   const handleModalSubmit = async () => {
     if (!modalInput.trim()) {
       alert("O nome não pode estar vazio.")
       return
     }
 
-    const idFormatado = modalInput.toLowerCase().trim().replace(/\s+/g, '_')
-    const novaConfig = { ...config }
+    const idFormatted = modalInput.toLowerCase().trim().replace(/\s+/g, '_')
+    const newConfig = { ...config }
 
     if (modalConfig.type === 'area') {
-      if (!novaConfig.plant_model.areas) novaConfig.plant_model.areas = {}
-      if (novaConfig.plant_model.areas[idFormatado]) {
+      if (!newConfig.plant_model.areas) newConfig.plant_model.areas = {}
+      if (newConfig.plant_model.areas[idFormatted]) {
         alert("Já existe uma área com este nome.")
         return
       }
-      novaConfig.plant_model.areas[idFormatado] = { name: modalInput, lines: [] }
+      newConfig.plant_model.areas[idFormatted] = { name: modalInput, lines: [] }
 
     } else if (modalConfig.type === 'line') {
       const targetArea = modalSelectArea
@@ -85,19 +81,18 @@ export default function Dashboard({ config, onSave, gatewayId, token, setToken }
         alert("Selecione uma Área para esta linha.")
         return
       }
-      if (!novaConfig.plant_model.areas[targetArea].lines) novaConfig.plant_model.areas[targetArea].lines = []
-      if (novaConfig.plant_model.areas[targetArea].lines.includes(idFormatado)) {
+      if (!newConfig.plant_model.areas[targetArea].lines) newConfig.plant_model.areas[targetArea].lines = []
+      if (newConfig.plant_model.areas[targetArea].lines.includes(idFormatted)) {
         alert("Esta linha já existe nesta área.")
         return
       }
-      novaConfig.plant_model.areas[targetArea].lines.push(idFormatado)
+      newConfig.plant_model.areas[targetArea].lines.push(idFormatted)
     }
 
-    await onSave(novaConfig)
+    await onSave(newConfig)
     closeModal()
   }
 
-  // --- DESIGN SYSTEM ---
   const colors = {
     sidebarBg: '#0f172a', sidebarHover: '#1e293b', bg: '#f8fafc', card: '#ffffff',
     border: '#e2e8f0', primary: '#2563eb', warning: '#f59e0b', success: '#10b981',
@@ -117,7 +112,6 @@ export default function Dashboard({ config, onSave, gatewayId, token, setToken }
     btnPrimary: { padding: '10px 20px', backgroundColor: colors.primary, color: 'white', border: 'none', borderRadius: '6px', fontWeight: '600', cursor: 'pointer', boxShadow: '0 4px 6px -1px rgba(37, 99, 235, 0.2)' },
     btnSecondary: { padding: '10px 20px', backgroundColor: 'white', color: colors.textMain, border: `1px solid ${colors.border}`, borderRadius: '6px', fontWeight: '600', cursor: 'pointer' },
     btnOutline: { padding: '6px 12px', backgroundColor: 'transparent', color: colors.primary, border: `1px solid ${colors.primary}`, borderRadius: '4px', fontSize: '13px', fontWeight: 'bold', cursor: 'pointer' },
-    // ESTILOS DO MODAL
     modalOverlay: { position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', backgroundColor: 'rgba(15, 23, 42, 0.7)', backdropFilter: 'blur(5px)', zIndex: 999, display: 'flex', justifyContent: 'center', alignItems: 'center' },
     modalCard: { backgroundColor: 'white', padding: '30px', borderRadius: '12px', width: '100%', maxWidth: '400px', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)' },
     input: { width: '100%', padding: '12px', marginTop: '8px', borderRadius: '6px', border: `1px solid ${colors.border}`, boxSizing: 'border-box', fontSize: '15px' }
@@ -125,16 +119,12 @@ export default function Dashboard({ config, onSave, gatewayId, token, setToken }
 
   return (
     <div style={styles.layout}>
-      
-      {/* OVERLAY DOS MODAIS DE CONSTRUÇÃO */}
       {modalConfig.isOpen && (
         <div style={styles.modalOverlay}>
           <div style={styles.modalCard}>
             <h2 style={{ margin: '0 0 20px 0', color: colors.textMain }}>
               {modalConfig.type === 'area' ? 'Nova Área Operacional' : 'Adicionar Nova Linha'}
             </h2>
-            
-            {/* Se for criar uma Linha a partir da Visão Global, pede para escolher a Área */}
             {modalConfig.type === 'line' && activeTab === 'all' && (
               <div style={{ marginBottom: '15px' }}>
                 <label style={{ fontSize: '14px', fontWeight: 'bold', color: colors.textMuted }}>Pertence a qual Área?</label>
@@ -160,7 +150,6 @@ export default function Dashboard({ config, onSave, gatewayId, token, setToken }
         </div>
       )}
 
-      {/* --- RENDERIZAÇÃO DA SIDEBAR E MAIN APP (IGUAL AO ANTERIOR) --- */}
       <div style={styles.sidebar}>
         <div style={styles.sidebarHeader}>
           <div style={{ fontSize: '12px', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', marginBottom: '4px' }}>SIDA EDGE CORE</div>
@@ -170,7 +159,7 @@ export default function Dashboard({ config, onSave, gatewayId, token, setToken }
 
         <div style={{ padding: '20px 0', flex: 1, overflowY: 'auto' }}>
           <div style={{ padding: '0 24px', fontSize: '11px', color: '#64748b', fontWeight: 'bold', textTransform: 'uppercase', marginBottom: '10px' }}>Visão Geral</div>
-          <div style={styles.navItem(activeTab === 'all')} onClick={() => setActiveTab('all')}>🏭 Planta Completa</div>
+          <div style={styles.navItem(activeTab === 'all')} onClick={() => setActiveTab('all')}>Planta Completa</div>
 
           <div style={{ padding: '20px 24px 10px', fontSize: '11px', color: '#64748b', fontWeight: 'bold', textTransform: 'uppercase' }}>Áreas Operacionais</div>
           {Object.entries(plantModel.areas || {}).map(([areaId, areaData]) => (
@@ -190,9 +179,9 @@ export default function Dashboard({ config, onSave, gatewayId, token, setToken }
 
           <div>
              {isEngineeringMode ? (
-               <button onClick={handleLock} style={{ padding: '8px 16px', backgroundColor: '#fef3c7', color: '#b45309', border: '1px solid #fde68a', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer' }}>🔓 Trancar Edição</button>
+               <button onClick={handleLock} style={{ padding: '8px 16px', backgroundColor: '#fef3c7', color: '#b45309', border: '1px solid #fde68a', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer' }}>Trancar Edição</button>
              ) : (
-               <button onClick={() => setShowPinPrompt(!showPinPrompt)} style={{ padding: '8px 16px', backgroundColor: 'transparent', color: colors.textMuted, border: `1px solid ${colors.border}`, borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer' }}>🔒 Desbloquear</button>
+               <button onClick={() => setShowPinPrompt(!showPinPrompt)} style={{ padding: '8px 16px', backgroundColor: 'transparent', color: colors.textMuted, border: `1px solid ${colors.border}`, borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer' }}>Desbloquear</button>
              )}
           </div>
         </div>
@@ -230,17 +219,16 @@ export default function Dashboard({ config, onSave, gatewayId, token, setToken }
                 <h3 style={{ margin: 0, color: colors.textMain, fontSize: '20px' }}>{activeTab === 'all' ? `📍 ${areaData.name}` : 'Linhas de Produção'}</h3>
               </div>
               
-              {areaData.lines.map(linha => {
-                 const equipamentos = Object.entries(devices).filter(([_, d]) => d.asset_context?.path?.find(n => n.type === 'line')?.id === linha)
+              {areaData.lines.map(line => {
+                 const equipamentos = Object.entries(devices).filter(([_, d]) => d.asset_context?.path?.find(n => n.type === 'line')?.id === line)
                  return (
-                   <div key={linha} style={{ marginTop: '20px', padding: '20px', backgroundColor: 'white', borderRadius: '12px', border: `1px solid ${colors.border}`, boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }}>
+                   <div key={line} style={{ marginTop: '20px', padding: '20px', backgroundColor: 'white', borderRadius: '12px', border: `1px solid ${colors.border}`, boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }}>
                      
                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-                       <h4 style={{ margin: 0, color: colors.textMuted, textTransform: 'uppercase', fontSize: '13px', letterSpacing: '1px' }}>⚙️ {linha.replace(/_/g, ' ')}</h4>
+                       <h4 style={{ margin: 0, color: colors.textMuted, textTransform: 'uppercase', fontSize: '13px', letterSpacing: '1px' }}>⚙️ {line.replace(/_/g, ' ')}</h4>
                        
-                       {/* BOTAO ATUALIZADO: Salva o contexto de Área e Linha */}
                        {isEngineeringMode && (
-                         <button onClick={() => setDeviceTarget({ areaId, lineId: linha })} style={styles.btnOutline}>
+                         <button onClick={() => setDeviceTarget({ areaId, lineId: line })} style={styles.btnOutline}>
                            + Integrar Equipamento
                          </button>
                        )}
@@ -265,17 +253,16 @@ export default function Dashboard({ config, onSave, gatewayId, token, setToken }
         </div>
       </div>
 
-      {/* DEVICE FORM ATUALIZADO (Recebe o target injetado) */}
       {deviceTarget && (
         <DeviceForm 
           plantModel={plantModel} 
           targetArea={deviceTarget.areaId} 
           targetLine={deviceTarget.lineId} 
           onSave={(id, data) => { 
-            const novaConfig = {...config}; 
-            if(!novaConfig.devices) novaConfig.devices = {}; 
-            novaConfig.devices[id] = data; 
-            onSave(novaConfig); 
+            const newConfig = {...config}; 
+            if(!newConfig.devices) newConfig.devices = {}; 
+            newConfig.devices[id] = data; 
+            onSave(newConfig); 
             setDeviceTarget(null);
           }} 
           onCancel={() => setDeviceTarget(null)} 

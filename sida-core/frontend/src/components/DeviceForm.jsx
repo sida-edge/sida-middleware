@@ -1,16 +1,14 @@
 import { useState } from 'react'
 
 export default function DeviceForm({ plantModel, targetArea, targetLine, onSave, onCancel }) {
-  // 1. INFORMAÇÕES BÁSICAS E CONEXÃO
   const [deviceName, setDeviceName] = useState('')
   const [protocol, setProtocol] = useState('modbus_tcp')
   const [ip, setIp] = useState('')
   const [port, setPort] = useState(502)
   const [slaveId, setSlaveId] = useState(1)
   const [pollingRate, setPollingRate] = useState(1000)
-  const [byteOrder, setByteOrder] = useState('ABCD') // ABCD (Big Endian), DCBA (Little Endian), CDAB (Word Swap)
+  const [byteOrder, setByteOrder] = useState('ABCD')
 
-  // 2. TABELA DE REGISTRADORES (TAGS)
   const [tags, setTags] = useState([])
 
   const handleAddTag = () => {
@@ -33,11 +31,9 @@ export default function DeviceForm({ plantModel, targetArea, targetLine, onSave,
     setTags(tags.map(t => t.id === id ? { ...t, [field]: value } : t))
   }
 
-  // --- VALIDAÇÕES DE NÍVEL INDUSTRIAL ---
-  const validarDados = () => {
+  const checkData = () => {
     if (!deviceName.trim()) return "O Nome do equipamento é obrigatório."
     
-    // Validação de IP (IPv4)
     const ipRegex = /^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/
     if (!ipRegex.test(ip)) return "Endereço IP inválido."
 
@@ -47,7 +43,6 @@ export default function DeviceForm({ plantModel, targetArea, targetLine, onSave,
 
     if (tags.length === 0) return "Adicione pelo menos uma Tag para leitura."
 
-    // Verificação de Tags Duplicadas e Vazias
     const enderecosUsados = new Set()
     for (let i = 0; i < tags.length; i++) {
       const t = tags[i]
@@ -60,21 +55,20 @@ export default function DeviceForm({ plantModel, targetArea, targetLine, onSave,
       enderecosUsados.add(t.address)
     }
 
-    return null // Tudo OK!
+    return null
   }
 
   const handleSubmit = (e) => {
     e.preventDefault()
 
-    const erroDeValidacao = validarDados()
-    if (erroDeValidacao) {
-      alert(`⚠️ Erro de Configuração:\n${erroDeValidacao}`)
+    const checkError = checkData()
+    if (checkError) {
+      alert(`Erro de Configuração:\n${checkError}`)
       return
     }
 
     const deviceId = deviceName.toLowerCase().trim().replace(/\s+/g, '_')
 
-    // Constrói o metrics_mapping usando o endereço como chave
     const metricsMapping = {}
     tags.forEach(t => {
       metricsMapping[t.address.toString()] = {
@@ -86,7 +80,6 @@ export default function DeviceForm({ plantModel, targetArea, targetLine, onSave,
       }
     })
 
-    // O JSON Perfeito para o Node-RED
     const configFinal = {
       enabled: true,
       connection: {
@@ -95,7 +88,7 @@ export default function DeviceForm({ plantModel, targetArea, targetLine, onSave,
         port: parseInt(port),
         unit_id: parseInt(slaveId),
         scan_rate_ms: parseInt(pollingRate),
-        byte_order: byteOrder // Novo: Essencial para Node-RED converter Floats!
+        byte_order: byteOrder
       },
       asset_context: {
         standard: "ISA-95",
@@ -113,7 +106,6 @@ export default function DeviceForm({ plantModel, targetArea, targetLine, onSave,
     onSave(deviceId, configFinal)
   }
 
-  // --- DESIGN SYSTEM ---
   const colors = { bg: '#f8fafc', card: '#ffffff', border: '#e2e8f0', primary: '#2563eb', textMain: '#0f172a', textMuted: '#64748b', danger: '#ef4444' }
   const styles = {
     overlay: { position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', backgroundColor: 'rgba(15, 23, 42, 0.75)', backdropFilter: 'blur(4px)', zIndex: 1000, display: 'flex', justifyContent: 'center', alignItems: 'center' },
@@ -180,7 +172,6 @@ export default function DeviceForm({ plantModel, targetArea, targetLine, onSave,
             </div>
           </div>
 
-          {/* NOVO: Configuração Avançada Modbus */}
           <div style={{ marginBottom: '40px' }}>
              <label style={styles.label}>Ordem de Bytes (Endianness) - Crítico para Float32/Int32</label>
              <select style={{...styles.input, width: '50%'}} value={byteOrder} onChange={e => setByteOrder(e.target.value)}>

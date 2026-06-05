@@ -1,11 +1,11 @@
 import { useState } from 'react'
 
-export default function SetupWizard({ configAtual, onSave }) {
+export default function SetupWizard({ currentConfig, onSave }) {
   const [enterprise, setEnterprise] = useState('')
   const [site, setSite] = useState('')
   const [loading, setLoading] = useState(false)
 
-  const handleFinalizarSetup = async (e) => {
+  const handleFinishSetup = async (e) => {
     e.preventDefault()
     setLoading(true)
 
@@ -15,13 +15,13 @@ export default function SetupWizard({ configAtual, onSave }) {
       areas: {}
     }
 
-    const novaConfig = {
-      ...configAtual,
+    const newConfig = {
+      ...currentConfig,
       plant_model: plantModel,
-      devices: configAtual.devices || {}
+      devices: currentConfig.devices || {}
     }
 
-    await onSave(novaConfig)
+    await onSave(newConfig)
     setLoading(false)
   }
 
@@ -42,7 +42,7 @@ export default function SetupWizard({ configAtual, onSave }) {
           Defina a identidade raiz deste Gateway. A estrutura interna (Áreas e Linhas) poderá ser construída gradualmente no Dashboard.
         </p>
 
-        <form onSubmit={handleFinalizarSetup}>
+        <form onSubmit={handleFinishSetup}>
           <label style={{ display: 'block', fontWeight: '600', marginBottom: '8px' }}>Empresa (Enterprise)</label>
           <input style={styles.input} required placeholder="Ex: Grupo SENAI" value={enterprise} onChange={e => setEnterprise(e.target.value)} />
 
