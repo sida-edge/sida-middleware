@@ -3,6 +3,17 @@ networks:
     driver: bridge
 
 services:
+  sida-core:
+    build: ./sida-core  
+    container_name: sida-core
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./sida-core/data:/app/data
+    networks:
+      - sida_network
+    restart: unless-stopped
+
   poc-ingestion:
     build:
       context: .
@@ -23,6 +34,8 @@ services:
     extra_hosts:
      - "host.docker.internal:host-gateway"
     restart: unless-stopped
+    depends_on:
+      - sida-core
   
   poc-context:
     build:
@@ -42,6 +55,8 @@ services:
     networks:
       - sida_network
     restart: unless-stopped
+    depends_on:
+      - sida-core
 
   poc-delivery:
     build:
@@ -61,6 +76,8 @@ services:
     networks:
       - sida_network
     restart: unless-stopped
+    depends_on:
+      - sida-core
 
   plc-simulator:
     image: ghcr.io/sida-edge/simulador:latest
