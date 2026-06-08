@@ -448,5 +448,26 @@
                 "file": "/usr/src/node-red/node_modules/node-red-contrib-mqtt-sparkplug-plus/mqtt-sparkplug-plus.js"
             }
         }
+    },
+    "node-red-contrib-zeromq": {
+        "name": "node-red-contrib-zeromq",
+        "version": "0.0.10",
+        "local": true,
+        "user": true,
+        "nodes": {
+            "zeromq": {
+                "name": "zeromq",
+                "types": [
+                    "zeromq in",
+                    "zeromq out",
+                    "zeromq request"
+                ],
+                "enabled": true,
+                "local": true,
+                "user": false,
+                "module": "node-red-contrib-zeromq",
+                "file": "/data/node_modules/node-red-contrib-zeromq/zeromq.js"
+            }
+        }
     }
 }

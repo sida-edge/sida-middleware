@@ -99,7 +99,7 @@ function App() {
   return (
     <div style={{ flex: 1, width: '100%', backgroundColor: '#f1f5f9', display: 'flex', flexDirection: 'column' }}>
       {isSetup ? (
-        <SetupWizard configAtual={config} onSave={saveManifest} />
+        <SetupWizard currentConfig={config} onSave={saveManifest} />
       ) : (
         <Dashboard 
           config={config} 

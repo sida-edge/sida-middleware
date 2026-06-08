@@ -34,8 +34,8 @@ export default function DeviceForm({ plantModel, targetArea, targetLine, onSave,
   const checkData = () => {
     if (!deviceName.trim()) return "O Nome do equipamento é obrigatório."
     
-    const ipRegex = /^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/
-    if (!ipRegex.test(ip)) return "Endereço IP inválido."
+    const hostRegex = /^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$|^host\.docker\.internal$|^localhost$/;
+    if (!hostRegex.test(ip)) return "Endereço ou Hostname inválido.";
 
     if (port < 1 || port > 65535) return "Porta inválida (deve ser entre 1 e 65535)."
     if (slaveId < 1 || slaveId > 255) return "Slave ID inválido (1-255)."

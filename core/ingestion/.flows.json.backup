@@ -16,6 +16,14 @@
         "env": []
     },
     {
+        "id": "aaee6471150744f1",
+        "type": "tab",
+        "label": "Controller",
+        "disabled": false,
+        "info": "",
+        "env": []
+    },
+    {
         "id": "4372056093a7dc1b",
         "type": "group",
         "z": "bf8d16b5667222e0",
@@ -31,10 +39,82 @@
             "54734105d5a65c14",
             "7491cbfe6b0b41dc"
         ],
+        "x": 704,
+        "y": 99,
+        "w": 662,
+        "h": 142
+    },
+    {
+        "id": "fe90de53f668c66f",
+        "type": "group",
+        "z": "bf8d16b5667222e0",
+        "name": "Modbus",
+        "style": {
+            "stroke": "#ffC000",
+            "label": true,
+            "color": "#000000"
+        },
+        "nodes": [
+            "7b02c3c4a8ee2acb",
+            "a0e7e156b4a187fe",
+            "8cbeb60de162ae13"
+        ],
+        "x": 74,
+        "y": 99,
+        "w": 552,
+        "h": 142
+    },
+    {
+        "id": "a128b0c239b73023",
+        "type": "group",
+        "z": "aaee6471150744f1",
+        "style": {
+            "stroke": "#999999",
+            "stroke-opacity": "1",
+            "fill": "none",
+            "fill-opacity": "1",
+            "label": true,
+            "label-position": "nw",
+            "color": "#a4a4a4"
+        },
+        "nodes": [
+            "364461ecab765c2c",
+            "77e0020e57c60ee3",
+            "ab51cc16ba54591e",
+            "ec667cc729e2e248",
+            "caa5b416917446c7",
+            "a4e97b28a43e8ac4",
+            "2759d95830d70018",
+            "a9df0f3697eb03af",
+            "1a508b7bc27cc8f2",
+            "638e8a22a1149575",
+            "c4435ec5396628e9"
+        ],
         "x": 64,
         "y": 99,
-        "w": 542,
-        "h": 142
+        "w": 1182,
+        "h": 222
+    },
+    {
+        "id": "8ef01d727620bf3e",
+        "type": "group",
+        "z": "bf8d16b5667222e0",
+        "name": "Modbus",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "c0326375021887cf",
+            "f133a05b9c606a89",
+            "3c22d78beb5db72c",
+            "e4d12e1c41dea844",
+            "ccea0bf949fb23b4",
+            "e257bd166c027fa9"
+        ],
+        "x": 34,
+        "y": 299,
+        "w": 862,
+        "h": 162
     },
     {
         "id": "937213232cd58bf4",
@@ -46,7 +126,7 @@
         "queueLogEnabled": false,
         "failureLogEnabled": true,
         "tcpHost": "host.docker.internal",
-        "tcpPort": "502",
+        "tcpPort": "5020",
         "tcpType": "DEFAULT",
         "serialPort": "/dev/ttyUSB",
         "serialType": "RTU-BUFFERD",
@@ -75,13 +155,14 @@
         "links": [
             "e49bd44efe452f73"
         ],
-        "x": 105,
+        "x": 800,
         "y": 200,
         "wires": [
             [
                 "02d9ff725ecbb71c"
             ]
-        ]
+        ],
+        "l": true
     },
     {
         "id": "02d9ff725ecbb71c",
@@ -92,7 +173,7 @@
         "property": "payload",
         "action": "str",
         "pretty": false,
-        "x": 200,
+        "x": 960,
         "y": 200,
         "wires": [
             [
@@ -112,7 +193,7 @@
         "server": "ipc:///tmp/.ipc/ingestion.ipc",
         "isserver": true,
         "intype": "push",
-        "x": 390,
+        "x": 1150,
         "y": 200,
         "wires": []
     },
@@ -130,14 +211,15 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "counter",
-        "x": 440,
+        "x": 1200,
         "y": 140,
         "wires": []
     },
     {
         "id": "7b02c3c4a8ee2acb",
         "type": "modbus-read",
-        "z": "9e19e885c5971d19",
+        "z": "bf8d16b5667222e0",
+        "g": "fe90de53f668c66f",
         "name": "LeitorPLC_ModBus",
         "topic": "polling",
         "showStatusActivities": true,
@@ -159,85 +241,178 @@
         "useIOForPayload": false,
         "emptyMsgOnFail": true,
         "x": 210,
-        "y": 240,
+        "y": 200,
         "wires": [
             [
-                "029762e2e14db32f"
+                "a0e7e156b4a187fe"
             ],
-            [
-                "f87ace90293c1c4e"
-            ]
+            []
         ]
     },
     {
-        "id": "029762e2e14db32f",
+        "id": "a0e7e156b4a187fe",
         "type": "debug",
-        "z": "9e19e885c5971d19",
-        "name": "debug 1",
+        "z": "bf8d16b5667222e0",
+        "g": "fe90de53f668c66f",
+        "name": "Messaging Input Monitor",
         "active": true,
-        "tosidebar": true,
-        "console": true,
+        "tosidebar": false,
+        "console": false,
         "tostatus": true,
         "complete": "payload",
         "targetType": "msg",
         "statusVal": "",
         "statusType": "counter",
-        "x": 430,
-        "y": 180,
+        "x": 470,
+        "y": 140,
         "wires": []
     },
     {
-        "id": "f87ace90293c1c4e",
+        "id": "8cbeb60de162ae13",
+        "type": "link out",
+        "z": "bf8d16b5667222e0",
+        "g": "fe90de53f668c66f",
+        "name": "Message Out",
+        "mode": "link",
+        "links": [
+            "653a12304f363ae3"
+        ],
+        "x": 430,
+        "y": 200,
+        "wires": [],
+        "l": true
+    },
+    {
+        "id": "c0326375021887cf",
+        "type": "inject",
+        "z": "bf8d16b5667222e0",
+        "g": "8ef01d727620bf3e",
+        "name": "startMessaging",
+        "props": [
+            {
+                "p": "startTime",
+                "v": "",
+                "vt": "date"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": true,
+        "onceDelay": "2",
+        "topic": "",
+        "x": 160,
+        "y": 360,
+        "wires": [
+            [
+                "f133a05b9c606a89"
+            ]
+        ]
+    },
+    {
+        "id": "f133a05b9c606a89",
+        "type": "switch",
+        "z": "bf8d16b5667222e0",
+        "g": "8ef01d727620bf3e",
+        "name": "CheckEdgeManifest",
+        "property": "manifest",
+        "propertyType": "global",
+        "rules": [
+            {
+                "t": "null"
+            },
+            {
+                "t": "nnull"
+            }
+        ],
+        "checkall": "true",
+        "repair": false,
+        "outputs": 2,
+        "x": 380,
+        "y": 360,
+        "wires": [
+            [
+                "3c22d78beb5db72c"
+            ],
+            [
+                "ccea0bf949fb23b4"
+            ]
+        ]
+    },
+    {
+        "id": "3c22d78beb5db72c",
+        "type": "link out",
+        "z": "bf8d16b5667222e0",
+        "g": "8ef01d727620bf3e",
+        "name": "RequestConfig",
+        "mode": "link",
+        "links": [
+            "ec667cc729e2e248"
+        ],
+        "x": 600,
+        "y": 340,
+        "wires": [],
+        "l": true
+    },
+    {
+        "id": "e4d12e1c41dea844",
+        "type": "link in",
+        "z": "bf8d16b5667222e0",
+        "g": "8ef01d727620bf3e",
+        "name": "newManifest",
+        "links": [
+            "a9df0f3697eb03af"
+        ],
+        "x": 465,
+        "y": 400,
+        "wires": [
+            [
+                "ccea0bf949fb23b4"
+            ]
+        ]
+    },
+    {
+        "id": "ccea0bf949fb23b4",
         "type": "function",
-        "z": "9e19e885c5971d19",
-        "name": "modbusToJson",
-        "func": "var rawData = msg.payload.data;\n\nmsg.payload = {\n    \"temperature\": rawData[0],\n    \"humidity\": rawData[1],\n    \"timestamp\": new Date().toISOString()\n};\n\nreturn msg;\n",
+        "z": "bf8d16b5667222e0",
+        "g": "8ef01d727620bf3e",
+        "name": "setupModbus",
+        "func": "// A função principal do Node-RED não é assíncrona por padrão, \n// então envolvemos a lógica em uma função auto-executável async.\n(async function() {\n    const manifest = global.get(\"manifest\");\n    const gateway_id = global.get(\"gateway_id\");\n\n    node.warn(manifest);\n\n    if (!manifest || !manifest.config || !manifest.config.devices) {\n        node.warn(\"Manifesto inválido no Messaging.\");\n        return; // Sai da função assíncrona\n    }\n\n    let active_clients = global.get(\"modbus_clients\") || {};\n    \n    // Fechar clientes antigos\n    for (let id in active_clients) {\n        if (active_clients[id].client && active_clients[id].client.isOpen) {\n            active_clients[id].client.close();\n        }\n    }\n\n    active_clients = {};\n    const devices = manifest.config.devices;\n\n    // --- CORREÇÃO: Usando for...of em vez de forEach ---\n    for (const deviceId of Object.keys(devices)) {\n        const dev = devices[deviceId];\n\n        if (dev.enabled !== true || dev.connection.protocol !== \"modbus_tcp\") {\n            continue; // Equivalente ao \"return\" dentro do forEach\n        }\n\n        const client = new ModbusRTU();\n        \n        try {\n            // Agora o loop VAI ESPERAR essa conexão terminar\n            await client.connectTCP(dev.connection.host, { port: dev.connection.port || 502});\n            client.setID(dev.connection.unit_id || 1);\n\n            active_clients[deviceId] = {\n                client: client,\n                config: dev,\n                gateway_id: gateway_id\n            };\n            \n            node.warn(`[Messaging] Conexão ESTABELECIDA com ${deviceId}`);\n        } catch (erro) {\n            node.warn(`[Messaging] Erro ao conectar com ${deviceId}: ${erro.message}`);\n        }\n    }\n    // ----------------------------------------------------\n\n    // AGORA SIM, o loop terminou. Podemos salvar e avisar o sistema.\n    global.set(\"modbus_clients\", active_clients);\n    node.warn(\"Clientes ativos no momento: \" + Object.keys(active_clients).length);\n\n    msg.payload = \"Running\";\n    \n    // Como estamos dentro de uma função async que não usa o \"return msg\" padrão do Node-RED,\n    // precisamos usar a API nativa node.send()\n    node.send(msg);\n\n})();\n\n// O nó retorna null imediatamente, enquanto a função assíncrona acima faz o trabalho.\nreturn null;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
         "initialize": "",
         "finalize": "",
-        "libs": [],
-        "x": 440,
-        "y": 240,
+        "libs": [
+            {
+                "var": "ModbusRTU",
+                "module": "modbus-serial"
+            }
+        ],
+        "x": 600,
+        "y": 380,
         "wires": [
             [
-                "33923757fec61704"
+                "8cbeb60de162ae13",
+                "e257bd166c027fa9"
             ]
         ]
     },
     {
-        "id": "33923757fec61704",
-        "type": "json",
-        "z": "9e19e885c5971d19",
-        "name": "JSON Anotado",
-        "property": "payload",
-        "action": "str",
-        "pretty": false,
-        "x": 640,
-        "y": 240,
-        "wires": [
-            [
-                "22f8671443f9fb70",
-                "e49bd44efe452f73"
-            ]
-        ]
-    },
-    {
-        "id": "22f8671443f9fb70",
+        "id": "e257bd166c027fa9",
         "type": "debug",
-        "z": "9e19e885c5971d19",
+        "z": "bf8d16b5667222e0",
+        "g": "8ef01d727620bf3e",
         "name": "debug 2",
         "active": true,
         "tosidebar": true,
         "console": false,
-        "tostatus": true,
+        "tostatus": false,
         "complete": "payload",
         "targetType": "msg",
-        "statusVal": "payload",
+        "statusVal": "",
         "statusType": "auto",
-        "x": 840,
-        "y": 180,
+        "x": 790,
+        "y": 420,
         "wires": []
     },
     {
@@ -249,8 +424,339 @@
         "links": [
             "abab80c8e67aac5c"
         ],
-        "x": 795,
+        "x": 515,
         "y": 240,
         "wires": []
+    },
+    {
+        "id": "653a12304f363ae3",
+        "type": "link in",
+        "z": "9e19e885c5971d19",
+        "name": "Receiver Queue",
+        "links": [
+            "8cbeb60de162ae13"
+        ],
+        "x": 285,
+        "y": 240,
+        "wires": [
+            [
+                "d066b0653a83c8c3",
+                "f7895e750d4c7f68"
+            ]
+        ]
+    },
+    {
+        "id": "d066b0653a83c8c3",
+        "type": "function",
+        "z": "9e19e885c5971d19",
+        "name": "Polling",
+        "func": "const active_clients = global.get(\"modbus_clients\");\nnode.warn(active_clients);\nif (!active_clients) return null;\n\nlet timers = context.get(\"timersAtivos\") || {};\nfor(let key in timers) {\n    clearInterval(timers[key]);\n}\ntimers = {};\n\nObject.keys(active_clients).forEach((deviceId) => {\n    const { client, config, gateway_id } = active_clients[deviceId]\n\n    const scanRate = config.connection.scan_rate_ms || 1000;\n    const metrics = config.metrics_mapping || {};\n\n    let intervalId = setInterval(async () => {\n        if (!client.isOpen) return;\n        try {\n            let data_payload = {};\n            for (let addrKey of Object.keys(metrics)) {\n                const metric = metrics[addrKey];\n\n                let address = parseInt(addrKey);\n                if (address >= 40001 && address <= 49999) address -= 40001;\n                else if (address >= 30001 && address <= 39999) address -= 30001;\n\n                let quantity = (metric.data_type === \"float\" || metric.data_type === \"int32\") ? 2 : 1;\n                if (metric.data_type == \"double\" || metric.data_type == \"int64\") quantity = 4;\n\n                let data;\n                if (metric.register_type === \"holding\" || addrKey.startsWith(\"4\"))\n                    data = await client.readHoldingRegisters(address, quantity);\n                else if (metric.register_type === \"input\" || addrKey.startsWith(\"3\"))\n                    data = await client.readInputRegisters(address, quantity); \n\n                data_payload[addrKey] = (data.data.length === 1) ? data.data[0] : data.data;\n            }\n            node.warn(msg.payload);\n\n            node.send({\n                payload: {\n                    timestamp: Date.now(),\n                    gateway_id: gateway_id,\n                    source: {\n                        device_id: deviceId,\n                        source_protocol: config.connection.protocol\n                    },\n                    data: data_payload\n                }\n            });\n        } catch (erro) {\n            node.warn(`[Messaging] Erro de leitura em ${deviceId}: ${erro.message}`);\n        }\n    }, scanRate);\n\n    timers[deviceId] = intervalId;\n});\n\ncontext.set(\"timersAtivos\", timers);\nnode.status({ fill: \"green\", shape: \"dot\", text: \"Lendo e processando...\" });\n\nnode.on(\"close\", function () {\n    let timersAtivos = context.get(\"timersAtivos\") || {};\n    for (let key in timersAtivos) clearInterval(timersAtivos[key]);\n    context.set(\"timersAtivos\", {});\n});\n\nreturn null;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 390,
+        "y": 240,
+        "wires": [
+            [
+                "e49bd44efe452f73",
+                "138de548d248b8ba"
+            ]
+        ]
+    },
+    {
+        "id": "138de548d248b8ba",
+        "type": "debug",
+        "z": "9e19e885c5971d19",
+        "name": "Processing Monitor",
+        "active": true,
+        "tosidebar": false,
+        "console": false,
+        "tostatus": true,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "counter",
+        "x": 590,
+        "y": 180,
+        "wires": []
+    },
+    {
+        "id": "f7895e750d4c7f68",
+        "type": "debug",
+        "z": "9e19e885c5971d19",
+        "name": "debug 3",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 460,
+        "y": 140,
+        "wires": []
+    },
+    {
+        "id": "364461ecab765c2c",
+        "type": "http request",
+        "z": "aaee6471150744f1",
+        "g": "a128b0c239b73023",
+        "name": "getEdgeConfig",
+        "method": "GET",
+        "ret": "obj",
+        "paytoqs": "ignore",
+        "url": "http://sida-core:8000/api/system/info",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "insecureHTTPParser": false,
+        "authType": "",
+        "senderr": false,
+        "headers": [],
+        "x": 460,
+        "y": 180,
+        "wires": [
+            [
+                "ab51cc16ba54591e"
+            ]
+        ]
+    },
+    {
+        "id": "77e0020e57c60ee3",
+        "type": "switch",
+        "z": "aaee6471150744f1",
+        "g": "a128b0c239b73023",
+        "name": "CheckGatewayID",
+        "property": "gateway_id",
+        "propertyType": "global",
+        "rules": [
+            {
+                "t": "null"
+            },
+            {
+                "t": "nnull"
+            }
+        ],
+        "checkall": "true",
+        "repair": false,
+        "outputs": 2,
+        "x": 250,
+        "y": 200,
+        "wires": [
+            [
+                "364461ecab765c2c"
+            ],
+            [
+                "a4e97b28a43e8ac4"
+            ]
+        ]
+    },
+    {
+        "id": "ab51cc16ba54591e",
+        "type": "change",
+        "z": "aaee6471150744f1",
+        "g": "a128b0c239b73023",
+        "name": "SetGatewayID",
+        "rules": [
+            {
+                "t": "set",
+                "p": "gateway_id",
+                "pt": "global",
+                "to": "payload.gateway_id",
+                "tot": "msg"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 660,
+        "y": 180,
+        "wires": [
+            [
+                "a4e97b28a43e8ac4"
+            ]
+        ]
+    },
+    {
+        "id": "ec667cc729e2e248",
+        "type": "link in",
+        "z": "aaee6471150744f1",
+        "g": "a128b0c239b73023",
+        "name": "Controller In",
+        "links": [
+            "3c22d78beb5db72c"
+        ],
+        "x": 105,
+        "y": 200,
+        "wires": [
+            [
+                "77e0020e57c60ee3"
+            ]
+        ]
+    },
+    {
+        "id": "caa5b416917446c7",
+        "type": "http request",
+        "z": "aaee6471150744f1",
+        "g": "a128b0c239b73023",
+        "name": "getEdgeManifest",
+        "method": "GET",
+        "ret": "obj",
+        "paytoqs": "ignore",
+        "url": "",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "insecureHTTPParser": false,
+        "authType": "",
+        "senderr": false,
+        "headers": [],
+        "x": 690,
+        "y": 240,
+        "wires": [
+            [
+                "638e8a22a1149575"
+            ]
+        ]
+    },
+    {
+        "id": "a4e97b28a43e8ac4",
+        "type": "change",
+        "z": "aaee6471150744f1",
+        "g": "a128b0c239b73023",
+        "name": "setUrl",
+        "rules": [
+            {
+                "t": "set",
+                "p": "url",
+                "pt": "msg",
+                "to": "\"http://sida-core:8000/api/config/manifest?gateway_id=\" & $globalContext(\"gateway_id\")",
+                "tot": "jsonata"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 490,
+        "y": 240,
+        "wires": [
+            [
+                "caa5b416917446c7"
+            ]
+        ]
+    },
+    {
+        "id": "2759d95830d70018",
+        "type": "change",
+        "z": "aaee6471150744f1",
+        "g": "a128b0c239b73023",
+        "name": "SetEdgeManifest",
+        "rules": [
+            {
+                "t": "set",
+                "p": "manifest",
+                "pt": "global",
+                "to": "payload",
+                "tot": "msg"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 1070,
+        "y": 240,
+        "wires": [
+            [
+                "a9df0f3697eb03af"
+            ]
+        ]
+    },
+    {
+        "id": "a9df0f3697eb03af",
+        "type": "link out",
+        "z": "aaee6471150744f1",
+        "g": "a128b0c239b73023",
+        "name": "Controller Out",
+        "mode": "link",
+        "links": [
+            "e4d12e1c41dea844"
+        ],
+        "x": 1205,
+        "y": 240,
+        "wires": []
+    },
+    {
+        "id": "1a508b7bc27cc8f2",
+        "type": "http in",
+        "z": "aaee6471150744f1",
+        "g": "a128b0c239b73023",
+        "name": "updateEdgeConfig",
+        "url": "http://sida-core:8000/api/system/update",
+        "method": "post",
+        "upload": false,
+        "skipBodyParsing": false,
+        "swaggerDoc": "",
+        "x": 450,
+        "y": 140,
+        "wires": [
+            [
+                "ab51cc16ba54591e"
+            ]
+        ]
+    },
+    {
+        "id": "638e8a22a1149575",
+        "type": "switch",
+        "z": "aaee6471150744f1",
+        "g": "a128b0c239b73023",
+        "name": "checkResponse",
+        "property": "statusCode",
+        "propertyType": "msg",
+        "rules": [
+            {
+                "t": "eq",
+                "v": "200",
+                "vt": "str"
+            }
+        ],
+        "checkall": "true",
+        "repair": false,
+        "outputs": 1,
+        "x": 880,
+        "y": 240,
+        "wires": [
+            [
+                "2759d95830d70018"
+            ]
+        ]
+    },
+    {
+        "id": "c4435ec5396628e9",
+        "type": "http in",
+        "z": "aaee6471150744f1",
+        "g": "a128b0c239b73023",
+        "name": "updateEdgeManifest",
+        "url": "\"http://sida-core:8000/api/config/update/manifest?gateway_id=\" & $globalContext(\"gateway_id\")",
+        "method": "post",
+        "upload": false,
+        "skipBodyParsing": false,
+        "swaggerDoc": "",
+        "x": 310,
+        "y": 280,
+        "wires": [
+            [
+                "a4e97b28a43e8ac4"
+            ]
+        ]
     }
 ]

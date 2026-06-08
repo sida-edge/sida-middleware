@@ -1,0 +1,9 @@
+{
+    "modbus-serial": {
+        "spec": "modbus-serial",
+        "module": "modbus-serial",
+        "subpath": "",
+        "builtin": false,
+        "known": false
+    }
+}
