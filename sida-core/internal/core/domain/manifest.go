@@ -9,7 +9,23 @@ type Manifest struct {
 }
 
 type Config struct {
-	Devices map[string]Device `json:"devices" binding:"omitempty,dive"`
+	Plant  	Plant	`json:"plant" binding:"required"`
+}
+
+type Plant struct {
+	Enterprise string 			 			 `json:"enterprise" binding:"required"`
+	Site       string 			 			 `json:"site" binding:"required"`
+	Device     map[string]Device 			 `json:"devices" binding:"omitempty,dive"`
+	Receivers  map[string]ReceiverConnection `json:"receivers" binding:"omitempty,dive"`
+}
+
+type ReceiverConnection struct {
+	Protocol string `json:"protocol" binding:"required,oneof=http mqtt"`
+	Host     string `json:"host" binding:"required,ip|hostname"`
+	Port     int    `json:"port" binding:"required,min=1,max=65535"`
+	Endpoint string `json:"endpoint" binding:"required_if=Protocol http"`
+	Username string `json:"username" binding:"required_if=Protocol mqtt"`
+	Password string `json:"password" binding:"required_if=Protocol mqtt"`
 }
 
 type Device struct {
@@ -34,7 +50,7 @@ type AssetContext struct {
 }
 
 type AssetNode struct {
-	Type string `json:"type" binding:"required,oneof=enterprise site area line equipment"`
+	Type string `json:"type" binding:"required,oneof=area line equipment"`
 	ID   string `json:"id" binding:"required"`
 }
 
