@@ -106,21 +106,21 @@ func (h *ManifestHandler) RemoveDevice(c *gin.Context) {
 		return
 	}
 
-	if manifest.Config.Devices == nil {
+	if manifest.Config.Plant.Device == nil {
 		c.JSON(http.StatusNotFound, gin.H{
 			"error": "O manifesto está vazio, não há equipamentos para remover",
 		})
 		return
 	}
 
-	if _, exists := manifest.Config.Devices[deviceID]; !exists {
+	if _, exists := manifest.Config.Plant.Device[deviceID]; !exists {
 		c.JSON(http.StatusNotFound, gin.H{
 			"error": "Equipamento '" + deviceID + "' não encontrado",
 		})
 		return
 	}
 
-	delete(manifest.Config.Devices, deviceID)
+	delete(manifest.Config.Plant.Device, deviceID)
 	manifest.UpdatedAt = time.Now()
 
 	if err := h.repo.Save(c.Request.Context(), *manifest); err != nil {
@@ -134,7 +134,7 @@ func (h *ManifestHandler) RemoveDevice(c *gin.Context) {
 	_ = h.zmq.PublishUpdate(manifest.GatewayID)
 
 	c.JSON(http.StatusOK, gin.H{
-		"status": "sucess",
+		"status": "success",
 		"message": "Equipamento '" + deviceID + "' removido com sucesso",
 	})
 }
@@ -167,14 +167,14 @@ func (h *ManifestHandler) ToggleDeviceStatus(c *gin.Context) {
 		return
 	}
 
-	if manifest.Config.Devices == nil {
+	if manifest.Config.Plant.Device == nil {
 		c.JSON(http.StatusNotFound, gin.H{
 			"error": "O manifesto está vazio, não há equipamentos para remover",
 		})
 		return
 	}
 
-	device, exists := manifest.Config.Devices[deviceID]
+	device, exists := manifest.Config.Plant.Device[deviceID]
 	if !exists {
 		c.JSON(http.StatusNotFound, gin.H{
 			"error": "Equipamento '" + deviceID + "' não encontrado",
@@ -183,7 +183,7 @@ func (h *ManifestHandler) ToggleDeviceStatus(c *gin.Context) {
 	}
 
 	device.Enabled = *payload.Enabled
-	manifest.Config.Devices[deviceID] = device
+	manifest.Config.Plant.Device[deviceID] = device
 
 	manifest.UpdatedAt = time.Now()
 
@@ -202,7 +202,7 @@ func (h *ManifestHandler) ToggleDeviceStatus(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"status": "sucesso",
+		"status": "success",
 		"message": "Equipamento '" + deviceID + "' " + statusStr + " com sucesso",
 	})
 }
