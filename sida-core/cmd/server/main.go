@@ -31,13 +31,16 @@ func main() {
 	}
 	log.Println("Database connected.")
 
+	authService := services.NewAuthService()
+	authHandler := handler.NewAuthHandler(authService)
+	systemHandler := handler.NewSystemHandler()
 	manifestHandler := handler.NewManifestHandler(repo)
 	// .Save .GetByID => SQLiteManifestRepository
 
 	gin.SetMode(gin.ReleaseMode)
 	router := gin.Default()
 
-	api.SetupRoutes(router, manifestHandler)
+	api.SetupRoutes(router, manifestHandler, authHandler, systemHandler, authService)
 
 	srv := &http.Server{
 		Addr:    ":8000",

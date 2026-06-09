@@ -131,3 +131,71 @@ func (h *ManifestHandler) RemoveDevice(c *gin.Context) {
 		"message": "Equipamento '" + deviceID + "' removido com sucesso",
 	})
 }
+
+func (h *ManifestHandler) ToggleDeviceStatus(c *gin.Context) {
+	deviceID := c.Param("id")
+
+	var payload struct {
+		Enabled *bool `json:"enabled" binding:"required"`
+	}
+
+	if err := c.ShouldBindJSON(&payload); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Payload inválido. Envie {'enabled': true/false}",
+			"details": err.Error(),
+		})
+		return
+	}
+
+	gatewayID := os.Getenv("EDGE_GATEWAY_ID")
+	if gatewayID == "" {
+		gatewayID = "sida_edge_001"
+	}
+
+	manifest, err := h.repo.GetByID(c.Request.Context(), gatewayID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "Erro ao ler o manifesto",
+		})
+		return
+	}
+
+	if manifest.Config.Devices == nil {
+		c.JSON(http.StatusNotFound, gin.H{
+			"error": "O manifesto está vazio, não há equipamentos para remover",
+		})
+		return
+	}
+
+	device, exists := manifest.Config.Devices[deviceID]
+	if !exists {
+		c.JSON(http.StatusNotFound, gin.H{
+			"error": "Equipamento '" + deviceID + "' não encontrado",
+		})
+		return
+	}
+
+	device.Enabled = *payload.Enabled
+	manifest.Config.Devices[deviceID] = device
+
+	manifest.UpdatedAt = time.Now()
+
+	if err := h.repo.Save(c.Request.Context(), *manifest); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "Erro ao salvar alteração",
+		})
+		return
+	}
+
+	// TODO: ZeroMQ - Disparar notificação para o serviço da borda pausar/retomar o Polling Modbus
+
+	statusStr := "disabled"
+	if *payload.Enabled {
+		statusStr = "enabled"
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"status": "sucesso",
+		"message": "Equipamento '" + deviceID + "' " + statusStr + " com sucesso",
+	})
+}

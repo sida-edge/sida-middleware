@@ -4,21 +4,30 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 )
+
+type SystemHandler struct{}
+
+func NewSystemHandler() *SystemHandler {
+	return &SystemHandler{}
+}
 
 type ProvisionPayload struct {
 	GatewayID string `json:"gateway_id" binding:"required"`
 	PIN       string `json:"pin" binding:"required"`
 }
 
-func SetupEdgeGateway(c *gin.Context) {
+func (h *SystemHandler) SetupEdgeGateway(c *gin.Context) {
 	var payload ProvisionPayload
 
 	if err := c.ShouldBindJSON(&payload); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Dados inválidos."})
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Dados inválidos.",
+		})
 		return
 	}
 
@@ -27,7 +36,9 @@ func SetupEdgeGateway(c *gin.Context) {
 
 	err := os.WriteFile(envPath, []byte(envContent), 0644)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Falha ao gravar identidade."})
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "Falha ao gravar identidade.",
+		})
 		return
 	}
 
@@ -39,11 +50,24 @@ func SetupEdgeGateway(c *gin.Context) {
 	})
 }
 
-func GetSystemInfo(c *gin.Context) {
+func (h *SystemHandler) GetSystemInfo(c *gin.Context) {
 	gatewayID := os.Getenv("EDGE_GATEWAY_ID")
 	if gatewayID == "" {
-		c.JSON(http.StatusOK, gin.H{"provisioned": false})
+		c.JSON(http.StatusOK, gin.H{
+			"provisioned": false,
+		})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"provisioned": true, "gateway_id": gatewayID})
+	c.JSON(http.StatusOK, gin.H{
+		"provisioned": true,
+		"gateway_id": gatewayID,
+	})
+}
+
+func (h *SystemHandler) HealthCheck(c *gin.Context) {
+	c.JSON(http.StatusOK, gin.H{
+		"status": 	"UP",
+		"service":  "sida-core",
+		"timestamp": time.Now().Format(time.RFC3339),
+	})
 }
