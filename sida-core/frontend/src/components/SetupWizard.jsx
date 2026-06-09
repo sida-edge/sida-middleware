@@ -12,13 +12,13 @@ export default function SetupWizard({ currentConfig, onSave }) {
     const plantModel = {
       enterprise: enterprise.trim(),
       site: site.trim(),
-      areas: {}
+      devices: {},
+      receivers: {}
     }
 
     const newConfig = {
       ...currentConfig,
-      plant_model: plantModel,
-      devices: currentConfig.devices || {}
+      plant: plantModel
     }
 
     await onSave(newConfig)
@@ -49,6 +49,8 @@ export default function SetupWizard({ currentConfig, onSave }) {
           <label style={{ display: 'block', fontWeight: '600', marginBottom: '8px' }}>Fábrica (Site)</label>
           <input style={styles.input} required placeholder="Ex: Planta Recife" value={site} onChange={e => setSite(e.target.value)} />
 
+          {/* TODO: Add device and receiver configuration fields */}
+          
           <button type="submit" style={styles.btn} disabled={loading}>
             {loading ? 'A inicializar...' : 'Criar Fundação'}
           </button>
