@@ -12,51 +12,16 @@ import (
 
 	"sida-core/internal/adapters/handler"
 	"sida-core/internal/adapters/repository"
+	"sida-core/internal/api"
 
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 )
 
-func CORSMiddleware() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		c.Writer.Header().Set("Access-Control-Allow-Origin", "*") 
-		c.Writer.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
-		c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
-
-		if c.Request.Method == "OPTIONS" {
-			c.AbortWithStatus(204)
-			return
-		}
-		c.Next()
-	}
-}
-
-func RequireAuth() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		token := c.GetHeader("Authorization")
-		expectedPIN := os.Getenv("EDGE_ENGINEER_PIN")
-		
-		expectedToken := "Bearer session_" + expectedPIN
-
-		if expectedPIN == "" {
-			log.Println("ERROR: O PIN no servidor está VAZIO. O godotenv não carregou a memória.")
-		}
-
-		if token != expectedToken {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "Acesso não autorizado"})
-			c.Abort()
-			return
-		}
-		
-		c.Next()
-	}
-}
-
 func main() {
 	log.Println("Iniciando SIDA-Core...")
 
 	_ = godotenv.Load("/app/data/.env")
-
 	dbPath := "./data/sida_config.db"
 	os.MkdirAll(filepath.Dir(dbPath), os.ModePerm)
 
@@ -67,53 +32,12 @@ func main() {
 	log.Println("Database connected.")
 
 	manifestHandler := handler.NewManifestHandler(repo)
+	// .Save .GetByID => SQLiteManifestRepository
 
 	gin.SetMode(gin.ReleaseMode)
 	router := gin.Default()
-	router.Use(CORSMiddleware())
 
-	router.Static("/assets", "./public/assets")
-	router.StaticFile("/", "./public/index.html")
-
-	router.NoRoute(func(c *gin.Context) {
-		c.File("./public/index.html")
-	})
-
-	router.GET("/api/health", func(c *gin.Context) {
-		c.JSON(http.StatusOK, gin.H{
-			"status": "UP", 
-			"service": "sida-core", 
-			"timestamp": time.Now().Format(time.RFC3339),
-		})
-	})
-
-	router.POST("/api/auth/unlock", func(c *gin.Context) {
-		var login struct { PIN string `json:"pin"` }
-		if err := c.ShouldBindJSON(&login); err != nil {
-			c.JSON(400, gin.H{"error": "Dados inválidos"})
-			return
-		}
-
-		expectedPIN := os.Getenv("EDGE_ENGINEER_PIN")
-		
-		if expectedPIN != "" && login.PIN == expectedPIN {
-			c.JSON(200, gin.H{
-				"status": "unlocked",
-				"token": "session_" + expectedPIN, 
-			})
-		} else {
-			c.JSON(401, gin.H{"error": "PIN incorreto"})
-		}
-	})
-
-	api := router.Group("/api/config")
-	{
-		api.GET("/manifest", manifestHandler.GetManifest)
-		api.POST("/manifest", RequireAuth(), manifestHandler.UploadManifest)
-	}
-
-	router.GET("/api/system/info", handler.GetSystemInfo)
-	router.POST("/api/system/setup", handler.SetupEdgeGateway)
+	api.SetupRoutes(router, manifestHandler)
 
 	srv := &http.Server{
 		Addr:    ":8000",
