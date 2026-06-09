@@ -94,7 +94,7 @@ function App() {
   if (appState === 'error') return <div style={{ padding: '50px', textAlign: 'center' }}>Falha na API.</div>
   if (appState === 'unprovisioned') return <EdgeProvisioning onProvisioned={handleProvisioned} />
 
-  const isSetup = !config.plant_model;
+  const isSetup = !config.plant;
 
   return (
     <div style={{ flex: 1, width: '100%', backgroundColor: '#f1f5f9', display: 'flex', flexDirection: 'column' }}>
