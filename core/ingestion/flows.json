@@ -416,6 +416,42 @@
         "wires": []
     },
     {
+        "id": "99ed1f39a3c5363e",
+        "type": "zeromq in",
+        "z": "bf8d16b5667222e0",
+        "name": "ManifestTeste",
+        "topic": "sida/manifest",
+        "fields": "topic,payload",
+        "server": "ipc:///tmp/.ipc/manifest.ipc",
+        "output": "buffer",
+        "isserver": false,
+        "intype": "sub",
+        "x": 290,
+        "y": 500,
+        "wires": [
+            [
+                "2f056f0b4c58b2b8"
+            ]
+        ]
+    },
+    {
+        "id": "2f056f0b4c58b2b8",
+        "type": "debug",
+        "z": "bf8d16b5667222e0",
+        "name": "debug 1",
+        "active": true,
+        "tosidebar": false,
+        "console": false,
+        "tostatus": true,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "counter",
+        "x": 460,
+        "y": 500,
+        "wires": []
+    },
+    {
         "id": "e49bd44efe452f73",
         "type": "link out",
         "z": "9e19e885c5971d19",

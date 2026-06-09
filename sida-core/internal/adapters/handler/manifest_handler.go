@@ -7,17 +7,20 @@ import (
 
 	"sida-core/internal/core/domain"
 	"sida-core/internal/core/ports"
+	"sida-core/internal/core/services"
 
 	"github.com/gin-gonic/gin"
 )
 
 type ManifestHandler struct {
 	repo ports.ManifestRepository
+	zmq  *services.ZMQPublisher
 }
 
-func NewManifestHandler(repo ports.ManifestRepository) *ManifestHandler {
+func NewManifestHandler(repo ports.ManifestRepository, zmq *services.ZMQPublisher) *ManifestHandler {
 	return &ManifestHandler{
 		repo: repo,
+		zmq:  zmq,
 	}
 }
 
@@ -45,6 +48,8 @@ func (h *ManifestHandler) UploadManifest(c *gin.Context) {
 		})
 		return
 	}
+
+	_ = h.zmq.PublishUpdate(manifest.GatewayID)
 
 	c.JSON(http.StatusOK, gin.H{
 		"status": "success", 
@@ -126,6 +131,8 @@ func (h *ManifestHandler) RemoveDevice(c *gin.Context) {
 		return
 	}
 
+	_ = h.zmq.PublishUpdate(manifest.GatewayID)
+
 	c.JSON(http.StatusOK, gin.H{
 		"status": "sucess",
 		"message": "Equipamento '" + deviceID + "' removido com sucesso",
@@ -187,7 +194,7 @@ func (h *ManifestHandler) ToggleDeviceStatus(c *gin.Context) {
 		return
 	}
 
-	// TODO: ZeroMQ - Disparar notificação para o serviço da borda pausar/retomar o Polling Modbus
+	_ = h.zmq.PublishUpdate(manifest.GatewayID)
 
 	statusStr := "disabled"
 	if *payload.Enabled {

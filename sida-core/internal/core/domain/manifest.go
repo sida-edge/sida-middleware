@@ -3,7 +3,7 @@ package domain
 import "time"
 
 type Manifest struct {
-	GatewayID string    `json:"gateway_id" binding:"required,alphanum|uldl"`
+	GatewayID string    `json:"gateway_id" binding:"required"`
 	Config    Config    `json:"config" binding:"required"`
 	UpdatedAt time.Time `json:"updated_at"`
 }

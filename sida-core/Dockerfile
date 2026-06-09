@@ -11,7 +11,7 @@ RUN npm run build
 
 FROM golang:alpine AS builder
 
-RUN apk add --no-cache gcc musl-dev
+RUN apk add --no-cache gcc musl-dev pkgconfig zeromq-dev
 
 WORKDIR /app
 
@@ -25,7 +25,7 @@ RUN CGO_ENABLED=1 GOOS=linux go build -ldflags="-s -w" -o sida-core cmd/server/m
 
 FROM alpine:latest
 
-RUN apk --no-cache add ca-certificates tzdata
+RUN apk --no-cache add ca-certificates tzdata zeromq
 
 WORKDIR /app
 

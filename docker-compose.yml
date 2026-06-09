@@ -10,9 +10,11 @@ services:
       - "8000:8000"
     volumes:
       - ./sida-core/data:/app/data
+      - sida_ipc:/tmp/.ipc
     networks:
       - sida_network
     restart: unless-stopped
+
 
   poc-ingestion:
     build:
@@ -36,6 +38,7 @@ services:
     restart: unless-stopped
     depends_on:
       - sida-core
+    attach: false
   
   poc-context:
     build:
@@ -57,6 +60,7 @@ services:
     restart: unless-stopped
     depends_on:
       - sida-core
+    attach: false
 
   poc-delivery:
     build:
@@ -78,6 +82,7 @@ services:
     restart: unless-stopped
     depends_on:
       - sida-core
+    attach: false
 
   plc-simulator:
     image: ghcr.io/sida-edge/simulador:latest
@@ -89,6 +94,7 @@ services:
     ports:
       - "5020:5020"
     restart: unless-stopped
+    attach: false
 
 volumes:
   sida_ipc:

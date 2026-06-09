@@ -31,6 +31,7 @@ export default function EdgeProvisioning({ onProvisioned }) {
       const authData = await resAuth.json()
 
       onProvisioned(setupData.gateway_id, authData.token)
+      
     } catch (error) {
       setErro(error.message)
     } finally {

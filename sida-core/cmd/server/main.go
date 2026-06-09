@@ -32,11 +32,15 @@ func main() {
 	}
 	log.Println("Database connected.")
 
+	zmqPub, err := services.NewZMQPublisher("/tmp/.ipc/manifest.ipc")
+	if err != nil {
+		log.Fatal("Erro fatal ao iniciar ZeroMQ:", err)
+	}
+
 	authService := services.NewAuthService()
 	authHandler := handler.NewAuthHandler(authService)
 	systemHandler := handler.NewSystemHandler()
-	manifestHandler := handler.NewManifestHandler(repo)
-	// .Save .GetByID => SQLiteManifestRepository
+	manifestHandler := handler.NewManifestHandler(repo, zmqPub)
 
 	gin.SetMode(gin.ReleaseMode)
 	router := gin.Default()
@@ -66,6 +70,10 @@ func main() {
 
 	if err := srv.Shutdown(ctx); err != nil {
 		log.Fatal("Desligamento forçado do servidor:", err)
+	}
+
+	if err := zmqPub.Close(); err != nil {
+		log.Println("Erro ao fechar socket ZMQ:", err)
 	}
 
 	log.Println("SIDA-Core encerrado")
