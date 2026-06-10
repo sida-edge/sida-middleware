@@ -26,7 +26,7 @@ type Areas struct {
 
 type Line struct {
 	Line 	string 					`json:"line" binding:"required"`
-	Devices map[string]Equipment 	`json:"equipment" binding:"omitempty,dive"`
+	Devices map[string]Device 		`json:"devices" binding:"omitempty,dive"`
 }
 
 type ReceiverConnection struct {
