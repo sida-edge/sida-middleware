@@ -16,10 +16,18 @@
         "env": []
     },
     {
+        "id": "be71d2b93d53caac",
+        "type": "tab",
+        "label": "Controller",
+        "disabled": false,
+        "info": "",
+        "env": []
+    },
+    {
         "id": "65eb713d429814a4",
         "type": "tab",
         "label": "Sniffer / MQTT Monitor",
-        "disabled": false,
+        "disabled": true,
         "info": "",
         "env": []
     },
@@ -43,6 +51,79 @@
         "y": 99,
         "w": 492,
         "h": 142
+    },
+    {
+        "id": "0f9186a82e87dfc2",
+        "type": "group",
+        "z": "20080e9522dba17a",
+        "name": "Broker MQTT",
+        "style": {
+            "stroke": "#ffC000",
+            "label": true,
+            "color": "#000000"
+        },
+        "nodes": [
+            "d1928eef1a094621",
+            "a88317af959e8167",
+            "215475b220f7c97d"
+        ],
+        "x": 74,
+        "y": 259,
+        "w": 402,
+        "h": 142
+    },
+    {
+        "id": "ba6a1b32fd321ca2",
+        "type": "group",
+        "z": "f4a91dd7bfc833e7",
+        "name": "Processor",
+        "style": {
+            "stroke": "#0070c0",
+            "label": true,
+            "color": "#001f60"
+        },
+        "nodes": [
+            "a2c12bcdbb991cf7",
+            "f0158cfd43983707",
+            "50b1232778c14788",
+            "bb9d3d5d27646cc2",
+            "d3c7a3bda6911916",
+            "4b39ced9533d7a88",
+            "1eed795d89c44e79",
+            "a16033606934f38c"
+        ],
+        "x": 64,
+        "y": 99,
+        "w": 762,
+        "h": 222
+    },
+    {
+        "id": "a092e4acc9b2bb17",
+        "type": "group",
+        "z": "be71d2b93d53caac",
+        "name": "Controller",
+        "style": {
+            "stroke": "#0070c0",
+            "label": true
+        },
+        "nodes": [
+            "01fbaf9d9951d14a",
+            "c7534669245d4787",
+            "5ddbf214fb94523a",
+            "45954c122b1b7607",
+            "7962766549577b0c",
+            "c4a0cf2f880318ed",
+            "d59002e15ec3ed65",
+            "373bc88b1ed61798",
+            "26c34e7092ac50a8",
+            "f50f0e7c477377e5",
+            "adf7a5f1c54af002",
+            "9a1d24030b800454"
+        ],
+        "x": 14,
+        "y": 79,
+        "w": 1222,
+        "h": 162
     },
     {
         "id": "2312654bef2ae844",
@@ -170,11 +251,12 @@
         "id": "d1928eef1a094621",
         "type": "link in",
         "z": "20080e9522dba17a",
+        "g": "0f9186a82e87dfc2",
         "name": "link in 1",
         "links": [
             "a16033606934f38c"
         ],
-        "x": 145,
+        "x": 115,
         "y": 360,
         "wires": [
             [
@@ -187,12 +269,13 @@
         "id": "a88317af959e8167",
         "type": "mqtt sparkplug out",
         "z": "20080e9522dba17a",
+        "g": "0f9186a82e87dfc2",
         "name": "UNS Broker (GCP)",
         "topic": "",
         "qos": "0",
         "retain": "",
         "broker": "97528de95b131960",
-        "x": 310,
+        "x": 280,
         "y": 360,
         "wires": []
     },
@@ -200,6 +283,7 @@
         "id": "215475b220f7c97d",
         "type": "debug",
         "z": "20080e9522dba17a",
+        "g": "0f9186a82e87dfc2",
         "name": "Messaging Output Monitor",
         "active": true,
         "tosidebar": false,
@@ -209,39 +293,15 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "counter",
-        "x": 340,
+        "x": 310,
         "y": 300,
         "wires": []
-    },
-    {
-        "id": "0b6e40380fc4820f",
-        "type": "inject",
-        "z": "f4a91dd7bfc833e7",
-        "name": "Semantic Data ",
-        "props": [
-            {
-                "p": "payload"
-            }
-        ],
-        "repeat": "1",
-        "crontab": "",
-        "once": true,
-        "onceDelay": 0.1,
-        "topic": "",
-        "payload": "{\"timestamp\":1684512000000,\"source\":{\"type\":\"edge_gateway\",\"id\":\"sida_edge_001\"},\"asset_context\":{\"standard\":\"ISA-95\",\"path\":[{\"type\":\"enterprise\",\"id\":\"senai\"},{\"type\":\"site\",\"id\":\"recife\"},{\"type\":\"area\",\"id\":\"producao\"},{\"type\":\"line\",\"id\":\"linha_envase\"},{\"type\":\"equipment\",\"id\":\"esteira_a\"}]},\"data\":[{\"name\":\"motor_velocity\",\"value\":45.5,\"unit\":\"RPM\",\"data_type\":\"float\"},{\"name\":\"motor_running\",\"value\":true,\"unit\":null,\"data_type\":\"boolean\"}]}",
-        "payloadType": "json",
-        "x": 200,
-        "y": 140,
-        "wires": [
-            [
-                "50b1232778c14788"
-            ]
-        ]
     },
     {
         "id": "a2c12bcdbb991cf7",
         "type": "function",
         "z": "f4a91dd7bfc833e7",
+        "g": "ba6a1b32fd321ca2",
         "name": "spbGenerator",
         "func": "const payloadIn = msg.payload;\nconst dataTimestamp = payloadIn.timestamp;\nconst pathArray = payloadIn.asset_context.path;\nconst dataRaw = payloadIn.data;\n\nconst getContextId = (targetType) => {\n    const item = pathArray.find(p => p.type === targetType);\n    return item ? item.id : \"unknown\";\n};\n\nconst enterprise = getContextId(\"enterprise\");\nconst site = getContextId(\"site\");\nconst area = getContextId(\"area\");\n\nconst groupId = `${enterprise}_${site}_${area}`;\nconst nodeId = getContextId(\"line\");\nconst deviceId = getContextId(\"equipment\");\n\nconst dataMetrics = dataRaw.map(item => {\n    let sparkplugType = \"String\";\n    const explicitType = item.data_type ? item.data_type.toLowerCase() : \"\";\n\n    if (explicitType === \"float\" || explicitType === \"double\") {\n        sparkplugType = \"Float\";\n    } else if (explicitType === \"boolean\" || explicitType === \"bool\") {\n        sparkplugType = \"Boolean\";\n    } else if (explicitType === \"int\" || explicitType === \"integer\") {\n        sparkplugType = \"Int32\";\n    } else {\n        if (typeof item.value === \"number\") {\n            sparkplugType = Number.isInteger(item.value) ? \"Int32\" : \"Double\";\n        } else if (typeof item.value === \"boolean\") {\n            sparkplugType = \"Boolean\";\n        }\n    }\n\n    const metric = {\n        name: item.name,\n        value: item.value,\n        type: sparkplugType,\n        timestamp: dataTimestamp\n    };\n\n    if (item.unit) {\n        metric.properties = {\n            engUnit: { type: \"String\", value: item.unit }\n        };\n    }\n\n    return metric;\n});\n\nmsg.topic = `spBv1.0/${groupId}/DDATA/${nodeId}/${deviceId}`;\nmsg.payload = {\n    metrics: dataMetrics\n};\n\nreturn msg;",
         "outputs": 1,
@@ -250,14 +310,13 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 560,
+        "x": 340,
         "y": 140,
         "wires": [
             [
                 "f0158cfd43983707",
                 "bb9d3d5d27646cc2",
                 "4b39ced9533d7a88",
-                "bdcd2d6f38e3b341",
                 "a16033606934f38c"
             ]
         ]
@@ -267,6 +326,7 @@
         "type": "function",
         "z": "f4a91dd7bfc833e7",
         "d": true,
+        "g": "ba6a1b32fd321ca2",
         "name": "JSON Length",
         "func": "const jsonText = JSON.stringify(msg.payload);\nconst jsonLength = Buffer.byteLength(jsonText, 'utf8');\n\nnode.warn(\"📊 Tamanho do JSON bruto: \" + jsonLength + \" bytes\");\n\nreturn null;",
         "outputs": 1,
@@ -275,7 +335,7 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 780,
+        "x": 560,
         "y": 200,
         "wires": [
             []
@@ -283,59 +343,10 @@
         "icon": "node-red/alert.svg"
     },
     {
-        "id": "9aa980bc751693fa",
-        "type": "inject",
-        "z": "f4a91dd7bfc833e7",
-        "name": "Semantic Data ",
-        "props": [
-            {
-                "p": "payload"
-            }
-        ],
-        "repeat": "2",
-        "crontab": "",
-        "once": true,
-        "onceDelay": 0.1,
-        "topic": "",
-        "payload": "{\"timestamp\":1684512000000,\"source\":{\"type\":\"edge_gateway\",\"id\":\"sida_edge_001\"},\"asset_context\":{\"standard\":\"ISA-95\",\"path\":[{\"type\":\"enterprise\",\"id\":\"senai\"},{\"type\":\"site\",\"id\":\"recife\"},{\"type\":\"area\",\"id\":\"producao\"},{\"type\":\"line\",\"id\":\"linha_envase\"},{\"type\":\"equipment\",\"id\":\"esteira_a\"}]},\"data\":[{\"name\":\"motor_velocity\",\"value\":45.5,\"unit\":\"RPM\",\"data_type\":\"float\"},{\"name\":\"motor_running\",\"value\":true,\"unit\":null,\"data_type\":\"boolean\"}]}",
-        "payloadType": "json",
-        "x": 200,
-        "y": 180,
-        "wires": [
-            [
-                "50b1232778c14788"
-            ]
-        ]
-    },
-    {
-        "id": "c1ccb8bad067a7b8",
-        "type": "inject",
-        "z": "f4a91dd7bfc833e7",
-        "name": "Semantic Data ",
-        "props": [
-            {
-                "p": "payload"
-            }
-        ],
-        "repeat": "3",
-        "crontab": "",
-        "once": true,
-        "onceDelay": 0.1,
-        "topic": "",
-        "payload": "{\"timestamp\":1684512000000,\"source\":{\"type\":\"edge_gateway\",\"id\":\"sida_edge_001\"},\"asset_context\":{\"standard\":\"ISA-95\",\"path\":[{\"type\":\"enterprise\",\"id\":\"senai\"},{\"type\":\"site\",\"id\":\"recife\"},{\"type\":\"area\",\"id\":\"producao\"},{\"type\":\"line\",\"id\":\"linha_envase\"},{\"type\":\"equipment\",\"id\":\"esteira_a\"}]},\"data\":[{\"name\":\"motor_velocity\",\"value\":45.5,\"unit\":\"RPM\",\"data_type\":\"float\"},{\"name\":\"motor_running\",\"value\":true,\"unit\":null,\"data_type\":\"boolean\"}]}",
-        "payloadType": "json",
-        "x": 200,
-        "y": 100,
-        "wires": [
-            [
-                "50b1232778c14788"
-            ]
-        ]
-    },
-    {
         "id": "50b1232778c14788",
         "type": "function",
         "z": "f4a91dd7bfc833e7",
+        "g": "ba6a1b32fd321ca2",
         "name": "Start",
         "func": "msg.startTime = Date.now();\n\nreturn msg",
         "outputs": 1,
@@ -344,7 +355,7 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 390,
+        "x": 190,
         "y": 140,
         "wires": [
             [
@@ -356,6 +367,8 @@
         "id": "bb9d3d5d27646cc2",
         "type": "function",
         "z": "f4a91dd7bfc833e7",
+        "d": true,
+        "g": "ba6a1b32fd321ca2",
         "name": "Process Monitor",
         "func": "if (msg.startTime) {\n    const totalTime = Date.now() - msg.startTime;\n    \n    msg.payload = `${Date.now()},${totalTime}\\n`;\n    msg.filename = \"/data/log/process_time.csv\";\n    \n    return msg;\n}\n\nreturn null;",
         "outputs": 1,
@@ -364,7 +377,7 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 780,
+        "x": 560,
         "y": 240,
         "wires": [
             [
@@ -376,6 +389,7 @@
         "id": "d3c7a3bda6911916",
         "type": "file",
         "z": "f4a91dd7bfc833e7",
+        "g": "ba6a1b32fd321ca2",
         "name": "",
         "filename": "filename",
         "filenameType": "msg",
@@ -383,7 +397,7 @@
         "createDir": true,
         "overwriteFile": "false",
         "encoding": "none",
-        "x": 960,
+        "x": 740,
         "y": 240,
         "wires": [
             []
@@ -393,6 +407,8 @@
         "id": "4b39ced9533d7a88",
         "type": "function",
         "z": "f4a91dd7bfc833e7",
+        "d": true,
+        "g": "ba6a1b32fd321ca2",
         "name": "Latency Monitor",
         "func": "let filaLatencia = global.get('latency_queue') || [];\n\nfilaLatencia.push(Date.now());\nglobal.set('fila_latencia', filaLatencia);\n\nreturn msg;",
         "outputs": 1,
@@ -401,39 +417,23 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 780,
+        "x": 560,
         "y": 280,
         "wires": [
             []
         ]
     },
     {
-        "id": "bdcd2d6f38e3b341",
-        "type": "debug",
-        "z": "f4a91dd7bfc833e7",
-        "name": "debug 1",
-        "active": false,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "true",
-        "targetType": "full",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 760,
-        "y": 320,
-        "wires": []
-    },
-    {
         "id": "1eed795d89c44e79",
         "type": "link in",
         "z": "f4a91dd7bfc833e7",
+        "g": "ba6a1b32fd321ca2",
         "name": "Receiver Queue",
         "links": [
             "b6034584ef370295"
         ],
-        "x": 265,
-        "y": 240,
+        "x": 105,
+        "y": 140,
         "wires": [
             [
                 "50b1232778c14788"
@@ -444,13 +444,289 @@
         "id": "a16033606934f38c",
         "type": "link out",
         "z": "f4a91dd7bfc833e7",
+        "g": "ba6a1b32fd321ca2",
         "name": "Sender Queue",
         "mode": "link",
         "links": [
             "d1928eef1a094621"
         ],
-        "x": 715,
+        "x": 475,
         "y": 140,
+        "wires": []
+    },
+    {
+        "id": "01fbaf9d9951d14a",
+        "type": "link in",
+        "z": "be71d2b93d53caac",
+        "g": "a092e4acc9b2bb17",
+        "name": "Controller In",
+        "links": [],
+        "x": 185,
+        "y": 140,
+        "wires": [
+            [
+                "5ddbf214fb94523a"
+            ]
+        ]
+    },
+    {
+        "id": "c7534669245d4787",
+        "type": "zeromq in",
+        "z": "be71d2b93d53caac",
+        "g": "a092e4acc9b2bb17",
+        "name": "ManifestUpdate",
+        "topic": "sida/manifest",
+        "fields": "topic,payload",
+        "server": "tcp://sida-core:5556",
+        "output": "buffer",
+        "isserver": false,
+        "intype": "sub",
+        "x": 120,
+        "y": 180,
+        "wires": [
+            [
+                "5ddbf214fb94523a",
+                "9a1d24030b800454"
+            ]
+        ]
+    },
+    {
+        "id": "5ddbf214fb94523a",
+        "type": "switch",
+        "z": "be71d2b93d53caac",
+        "g": "a092e4acc9b2bb17",
+        "name": "checkGatewayID",
+        "property": "gateway_id",
+        "propertyType": "global",
+        "rules": [
+            {
+                "t": "null"
+            },
+            {
+                "t": "nnull"
+            }
+        ],
+        "checkall": "true",
+        "repair": false,
+        "outputs": 2,
+        "x": 330,
+        "y": 160,
+        "wires": [
+            [
+                "45954c122b1b7607"
+            ],
+            [
+                "c4a0cf2f880318ed"
+            ]
+        ]
+    },
+    {
+        "id": "45954c122b1b7607",
+        "type": "http request",
+        "z": "be71d2b93d53caac",
+        "g": "a092e4acc9b2bb17",
+        "name": "getEdgeConfig",
+        "method": "GET",
+        "ret": "obj",
+        "paytoqs": "ignore",
+        "url": "http://sida-core:8000/api/system/info",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "insecureHTTPParser": false,
+        "authType": "",
+        "senderr": false,
+        "headers": [],
+        "x": 540,
+        "y": 140,
+        "wires": [
+            [
+                "7962766549577b0c"
+            ]
+        ]
+    },
+    {
+        "id": "7962766549577b0c",
+        "type": "change",
+        "z": "be71d2b93d53caac",
+        "g": "a092e4acc9b2bb17",
+        "name": "setGatewayID",
+        "rules": [
+            {
+                "t": "set",
+                "p": "gateway_id",
+                "pt": "global",
+                "to": "payload.gateway_id",
+                "tot": "msg"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 720,
+        "y": 140,
+        "wires": [
+            [
+                "c4a0cf2f880318ed"
+            ]
+        ]
+    },
+    {
+        "id": "c4a0cf2f880318ed",
+        "type": "change",
+        "z": "be71d2b93d53caac",
+        "g": "a092e4acc9b2bb17",
+        "name": "setUrl",
+        "rules": [
+            {
+                "t": "set",
+                "p": "url",
+                "pt": "msg",
+                "to": "\"http://sida-core:8000/api/config/manifest?gateway_id=\" & $globalContext(\"gateway_id\")",
+                "tot": "jsonata"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 510,
+        "y": 180,
+        "wires": [
+            [
+                "d59002e15ec3ed65"
+            ]
+        ]
+    },
+    {
+        "id": "d59002e15ec3ed65",
+        "type": "http request",
+        "z": "be71d2b93d53caac",
+        "g": "a092e4acc9b2bb17",
+        "name": "",
+        "method": "GET",
+        "ret": "obj",
+        "paytoqs": "ignore",
+        "url": "",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "insecureHTTPParser": false,
+        "authType": "",
+        "senderr": false,
+        "headers": [],
+        "x": 650,
+        "y": 180,
+        "wires": [
+            [
+                "373bc88b1ed61798"
+            ]
+        ]
+    },
+    {
+        "id": "373bc88b1ed61798",
+        "type": "switch",
+        "z": "be71d2b93d53caac",
+        "g": "a092e4acc9b2bb17",
+        "name": "checkResponse",
+        "property": "statusCode",
+        "propertyType": "msg",
+        "rules": [
+            {
+                "t": "eq",
+                "v": "200",
+                "vt": "str"
+            }
+        ],
+        "checkall": "true",
+        "repair": false,
+        "outputs": 1,
+        "x": 820,
+        "y": 180,
+        "wires": [
+            [
+                "26c34e7092ac50a8"
+            ]
+        ]
+    },
+    {
+        "id": "26c34e7092ac50a8",
+        "type": "change",
+        "z": "be71d2b93d53caac",
+        "g": "a092e4acc9b2bb17",
+        "name": "SetEdgeManifest",
+        "rules": [
+            {
+                "t": "set",
+                "p": "manifest",
+                "pt": "global",
+                "to": "payload",
+                "tot": "msg"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 1010,
+        "y": 180,
+        "wires": [
+            [
+                "f50f0e7c477377e5",
+                "adf7a5f1c54af002"
+            ]
+        ]
+    },
+    {
+        "id": "f50f0e7c477377e5",
+        "type": "link out",
+        "z": "be71d2b93d53caac",
+        "g": "a092e4acc9b2bb17",
+        "name": "Controller Out",
+        "mode": "link",
+        "links": [],
+        "x": 1135,
+        "y": 180,
+        "wires": []
+    },
+    {
+        "id": "adf7a5f1c54af002",
+        "type": "debug",
+        "z": "be71d2b93d53caac",
+        "g": "a092e4acc9b2bb17",
+        "name": "debug 1",
+        "active": true,
+        "tosidebar": false,
+        "console": false,
+        "tostatus": true,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "counter",
+        "x": 1130,
+        "y": 120,
+        "wires": []
+    },
+    {
+        "id": "9a1d24030b800454",
+        "type": "debug",
+        "z": "be71d2b93d53caac",
+        "g": "a092e4acc9b2bb17",
+        "name": "debug 2",
+        "active": true,
+        "tosidebar": false,
+        "console": false,
+        "tostatus": true,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "counter",
+        "x": 290,
+        "y": 200,
         "wires": []
     },
     {
