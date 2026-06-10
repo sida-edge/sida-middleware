@@ -32,7 +32,7 @@ func main() {
 	}
 	log.Println("Database connected.")
 
-	zmqPub, err := services.NewZMQPublisher("/tmp/.ipc/manifest.ipc")
+	zmqPub, err := services.NewZMQPublisher("0.0.0.0:5556")
 	if err != nil {
 		log.Fatal("Erro fatal ao iniciar ZeroMQ:", err)
 	}

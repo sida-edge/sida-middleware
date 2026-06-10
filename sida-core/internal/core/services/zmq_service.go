@@ -10,13 +10,13 @@ type ZMQPublisher struct {
 	socket *zmq4.Socket
 }
 
-func NewZMQPublisher(ipcPath string) (*ZMQPublisher, error) {
+func NewZMQPublisher(tcpPath string) (*ZMQPublisher, error) {
 	socket, err := zmq4.NewSocket(zmq4.PUB)
 	if err != nil {
 		return nil, err
 	}
 
-	address := "ipc://" + ipcPath
+	address := "tcp://" + tcpPath
 	if err := socket.Bind(address); err != nil {
 		return nil, err
 	}
