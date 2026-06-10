@@ -39,29 +39,9 @@
             "54734105d5a65c14",
             "7491cbfe6b0b41dc"
         ],
-        "x": 704,
-        "y": 99,
+        "x": 34,
+        "y": 139,
         "w": 662,
-        "h": 142
-    },
-    {
-        "id": "fe90de53f668c66f",
-        "type": "group",
-        "z": "bf8d16b5667222e0",
-        "name": "Modbus",
-        "style": {
-            "stroke": "#ffC000",
-            "label": true,
-            "color": "#000000"
-        },
-        "nodes": [
-            "7b02c3c4a8ee2acb",
-            "a0e7e156b4a187fe",
-            "8cbeb60de162ae13"
-        ],
-        "x": 74,
-        "y": 99,
-        "w": 552,
         "h": 142
     },
     {
@@ -86,14 +66,13 @@
             "a4e97b28a43e8ac4",
             "2759d95830d70018",
             "a9df0f3697eb03af",
-            "1a508b7bc27cc8f2",
             "638e8a22a1149575",
-            "c4435ec5396628e9"
+            "2750b24fc825b54e"
         ],
-        "x": 64,
-        "y": 99,
-        "w": 1182,
-        "h": 222
+        "x": 34,
+        "y": 119,
+        "w": 1222,
+        "h": 162
     },
     {
         "id": "8ef01d727620bf3e",
@@ -104,17 +83,17 @@
             "label": true
         },
         "nodes": [
-            "c0326375021887cf",
-            "f133a05b9c606a89",
-            "3c22d78beb5db72c",
-            "e4d12e1c41dea844",
             "ccea0bf949fb23b4",
-            "e257bd166c027fa9"
+            "f133a05b9c606a89",
+            "e4d12e1c41dea844",
+            "8cbeb60de162ae13",
+            "c0326375021887cf",
+            "3c22d78beb5db72c"
         ],
         "x": 34,
         "y": 299,
-        "w": 862,
-        "h": 162
+        "w": 852,
+        "h": 142
     },
     {
         "id": "937213232cd58bf4",
@@ -155,8 +134,8 @@
         "links": [
             "e49bd44efe452f73"
         ],
-        "x": 800,
-        "y": 200,
+        "x": 130,
+        "y": 240,
         "wires": [
             [
                 "02d9ff725ecbb71c"
@@ -173,8 +152,8 @@
         "property": "payload",
         "action": "str",
         "pretty": false,
-        "x": 960,
-        "y": 200,
+        "x": 290,
+        "y": 240,
         "wires": [
             [
                 "54734105d5a65c14",
@@ -193,8 +172,8 @@
         "server": "ipc:///tmp/.ipc/ingestion.ipc",
         "isserver": true,
         "intype": "push",
-        "x": 1150,
-        "y": 200,
+        "x": 480,
+        "y": 240,
         "wires": []
     },
     {
@@ -211,74 +190,22 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "counter",
-        "x": 1200,
-        "y": 140,
-        "wires": []
-    },
-    {
-        "id": "7b02c3c4a8ee2acb",
-        "type": "modbus-read",
-        "z": "bf8d16b5667222e0",
-        "g": "fe90de53f668c66f",
-        "name": "LeitorPLC_ModBus",
-        "topic": "polling",
-        "showStatusActivities": true,
-        "logIOActivities": false,
-        "showErrors": true,
-        "showWarnings": true,
-        "unitid": "1",
-        "dataType": "HoldingRegister",
-        "adr": "0",
-        "quantity": "9",
-        "rate": "1",
-        "rateUnit": "s",
-        "delayOnStart": false,
-        "enableDeformedMessages": true,
-        "startDelayTime": "",
-        "server": "937213232cd58bf4",
-        "useIOFile": false,
-        "ioFile": "",
-        "useIOForPayload": false,
-        "emptyMsgOnFail": true,
-        "x": 210,
-        "y": 200,
-        "wires": [
-            [
-                "a0e7e156b4a187fe"
-            ],
-            []
-        ]
-    },
-    {
-        "id": "a0e7e156b4a187fe",
-        "type": "debug",
-        "z": "bf8d16b5667222e0",
-        "g": "fe90de53f668c66f",
-        "name": "Messaging Input Monitor",
-        "active": true,
-        "tosidebar": false,
-        "console": false,
-        "tostatus": true,
-        "complete": "payload",
-        "targetType": "msg",
-        "statusVal": "",
-        "statusType": "counter",
-        "x": 470,
-        "y": 140,
+        "x": 530,
+        "y": 180,
         "wires": []
     },
     {
         "id": "8cbeb60de162ae13",
         "type": "link out",
         "z": "bf8d16b5667222e0",
-        "g": "fe90de53f668c66f",
+        "g": "8ef01d727620bf3e",
         "name": "Message Out",
         "mode": "link",
         "links": [
             "653a12304f363ae3"
         ],
-        "x": 430,
-        "y": 200,
+        "x": 790,
+        "y": 380,
         "wires": [],
         "l": true
     },
@@ -376,7 +303,7 @@
         "z": "bf8d16b5667222e0",
         "g": "8ef01d727620bf3e",
         "name": "setupModbus",
-        "func": "// A função principal do Node-RED não é assíncrona por padrão, \n// então envolvemos a lógica em uma função auto-executável async.\n(async function() {\n    const manifest = global.get(\"manifest\");\n    const gateway_id = global.get(\"gateway_id\");\n\n    node.warn(manifest);\n\n    if (!manifest || !manifest.config || !manifest.config.devices) {\n        node.warn(\"Manifesto inválido no Messaging.\");\n        return; // Sai da função assíncrona\n    }\n\n    let active_clients = global.get(\"modbus_clients\") || {};\n    \n    // Fechar clientes antigos\n    for (let id in active_clients) {\n        if (active_clients[id].client && active_clients[id].client.isOpen) {\n            active_clients[id].client.close();\n        }\n    }\n\n    active_clients = {};\n    const devices = manifest.config.devices;\n\n    // --- CORREÇÃO: Usando for...of em vez de forEach ---\n    for (const deviceId of Object.keys(devices)) {\n        const dev = devices[deviceId];\n\n        if (dev.enabled !== true || dev.connection.protocol !== \"modbus_tcp\") {\n            continue; // Equivalente ao \"return\" dentro do forEach\n        }\n\n        const client = new ModbusRTU();\n        \n        try {\n            // Agora o loop VAI ESPERAR essa conexão terminar\n            await client.connectTCP(dev.connection.host, { port: dev.connection.port || 502});\n            client.setID(dev.connection.unit_id || 1);\n\n            active_clients[deviceId] = {\n                client: client,\n                config: dev,\n                gateway_id: gateway_id\n            };\n            \n            node.warn(`[Messaging] Conexão ESTABELECIDA com ${deviceId}`);\n        } catch (erro) {\n            node.warn(`[Messaging] Erro ao conectar com ${deviceId}: ${erro.message}`);\n        }\n    }\n    // ----------------------------------------------------\n\n    // AGORA SIM, o loop terminou. Podemos salvar e avisar o sistema.\n    global.set(\"modbus_clients\", active_clients);\n    node.warn(\"Clientes ativos no momento: \" + Object.keys(active_clients).length);\n\n    msg.payload = \"Running\";\n    \n    // Como estamos dentro de uma função async que não usa o \"return msg\" padrão do Node-RED,\n    // precisamos usar a API nativa node.send()\n    node.send(msg);\n\n})();\n\n// O nó retorna null imediatamente, enquanto a função assíncrona acima faz o trabalho.\nreturn null;",
+        "func": "(async function () {\n    const manifest = global.get(\"manifest\");\n    const gateway_id = global.get(\"gateway_id\");\n\n    node.warn(manifest);\n\n    if (!manifest || !manifest.config || !manifest.config.plant || !manifest.config.plant.areas) {\n        node.warn(\"Manifesto inválido no Messaging. Estrutura de Planta/Áreas ausente.\");\n        return;\n    }\n\n    let active_clients = global.get(\"modbus_clients\") || {};\n\n    for (let id in active_clients) {\n        if (active_clients[id].client && active_clients[id].client.isOpen) {\n            active_clients[id].client.close();\n        }\n    }\n\n    active_clients = {};\n    const areas = manifest.config.plant.areas;\n\n    for (const areaId of Object.keys(areas)) {\n        const lines = areas[areaId].lines || {};\n        for (const lineId of Object.keys(lines)) {\n            const devices = lines[lineId].devices || {};\n            for (const deviceId of Object.keys(devices)) {\n                const dev = devices[deviceId];\n                if (dev.enabled !== true || dev.connection.protocol !== \"modbus_tcp\") {\n                    continue;\n                }\n                const client = new ModbusRTU();\n\n                try {\n                    await client.connectTCP(dev.connection.host, { port: dev.connection.port || 502 });\n                    client.setID(dev.connection.unit_id || 1);\n\n                    active_clients[deviceId] = {\n                        client: client,\n                        config: dev,\n                        gateway_id: gateway_id\n                    };\n\n                    node.warn(`[Messaging] Conexão ESTABELECIDA com ${deviceId}`);\n                } catch (erro) {\n                    node.warn(`[Messaging] Erro ao conectar com ${deviceId}: ${erro.message}`);\n                }\n            }\n        }\n    }\n\n    global.set(\"modbus_clients\", active_clients);\n    node.warn(\"Clientes ativos no momento: \" + Object.keys(active_clients).length);\n\n    msg.payload = \"Running\";\n    node.send(msg);\n\n})();\n\nreturn null;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
@@ -392,28 +319,9 @@
         "y": 380,
         "wires": [
             [
-                "8cbeb60de162ae13",
-                "e257bd166c027fa9"
+                "8cbeb60de162ae13"
             ]
         ]
-    },
-    {
-        "id": "e257bd166c027fa9",
-        "type": "debug",
-        "z": "bf8d16b5667222e0",
-        "g": "8ef01d727620bf3e",
-        "name": "debug 2",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "payload",
-        "targetType": "msg",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 790,
-        "y": 420,
-        "wires": []
     },
     {
         "id": "99ed1f39a3c5363e",
@@ -422,12 +330,12 @@
         "name": "ManifestTeste",
         "topic": "sida/manifest",
         "fields": "topic,payload",
-        "server": "ipc:///tmp/.ipc/manifest.ipc",
-        "output": "json",
+        "server": "tcp://sida-core:5556",
+        "output": "buffer",
         "isserver": false,
         "intype": "sub",
-        "x": 290,
-        "y": 500,
+        "x": 810,
+        "y": 160,
         "wires": [
             [
                 "2f056f0b4c58b2b8"
@@ -447,8 +355,8 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "counter",
-        "x": 460,
-        "y": 500,
+        "x": 980,
+        "y": 160,
         "wires": []
     },
     {
@@ -553,8 +461,8 @@
         "authType": "",
         "senderr": false,
         "headers": [],
-        "x": 460,
-        "y": 180,
+        "x": 580,
+        "y": 160,
         "wires": [
             [
                 "ab51cc16ba54591e"
@@ -580,7 +488,7 @@
         "checkall": "true",
         "repair": false,
         "outputs": 2,
-        "x": 250,
+        "x": 350,
         "y": 200,
         "wires": [
             [
@@ -611,8 +519,8 @@
         "from": "",
         "to": "",
         "reg": false,
-        "x": 660,
-        "y": 180,
+        "x": 780,
+        "y": 160,
         "wires": [
             [
                 "a4e97b28a43e8ac4"
@@ -628,7 +536,7 @@
         "links": [
             "3c22d78beb5db72c"
         ],
-        "x": 105,
+        "x": 205,
         "y": 200,
         "wires": [
             [
@@ -653,8 +561,8 @@
         "authType": "",
         "senderr": false,
         "headers": [],
-        "x": 690,
-        "y": 240,
+        "x": 710,
+        "y": 220,
         "wires": [
             [
                 "638e8a22a1149575"
@@ -681,8 +589,8 @@
         "from": "",
         "to": "",
         "reg": false,
-        "x": 490,
-        "y": 240,
+        "x": 550,
+        "y": 220,
         "wires": [
             [
                 "caa5b416917446c7"
@@ -709,8 +617,8 @@
         "from": "",
         "to": "",
         "reg": false,
-        "x": 1070,
-        "y": 240,
+        "x": 1090,
+        "y": 220,
         "wires": [
             [
                 "a9df0f3697eb03af"
@@ -727,28 +635,9 @@
         "links": [
             "e4d12e1c41dea844"
         ],
-        "x": 1205,
-        "y": 240,
+        "x": 1215,
+        "y": 220,
         "wires": []
-    },
-    {
-        "id": "1a508b7bc27cc8f2",
-        "type": "http in",
-        "z": "aaee6471150744f1",
-        "g": "a128b0c239b73023",
-        "name": "updateEdgeConfig",
-        "url": "http://sida:8000/api/system/update",
-        "method": "post",
-        "upload": false,
-        "skipBodyParsing": false,
-        "swaggerDoc": "",
-        "x": 450,
-        "y": 140,
-        "wires": [
-            [
-                "ab51cc16ba54591e"
-            ]
-        ]
     },
     {
         "id": "638e8a22a1149575",
@@ -768,8 +657,8 @@
         "checkall": "true",
         "repair": false,
         "outputs": 1,
-        "x": 880,
-        "y": 240,
+        "x": 900,
+        "y": 220,
         "wires": [
             [
                 "2759d95830d70018"
@@ -777,21 +666,22 @@
         ]
     },
     {
-        "id": "c4435ec5396628e9",
-        "type": "http in",
+        "id": "2750b24fc825b54e",
+        "type": "zeromq in",
         "z": "aaee6471150744f1",
         "g": "a128b0c239b73023",
-        "name": "updateEdgeManifest",
-        "url": "\"http://sida-core:8000/api/config/update/manifest?gateway_id=\" & $globalContext(\"gateway_id\")",
-        "method": "post",
-        "upload": false,
-        "skipBodyParsing": false,
-        "swaggerDoc": "",
-        "x": 310,
-        "y": 280,
+        "name": "ManifestUpdate",
+        "topic": "sida/manifest",
+        "fields": "topic,payload",
+        "server": "tcp://sida-core:5556",
+        "output": "buffer",
+        "isserver": false,
+        "intype": "sub",
+        "x": 140,
+        "y": 240,
         "wires": [
             [
-                "a4e97b28a43e8ac4"
+                "77e0020e57c60ee3"
             ]
         ]
     }
