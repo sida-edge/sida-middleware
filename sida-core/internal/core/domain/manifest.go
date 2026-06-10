@@ -9,14 +9,24 @@ type Manifest struct {
 }
 
 type Config struct {
-	Plant  	Plant	`json:"plant" binding:"required"`
+	Plant  		Plant							`json:"plant" binding:"required"`
+	Receivers 	map[string]ReceiverConnection 	`json:"receivers" binding:"omitempty,dive"`
 }
 
 type Plant struct {
-	Enterprise string 			 			 `json:"enterprise" binding:"required"`
-	Site       string 			 			 `json:"site" binding:"required"`
-	Device     map[string]Device 			 `json:"devices" binding:"omitempty,dive"`
-	Receivers  map[string]ReceiverConnection `json:"receivers" binding:"omitempty,dive"`
+	Enterprise 	string 			 			 	`json:"enterprise" binding:"required"`
+	Site       	string 			 			 	`json:"site" binding:"required"`
+	Areas 		map[string]Areas 				`json:"areas" binding:"omitempty,dive"`
+}
+
+type Areas struct {
+	Area 	string 			`json:"area" binding:"required"`
+	Lines 	map[string]Line `json:"lines" binding:"omitempty,dive"`
+}
+
+type Line struct {
+	Line 	string 					`json:"line" binding:"required"`
+	Devices map[string]Equipment 	`json:"equipment" binding:"omitempty,dive"`
 }
 
 type ReceiverConnection struct {

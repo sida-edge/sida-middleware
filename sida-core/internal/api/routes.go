@@ -46,8 +46,10 @@ func SetupRoutes(router *gin.Engine,
 	{
 		apiConfig.GET("/manifest", manifestHandler.GetManifest)
 		apiConfig.POST("/manifest", RequireAuth(authService), manifestHandler.UploadManifest)
-		apiConfig.DELETE("/device/:id", RequireAuth(authService), manifestHandler.RemoveDevice)
-		apiConfig.PATCH("/device/:id/status", RequireAuth(authService), manifestHandler.ToggleDeviceStatus)
+		apiConfig.DELETE("/area/:id", RequireAuth(authService), manifestHandler.RemoveArea)
+		apiConfig.DELETE("/:area/:id/", RequireAuth(authService), manifestHandler.RemoveLine)
+		apiConfig.DELETE("/:area/:line/:id/", RequireAuth(authService), manifestHandler.RemoveDevice)
+		apiConfig.PATCH("/:area/:line/:id/status", RequireAuth(authService), manifestHandler.ToggleDeviceStatus)
 	}
 
 	apiSystem := router.Group("/api/system")
