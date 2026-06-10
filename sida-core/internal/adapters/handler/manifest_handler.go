@@ -3,6 +3,7 @@ package handler
 import (
 	"net/http"
 	"time"
+	"fmt"
 	"os"
 
 	"sida-core/internal/core/domain"
@@ -89,7 +90,7 @@ func (h *ManifestHandler) GetManifest(c *gin.Context) {
 }
 
 func (h *ManifestHandler) RemoveArea(c *gin.Context) {
-	areaID := c.Param("id")
+	areaID := c.Param("area")
 
 	gatewayID := os.Getenv("EDGE_GATEWAY_ID")
 	if gatewayID == "" {
@@ -140,7 +141,7 @@ func (h *ManifestHandler) RemoveArea(c *gin.Context) {
 
 func (h *ManifestHandler) RemoveLine(c *gin.Context) {
 	areaID := c.Param("area")
-	lineID := c.Param("id")
+	lineID := c.Param("line")
 	
 	gatewayID := os.Getenv("EDGE_GATEWAY_ID")
 	if gatewayID == "" {
@@ -347,6 +348,6 @@ func (h *ManifestHandler) ToggleDeviceStatus(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{
 		"status": "success",
-		"message": "Status do equipamento '" + deviceID + "' atualizado para " + strconv.FormatBool(device.Enabled),
+		"message": "Status do equipamento '" + deviceID + "' atualizado para " + fmt.Sprintf("%t", device.Enabled),
 	})
 }
