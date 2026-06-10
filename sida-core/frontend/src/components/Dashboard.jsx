@@ -3,7 +3,7 @@ import DeviceForm from './DeviceForm'
 import DeviceCard from './DeviceCard' 
 
 export default function Dashboard({ config, onSave, gatewayId, token, setToken }) {
-  const [deviceTarget, setDeviceTarget] = useState(null) // { areaId, lineId } ou null
+  const [deviceTarget, setDeviceTarget] = useState(null)
   
   const [showPinPrompt, setShowPinPrompt] = useState(false)
   const [pinInput, setPinInput] = useState('')
@@ -13,9 +13,10 @@ export default function Dashboard({ config, onSave, gatewayId, token, setToken }
   const [modalInput, setModalInput] = useState('')
   const [modalSelectArea, setModalSelectArea] = useState('')
 
-  const plantModel = config.plant_model || { areas: {} }
-  const devices = config.devices || {}
+  const plantModel = config.plant || { enterprise: '', site: '', areas: {} }
   const isEngineeringMode = token !== null
+
+  const formatName = (id) => id ? id.replace(/_/g, ' ').toUpperCase() : ''
 
   const handleUnlock = async () => {
     try {
@@ -65,28 +66,29 @@ export default function Dashboard({ config, onSave, gatewayId, token, setToken }
     }
 
     const idFormatted = modalInput.toLowerCase().trim().replace(/\s+/g, '_')
-    const newConfig = { ...config }
-
+    const newConfig = JSON.parse(JSON.stringify(config))
+    
+    if (!newConfig.plant.areas) newConfig.plant.areas = {}
     if (modalConfig.type === 'area') {
-      if (!newConfig.plant_model.areas) newConfig.plant_model.areas = {}
-      if (newConfig.plant_model.areas[idFormatted]) {
+      if (newConfig.plant.areas[idFormatted]) {
         alert("Já existe uma área com este nome.")
         return
       }
-      newConfig.plant_model.areas[idFormatted] = { name: modalInput, lines: [] }
-
+      newConfig.plant.areas[idFormatted] = { lines: {} }
+      
     } else if (modalConfig.type === 'line') {
       const targetArea = modalSelectArea
       if (!targetArea) {
         alert("Selecione uma Área para esta linha.")
         return
       }
-      if (!newConfig.plant_model.areas[targetArea].lines) newConfig.plant_model.areas[targetArea].lines = []
-      if (newConfig.plant_model.areas[targetArea].lines.includes(idFormatted)) {
+      if (!newConfig.plant.areas[targetArea].lines) newConfig.plant.areas[targetArea].lines = {}
+      if (newConfig.plant.areas[targetArea].lines[idFormatted]) {
         alert("Esta linha já existe nesta área.")
         return
       }
-      newConfig.plant_model.areas[targetArea].lines.push(idFormatted)
+      
+      newConfig.plant.areas[targetArea].lines[idFormatted] = { devices: {} }
     }
 
     await onSave(newConfig)
@@ -130,8 +132,8 @@ export default function Dashboard({ config, onSave, gatewayId, token, setToken }
                 <label style={{ fontSize: '14px', fontWeight: 'bold', color: colors.textMuted }}>Pertence a qual Área?</label>
                 <select value={modalSelectArea} onChange={e => setModalSelectArea(e.target.value)} style={styles.input}>
                   <option value="">-- Selecione uma Área --</option>
-                  {Object.entries(plantModel.areas).map(([id, a]) => (
-                    <option key={id} value={id}>{a.name}</option>
+                  {Object.keys(plantModel.areas || {}).map(id => (
+                    <option key={id} value={id}>{formatName(id)}</option>
                   ))}
                 </select>
               </div>
@@ -162,8 +164,10 @@ export default function Dashboard({ config, onSave, gatewayId, token, setToken }
           <div style={styles.navItem(activeTab === 'all')} onClick={() => setActiveTab('all')}>Planta Completa</div>
 
           <div style={{ padding: '20px 24px 10px', fontSize: '11px', color: '#64748b', fontWeight: 'bold', textTransform: 'uppercase' }}>Áreas Operacionais</div>
-          {Object.entries(plantModel.areas || {}).map(([areaId, areaData]) => (
-            <div key={areaId} style={styles.navItem(activeTab === areaId)} onClick={() => setActiveTab(areaId)}>📍 {areaData.name}</div>
+          {Object.keys(plantModel.areas || {}).map((areaId) => (
+            <div key={areaId} style={styles.navItem(activeTab === areaId)} onClick={() => setActiveTab(areaId)}>
+              {formatName(areaId)}
+            </div>
           ))}
         </div>
       </div>
@@ -199,7 +203,7 @@ export default function Dashboard({ config, onSave, gatewayId, token, setToken }
         <div style={styles.content}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '30px' }}>
              <div>
-               <h1 style={{ margin: '0 0 5px 0', fontSize: '28px', color: colors.textMain }}>{activeTab === 'all' ? 'Planta Completa' : plantModel.areas[activeTab]?.name}</h1>
+               <h1 style={{ margin: '0 0 5px 0', fontSize: '28px', color: colors.textMain }}>{activeTab === 'all' ? 'Planta Completa' : formatName(activeTab)}</h1>
                <p style={{ margin: 0, color: colors.textMuted, fontSize: '14px' }}>Gestão e monitorização de ativos na camada de Edge.</p>
              </div>
              
@@ -216,19 +220,19 @@ export default function Dashboard({ config, onSave, gatewayId, token, setToken }
           {Object.entries(plantModel.areas || {}).filter(([areaId]) => activeTab === 'all' || activeTab === areaId).map(([areaId, areaData]) => (
             <div key={areaId} style={{ marginBottom: '50px' }}>
               <div style={{ borderBottom: `2px solid ${colors.border}`, paddingBottom: '10px', marginBottom: '20px' }}>
-                <h3 style={{ margin: 0, color: colors.textMain, fontSize: '20px' }}>{activeTab === 'all' ? `📍 ${areaData.name}` : 'Linhas de Produção'}</h3>
+                <h3 style={{ margin: 0, color: colors.textMain, fontSize: '20px' }}>{activeTab === 'all' ? `📍 ${formatName(areaId)}` : 'Linhas de Produção'}</h3>
               </div>
               
-              {areaData.lines.map(line => {
-                 const equipamentos = Object.entries(devices).filter(([_, d]) => d.asset_context?.path?.find(n => n.type === 'line')?.id === line)
+              {Object.entries(areaData.lines || {}).map(([lineId, lineData]) => {
+                 const equipamentos = Object.entries(lineData.devices || {})
                  return (
-                   <div key={line} style={{ marginTop: '20px', padding: '20px', backgroundColor: 'white', borderRadius: '12px', border: `1px solid ${colors.border}`, boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }}>
+                   <div key={lineId} style={{ marginTop: '20px', padding: '20px', backgroundColor: 'white', borderRadius: '12px', border: `1px solid ${colors.border}`, boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }}>
                      
                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-                       <h4 style={{ margin: 0, color: colors.textMuted, textTransform: 'uppercase', fontSize: '13px', letterSpacing: '1px' }}>⚙️ {line.replace(/_/g, ' ')}</h4>
+                       <h4 style={{ margin: 0, color: colors.textMuted, fontSize: '13px', letterSpacing: '1px' }}>⚙️ {formatName(lineId)}</h4>
                        
                        {isEngineeringMode && (
-                         <button onClick={() => setDeviceTarget({ areaId, lineId: line })} style={styles.btnOutline}>
+                         <button onClick={() => setDeviceTarget({ areaId, lineId })} style={styles.btnOutline}>
                            + Integrar Equipamento
                          </button>
                        )}
@@ -245,7 +249,7 @@ export default function Dashboard({ config, onSave, gatewayId, token, setToken }
                  )
               })}
               
-              {areaData.lines.length === 0 && (
+              {Object.keys(areaData.lines || {}).length === 0 && (
                 <div style={{ padding: '30px', textAlign: 'center', color: colors.textMuted, backgroundColor: 'white', borderRadius: '12px', border: `1px dashed ${colors.border}` }}>Esta área ainda não possui linhas de produção.</div>
               )}
             </div>
@@ -259,11 +263,14 @@ export default function Dashboard({ config, onSave, gatewayId, token, setToken }
           targetArea={deviceTarget.areaId} 
           targetLine={deviceTarget.lineId} 
           onSave={(id, data) => { 
-            const newConfig = {...config}; 
-            if(!newConfig.devices) newConfig.devices = {}; 
-            newConfig.devices[id] = data; 
-            onSave(newConfig); 
-            setDeviceTarget(null);
+            const newConfig = JSON.parse(JSON.stringify(config))
+            const targetLine = newConfig.plant.areas[deviceTarget.areaId].lines[deviceTarget.lineId]
+            
+            if(!targetLine.devices) targetLine.devices = {}
+            targetLine.devices[id] = data
+            
+            onSave(newConfig) 
+            setDeviceTarget(null)
           }} 
           onCancel={() => setDeviceTarget(null)} 
         />

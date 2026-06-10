@@ -38,8 +38,8 @@ export default function DeviceForm({ plantModel, targetArea, targetLine, onSave,
     if (!hostRegex.test(ip)) return "Endereço ou Hostname inválido.";
 
     if (port < 1 || port > 65535) return "Porta inválida (deve ser entre 1 e 65535)."
-    if (slaveId < 1 || slaveId > 255) return "Slave ID inválido (1-255)."
-    if (pollingRate < 100) return "Polling Rate muito agressivo. Use no mínimo 100ms para não sobrecarregar a rede."
+    if (slaveId < 0 || slaveId > 255) return "Slave ID inválido (0-255)."
+    if (pollingRate < 50) return "Polling Rate inválido. Use no mínimo 50ms (recomendado >= 100ms)."
 
     if (tags.length === 0) return "Adicione pelo menos uma Tag para leitura."
 
@@ -93,8 +93,6 @@ export default function DeviceForm({ plantModel, targetArea, targetLine, onSave,
       asset_context: {
         standard: "ISA-95",
         path: [
-          { type: 'enterprise', id: plantModel.enterprise },
-          { type: 'site', id: plantModel.site },
           { type: 'area', id: targetArea },
           { type: 'line', id: targetLine },
           { type: 'equipment', id: deviceId }
@@ -222,9 +220,8 @@ export default function DeviceForm({ plantModel, targetArea, targetLine, onSave,
                     <option value="int16">INT 16</option>
                     <option value="uint16">UINT 16</option>
                     <option value="int32">INT 32</option>
-                    <option value="uint32">UINT 32</option>
                     <option value="float">FLOAT 32</option>
-                    <option value="boolean">BOOLEAN</option>
+                    <option value="bool">BOOL</option>
                   </select>
 
                   <input style={styles.input} type="number" step="0.001" value={tag.scale} onChange={e => handleTagChange(tag.id, 'scale', e.target.value)} />
