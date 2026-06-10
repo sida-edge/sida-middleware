@@ -20,12 +20,10 @@ type Plant struct {
 }
 
 type Areas struct {
-	Area 	string 			`json:"area" binding:"required"`
 	Lines 	map[string]Line `json:"lines" binding:"omitempty,dive"`
 }
 
 type Line struct {
-	Line 	string 					`json:"line" binding:"required"`
 	Devices map[string]Device 		`json:"devices" binding:"omitempty,dive"`
 }
 
