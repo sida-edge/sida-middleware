@@ -32,8 +32,8 @@ type ReceiverConnection struct {
 	Host     string `json:"host" binding:"required,ip|hostname"`
 	Port     int    `json:"port" binding:"required,min=1,max=65535"`
 	Endpoint string `json:"endpoint" binding:"required_if=Protocol http"`
-	Username string `json:"username" binding:"required_if=Protocol mqtt"`
-	Password string `json:"password" binding:"required_if=Protocol mqtt"`
+	Username string `json:"username" binding:"omitempty"`
+	Password string `json:"password" binding:"omitempty"`
 }
 
 type Device struct {
