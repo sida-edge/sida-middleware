@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import DeviceForm from './DeviceForm'
 import DeviceCard from './DeviceCard' 
+import ConnectorCard from './ConnectorCard'
+import ConnectorForm from './ConnectorForm'
 
 export default function Dashboard({ config, onSave, gatewayId, token, setToken }) {
   const [deviceTarget, setDeviceTarget] = useState(null)
@@ -12,6 +14,9 @@ export default function Dashboard({ config, onSave, gatewayId, token, setToken }
   const [modalConfig, setModalConfig] = useState({ isOpen: false, type: null })
   const [modalInput, setModalInput] = useState('')
   const [modalSelectArea, setModalSelectArea] = useState('')
+
+  const [connectorTarget, setConnectorTarget] = useState(null)
+  const [deleteConnectorTarget, setDeleteConnectorTarget] = useState(null)
 
   const plantModel = config.plant || { enterprise: '', site: '', areas: {} }
   const isEngineeringMode = token !== null
@@ -162,7 +167,7 @@ export default function Dashboard({ config, onSave, gatewayId, token, setToken }
         <div style={{ padding: '20px 0', flex: 1, overflowY: 'auto' }}>
           <div style={{ padding: '0 24px', fontSize: '11px', color: '#64748b', fontWeight: 'bold', textTransform: 'uppercase', marginBottom: '10px' }}>Visão Geral</div>
           <div style={styles.navItem(activeTab === 'all')} onClick={() => setActiveTab('all')}>Planta Completa</div>
-
+          <div style={styles.navItem(activeTab === 'connectors')} onClick={() => setActiveTab('connectors')}>External Connectors</div>
           <div style={{ padding: '20px 24px 10px', fontSize: '11px', color: '#64748b', fontWeight: 'bold', textTransform: 'uppercase' }}>Áreas Operacionais</div>
           {Object.keys(plantModel.areas || {}).map((areaId) => (
             <div key={areaId} style={styles.navItem(activeTab === areaId)} onClick={() => setActiveTab(areaId)}>
@@ -201,59 +206,111 @@ export default function Dashboard({ config, onSave, gatewayId, token, setToken }
         )}
 
         <div style={styles.content}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '30px' }}>
-             <div>
-               <h1 style={{ margin: '0 0 5px 0', fontSize: '28px', color: colors.textMain }}>{activeTab === 'all' ? 'Planta Completa' : formatName(activeTab)}</h1>
-               <p style={{ margin: 0, color: colors.textMuted, fontSize: '14px' }}>Gestão e monitorização de ativos na camada de Edge.</p>
-             </div>
-             
-             {isEngineeringMode && (
-               <div style={{ display: 'flex', gap: '12px' }}>
-                 {activeTab === 'all' && (
-                   <button onClick={openAreaModal} style={styles.btnSecondary}>+ Nova Área</button>
-                 )}
-                 <button onClick={openLineModal} style={styles.btnPrimary}>+ Adicionar Linha</button>
-               </div>
-             )}
-          </div>
-
-          {Object.entries(plantModel.areas || {}).filter(([areaId]) => activeTab === 'all' || activeTab === areaId).map(([areaId, areaData]) => (
-            <div key={areaId} style={{ marginBottom: '50px' }}>
-              <div style={{ borderBottom: `2px solid ${colors.border}`, paddingBottom: '10px', marginBottom: '20px' }}>
-                <h3 style={{ margin: 0, color: colors.textMain, fontSize: '20px' }}>{activeTab === 'all' ? `📍 ${formatName(areaId)}` : 'Linhas de Produção'}</h3>
+          {activeTab === 'connectors' ? (
+            <div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '30px' }}>
+                <div>
+                  <h1 style={{ margin: '0 0 5px 0', fontSize: '28px', color: colors.textMain }}>Conexões Externas</h1>
+                  <p style={{ margin: 0, color: colors.textMuted, fontSize: '14px' }}>Destinos de integração para exportação de telemetria.</p>
+                </div>
+                {isEngineeringMode && (
+                  <button onClick={() => setConnectorTarget({ isNew: true })} style={styles.btnPrimary}>+ Nova Conexão</button>
+                )}
               </div>
-              
-              {Object.entries(areaData.lines || {}).map(([lineId, lineData]) => {
-                 const equipamentos = Object.entries(lineData.devices || {})
-                 return (
-                   <div key={lineId} style={{ marginTop: '20px', padding: '20px', backgroundColor: 'white', borderRadius: '12px', border: `1px solid ${colors.border}`, boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }}>
-                     
-                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-                       <h4 style={{ margin: 0, color: colors.textMuted, fontSize: '13px', letterSpacing: '1px' }}>⚙️ {formatName(lineId)}</h4>
-                       
-                       {isEngineeringMode && (
-                         <button onClick={() => setDeviceTarget({ areaId, lineId })} style={styles.btnOutline}>
-                           + Integrar Equipamento
-                         </button>
-                       )}
-                     </div>
-                     
-                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '20px' }}>
-                       {equipamentos.length > 0 ? (
-                          equipamentos.map(([id, device]) => <DeviceCard key={id} deviceId={id} device={device} />)
-                       ) : (
-                          <div style={{ padding: '15px', backgroundColor: colors.bg, border: `1px dashed ${colors.border}`, borderRadius: '8px', color: colors.textMuted, fontSize: '13px', gridColumn: '1 / -1', textAlign: 'center' }}>Nenhum equipamento alocado a esta linha.</div>
-                       )}
-                     </div>
-                   </div>
-                 )
-              })}
-              
-              {Object.keys(areaData.lines || {}).length === 0 && (
-                <div style={{ padding: '30px', textAlign: 'center', color: colors.textMuted, backgroundColor: 'white', borderRadius: '12px', border: `1px dashed ${colors.border}` }}>Esta área ainda não possui linhas de produção.</div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))', gap: '20px' }}>
+                {Object.entries(config.receivers || {}).map(([id, connector]) => (
+                  <ConnectorCard 
+                    key={id} 
+                    connectorId={id} 
+                    connector={connector} 
+                    isEngineeringMode={isEngineeringMode}
+                    onEdit={() => setConnectorTarget({ id, data: connector })}
+                    onDelete={() => {
+                      const newConfig = JSON.parse(JSON.stringify(config));
+                      delete newConfig.receivers[id];
+                      onSave(newConfig);
+                    }}
+                  />
+                ))}
+              </div>
+
+              {connectorTarget && (
+                <ConnectorForm 
+                  initialConnectorId={connectorTarget.id}
+                  initialData={connectorTarget.data}
+                  onSave={(id, data) => {
+                    const newConfig = JSON.parse(JSON.stringify(config));
+                    if (!newConfig.receivers) newConfig.receivers = {};
+                    
+                    if (connectorTarget.id && connectorTarget.id !== id) {
+                      delete newConfig.receivers[connectorTarget.id];
+                    }
+                    newConfig.receivers[id] = data;
+                    onSave(newConfig);
+                    setConnectorTarget(null);
+                  }}
+                  onCancel={() => setConnectorTarget(null)}
+                />
               )}
             </div>
-          ))}
+          ) : (
+            <>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '30px' }}>
+              <div>
+                <h1 style={{ margin: '0 0 5px 0', fontSize: '28px', color: colors.textMain }}>{activeTab === 'all' ? 'Planta Completa' : formatName(activeTab)}</h1>
+                <p style={{ margin: 0, color: colors.textMuted, fontSize: '14px' }}>Gestão e monitorização de ativos</p>
+              </div>
+              
+              {isEngineeringMode && (
+                <div style={{ display: 'flex', gap: '12px' }}>
+                  {activeTab === 'all' && (
+                    <button onClick={openAreaModal} style={styles.btnSecondary}>+ Nova Área</button>
+                  )}
+                  <button onClick={openLineModal} style={styles.btnPrimary}>+ Adicionar Linha</button>
+                </div>
+              )}
+            </div>
+
+            {Object.entries(plantModel.areas || {}).filter(([areaId]) => activeTab === 'all' || activeTab === areaId).map(([areaId, areaData]) => (
+              <div key={areaId} style={{ marginBottom: '50px' }}>
+                <div style={{ borderBottom: `2px solid ${colors.border}`, paddingBottom: '10px', marginBottom: '20px' }}>
+                  <h3 style={{ margin: 0, color: colors.textMain, fontSize: '20px' }}>{activeTab === 'all' ? `📍 ${formatName(areaId)}` : 'Linhas de Produção'}</h3>
+                </div>
+                
+                {Object.entries(areaData.lines || {}).map(([lineId, lineData]) => {
+                  const equipamentos = Object.entries(lineData.devices || {})
+                  return (
+                    <div key={lineId} style={{ marginTop: '20px', padding: '20px', backgroundColor: 'white', borderRadius: '12px', border: `1px solid ${colors.border}`, boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }}>
+                      
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                        <h4 style={{ margin: 0, color: colors.textMuted, fontSize: '13px', letterSpacing: '1px' }}>⚙️ {formatName(lineId)}</h4>
+                        
+                        {isEngineeringMode && (
+                          <button onClick={() => setDeviceTarget({ areaId, lineId })} style={styles.btnOutline}>
+                            + Integrar Equipamento
+                          </button>
+                        )}
+                      </div>
+                      
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '20px' }}>
+                        {equipamentos.length > 0 ? (
+                            equipamentos.map(([id, device]) => <DeviceCard key={id} deviceId={id} device={device} />)
+                        ) : (
+                            <div style={{ padding: '15px', backgroundColor: colors.bg, border: `1px dashed ${colors.border}`, borderRadius: '8px', color: colors.textMuted, fontSize: '13px', gridColumn: '1 / -1', textAlign: 'center' }}>Nenhum equipamento alocado a esta linha.</div>
+                        )}
+                      </div>
+                    </div>
+                  )
+                })}
+                
+                {Object.keys(areaData.lines || {}).length === 0 && (
+                  <div style={{ padding: '30px', textAlign: 'center', color: colors.textMuted, backgroundColor: 'white', borderRadius: '12px', border: `1px dashed ${colors.border}` }}>Esta área ainda não possui linhas de produção.</div>
+                )}
+              </div>
+            ))}
+            </>
+          )}
         </div>
       </div>
 
