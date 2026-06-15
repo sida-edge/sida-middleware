@@ -303,84 +303,46 @@ export default function Dashboard({ config, onSave, gatewayId, token, setToken }
                   )}
                   <button onClick={openLineModal} style={styles.btnPrimary}>+ Adicionar Linha</button>
                 </div>
-              {Object.entries(areaData.lines || {}).map(([lineId, lineData]) => {
-                 const equipamentos = Object.entries(lineData.devices || {})
-                 return (
-                   <div key={lineId} style={{ marginTop: '20px', padding: '20px', backgroundColor: 'white', borderRadius: '12px', border: `1px solid ${colors.border}`, boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }}>
-                     
-                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-                       <h4 style={{ margin: 0, color: colors.textMuted, fontSize: '13px', letterSpacing: '1px' }}>⚙️ {formatName(lineId)}</h4>
-                       
-                       {isEngineeringMode && (
-                         <button onClick={() => setDeviceTarget({ areaId, lineId })} style={styles.btnOutline}>
-                           + Integrar Equipamento
-                         </button>
-                       )}
-                     </div>
-                     
-                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '20px' }}>
-                       {equipamentos.length > 0 ? (
-                          equipamentos.map(([id, device]) => (
-                            <DeviceCard 
-                              key={id} 
-                              deviceId={id} 
-                              device={device} 
-                              isEngineeringMode={isEngineeringMode}
-                              onToggle={(devId, status) => handleDeviceToggle(areaId, lineId, devId, status)}
-                              onEdit={() => setDeviceTarget({ areaId, lineId, deviceId: id, device })}
-                              onDelete={() => setDeleteTarget({ areaId, lineId, deviceId: id })}
-                            />
-                          ))
-                       ) : (
-                          <div style={{ padding: '15px', backgroundColor: colors.bg, border: `1px dashed ${colors.border}`, borderRadius: '8px', color: colors.textMuted, fontSize: '13px', gridColumn: '1 / -1', textAlign: 'center' }}>Nenhum equipamento alocado a esta linha.</div>
-                       )}
-                     </div>
-                   </div>
-                 )
-              })}
-              
-              {Object.keys(areaData.lines || {}).length === 0 && (
-                <div style={{ padding: '30px', textAlign: 'center', color: colors.textMuted, backgroundColor: 'white', borderRadius: '12px', border: `1px dashed ${colors.border}` }}>Esta área ainda não possui linhas de produção.</div>
               )}
-            </div>
-
-            {Object.entries(plantModel.areas || {}).filter(([areaId]) => activeTab === 'all' || activeTab === areaId).map(([areaId, areaData]) => (
-              <div key={areaId} style={{ marginBottom: '50px' }}>
-                <div style={{ borderBottom: `2px solid ${colors.border}`, paddingBottom: '10px', marginBottom: '20px' }}>
-                  <h3 style={{ margin: 0, color: colors.textMain, fontSize: '20px' }}>{activeTab === 'all' ? `📍 ${formatName(areaId)}` : 'Linhas de Produção'}</h3>
-                </div>
-                
-                {Object.entries(areaData.lines || {}).map(([lineId, lineData]) => {
-                  const equipamentos = Object.entries(lineData.devices || {})
-                  return (
-                    <div key={lineId} style={{ marginTop: '20px', padding: '20px', backgroundColor: 'white', borderRadius: '12px', border: `1px solid ${colors.border}`, boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }}>
-                      
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-                        <h4 style={{ margin: 0, color: colors.textMuted, fontSize: '13px', letterSpacing: '1px' }}>⚙️ {formatName(lineId)}</h4>
-                        
-                        {isEngineeringMode && (
-                          <button onClick={() => setDeviceTarget({ areaId, lineId })} style={styles.btnOutline}>
-                            + Integrar Equipamento
-                          </button>
-                        )}
-                      </div>
-                      
-                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '20px' }}>
-                        {equipamentos.length > 0 ? (
-                            equipamentos.map(([id, device]) => <DeviceCard key={id} deviceId={id} device={device} />)
-                        ) : (
-                            <div style={{ padding: '15px', backgroundColor: colors.bg, border: `1px dashed ${colors.border}`, borderRadius: '8px', color: colors.textMuted, fontSize: '13px', gridColumn: '1 / -1', textAlign: 'center' }}>Nenhum equipamento alocado a esta linha.</div>
-                        )}
-                      </div>
-                    </div>
-                  )
-                })}
-                
-                {Object.keys(areaData.lines || {}).length === 0 && (
-                  <div style={{ padding: '30px', textAlign: 'center', color: colors.textMuted, backgroundColor: 'white', borderRadius: '12px', border: `1px dashed ${colors.border}` }}>Esta área ainda não possui linhas de produção.</div>
-                )}
               </div>
-            ))}
+
+              {Object.entries(plantModel.areas || {}).filter(([areaId]) => activeTab === 'all' || activeTab === areaId).map(([areaId, areaData]) => (
+                <div key={areaId} style={{ marginBottom: '50px' }}>
+                  <div style={{ borderBottom: `2px solid ${colors.border}`, paddingBottom: '10px', marginBottom: '20px' }}>
+                    <h3 style={{ margin: 0, color: colors.textMain, fontSize: '20px' }}>{activeTab === 'all' ? `📍 ${formatName(areaId)}` : 'Linhas de Produção'}</h3>
+                  </div>
+                  
+                  {Object.entries(areaData.lines || {}).map(([lineId, lineData]) => {
+                    const equipamentos = Object.entries(lineData.devices || {})
+                    return (
+                      <div key={lineId} style={{ marginTop: '20px', padding: '20px', backgroundColor: 'white', borderRadius: '12px', border: `1px solid ${colors.border}`, boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }}>
+                        
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                          <h4 style={{ margin: 0, color: colors.textMuted, fontSize: '13px', letterSpacing: '1px' }}>⚙️ {formatName(lineId)}</h4>
+                          
+                          {isEngineeringMode && (
+                            <button onClick={() => setDeviceTarget({ areaId, lineId })} style={styles.btnOutline}>
+                              + Integrar Equipamento
+                            </button>
+                          )}
+                        </div>
+                        
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '20px' }}>
+                          {equipamentos.length > 0 ? (
+                              equipamentos.map(([id, device]) => <DeviceCard key={id} deviceId={id} device={device} />)
+                          ) : (
+                              <div style={{ padding: '15px', backgroundColor: colors.bg, border: `1px dashed ${colors.border}`, borderRadius: '8px', color: colors.textMuted, fontSize: '13px', gridColumn: '1 / -1', textAlign: 'center' }}>Nenhum equipamento alocado a esta linha.</div>
+                          )}
+                        </div>
+                      </div>
+                    )
+                  })}
+                  
+                  {Object.keys(areaData.lines || {}).length === 0 && (
+                    <div style={{ padding: '30px', textAlign: 'center', color: colors.textMuted, backgroundColor: 'white', borderRadius: '12px', border: `1px dashed ${colors.border}` }}>Esta área ainda não possui linhas de produção.</div>
+                  )}
+                </div>
+              ))}
             </>
           )}
         </div>
