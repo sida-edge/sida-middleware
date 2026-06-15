@@ -1,15 +1,36 @@
 import { useState } from 'react'
 
-export default function DeviceForm({ plantModel, targetArea, targetLine, onSave, onCancel }) {
-  const [deviceName, setDeviceName] = useState('')
-  const [protocol, setProtocol] = useState('modbus_tcp')
-  const [ip, setIp] = useState('')
-  const [port, setPort] = useState(502)
-  const [slaveId, setSlaveId] = useState(1)
-  const [pollingRate, setPollingRate] = useState(1000)
-  const [byteOrder, setByteOrder] = useState('ABCD')
+export default function DeviceForm({ 
+  plantModel, 
+  targetArea, 
+  targetLine, 
+  initialDeviceId,
+  initialDeviceData,
+  onSave, 
+  onCancel 
+}) {
+  const [deviceName, setDeviceName] = useState(() => initialDeviceId ? initialDeviceId.replace(/_/g, ' ') : '')
+  const [protocol, setProtocol] = useState(() => initialDeviceData?.connection?.protocol || 'modbus_tcp')
+  const [ip, setIp] = useState(() => initialDeviceData?.connection?.host || '')
+  const [port, setPort] = useState(() => initialDeviceData?.connection?.port || 502)
+  const [slaveId, setSlaveId] = useState(() => initialDeviceData?.connection?.unit_id || 1)
+  const [pollingRate, setPollingRate] = useState(() => initialDeviceData?.connection?.scan_rate_ms || 1000)
+  const [byteOrder, setByteOrder] = useState(() => initialDeviceData?.connection?.byte_order || 'ABCD')
 
-  const [tags, setTags] = useState([])
+  const [tags, setTags] = useState(() => {
+    if (initialDeviceData && initialDeviceData.metrics_mapping) {
+      return Object.entries(initialDeviceData.metrics_mapping).map(([address, metric]) => ({
+        id: crypto.randomUUID().split('-')[0],
+        name: metric.name ? metric.name.replace(/_/g, ' ') : '',
+        address: address,
+        regType: metric.register_type,
+        dataType: metric.data_type,
+        scale: metric.scale_factor,
+        unit: metric.unit || ''
+      }))
+    }
+    return []
+  })
 
   const handleAddTag = () => {
     setTags([...tags, { 
@@ -81,7 +102,7 @@ export default function DeviceForm({ plantModel, targetArea, targetLine, onSave,
     })
 
     const configFinal = {
-      enabled: true,
+      enabled: initialDeviceData ? initialDeviceData.enabled : true,
       connection: {
         protocol: protocol,
         host: ip,
@@ -127,7 +148,9 @@ export default function DeviceForm({ plantModel, targetArea, targetLine, onSave,
         
         <div style={styles.header}>
           <div>
-            <h2 style={{ margin: 0, color: colors.textMain, fontSize: '20px' }}>Integrar Equipamento</h2>
+            <h2 style={{ margin: 0, color: colors.textMain, fontSize: '20px' }}>
+              {initialDeviceId ? 'Editar Equipamento' : 'Integrar Equipamento'}
+            </h2>
             <div style={{ fontSize: '13px', color: colors.textMuted, marginTop: '4px' }}>
               Destino: <span style={{ fontWeight: 'bold' }}>{targetArea} ➔ {targetLine}</span>
             </div>
@@ -239,7 +262,9 @@ export default function DeviceForm({ plantModel, targetArea, targetLine, onSave,
 
         <div style={styles.footer}>
           <button onClick={onCancel} style={styles.btnSecondary}>Cancelar</button>
-          <button onClick={handleSubmit} style={styles.btnPrimary}>Guardar Equipamento</button>
+          <button onClick={handleSubmit} style={styles.btnPrimary}>
+            {initialDeviceId ? 'Atualizar Equipamento' : 'Guardar Equipamento'}
+          </button>
         </div>
         
       </div>

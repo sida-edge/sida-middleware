@@ -4,6 +4,7 @@ import DeviceCard from './DeviceCard'
 
 export default function Dashboard({ config, onSave, gatewayId, token, setToken }) {
   const [deviceTarget, setDeviceTarget] = useState(null)
+  const [deleteTarget, setDeleteTarget] = useState(null) 
   
   const [showPinPrompt, setShowPinPrompt] = useState(false)
   const [pinInput, setPinInput] = useState('')
@@ -95,9 +96,26 @@ export default function Dashboard({ config, onSave, gatewayId, token, setToken }
     closeModal()
   }
 
+  const handleDeviceToggle = async (areaId, lineId, deviceId, newStatus) => {
+    const newConfig = JSON.parse(JSON.stringify(config))
+    newConfig.plant.areas[areaId].lines[lineId].devices[deviceId].enabled = newStatus
+    await onSave(newConfig)
+  }
+
+  const confirmDeleteDevice = async () => {
+    if (!deleteTarget) return
+    const { areaId, lineId, deviceId } = deleteTarget
+    const newConfig = JSON.parse(JSON.stringify(config))
+    
+    delete newConfig.plant.areas[areaId].lines[lineId].devices[deviceId]
+    
+    await onSave(newConfig)
+    setDeleteTarget(null)
+  }
+
   const colors = {
     sidebarBg: '#0f172a', sidebarHover: '#1e293b', bg: '#f8fafc', card: '#ffffff',
-    border: '#e2e8f0', primary: '#2563eb', warning: '#f59e0b', success: '#10b981',
+    border: '#e2e8f0', primary: '#2563eb', warning: '#f59e0b', success: '#10b981', danger: '#ef4444',
     textMain: '#0f172a', textMuted: '#64748b'
   }
 
@@ -112,6 +130,7 @@ export default function Dashboard({ config, onSave, gatewayId, token, setToken }
     badge: { display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '4px 10px', borderRadius: '999px', fontSize: '12px', fontWeight: '600', backgroundColor: '#dcfce7', color: '#166534' },
     badgeWarning: { display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '4px 10px', borderRadius: '999px', fontSize: '12px', fontWeight: '600', backgroundColor: '#fef3c7', color: '#92400e' },
     btnPrimary: { padding: '10px 20px', backgroundColor: colors.primary, color: 'white', border: 'none', borderRadius: '6px', fontWeight: '600', cursor: 'pointer', boxShadow: '0 4px 6px -1px rgba(37, 99, 235, 0.2)' },
+    btnDanger: { padding: '10px 20px', backgroundColor: colors.danger, color: 'white', border: 'none', borderRadius: '6px', fontWeight: '600', cursor: 'pointer' },
     btnSecondary: { padding: '10px 20px', backgroundColor: 'white', color: colors.textMain, border: `1px solid ${colors.border}`, borderRadius: '6px', fontWeight: '600', cursor: 'pointer' },
     btnOutline: { padding: '6px 12px', backgroundColor: 'transparent', color: colors.primary, border: `1px solid ${colors.primary}`, borderRadius: '4px', fontSize: '13px', fontWeight: 'bold', cursor: 'pointer' },
     modalOverlay: { position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', backgroundColor: 'rgba(15, 23, 42, 0.7)', backdropFilter: 'blur(5px)', zIndex: 999, display: 'flex', justifyContent: 'center', alignItems: 'center' },
@@ -121,6 +140,21 @@ export default function Dashboard({ config, onSave, gatewayId, token, setToken }
 
   return (
     <div style={styles.layout}>
+      {deleteTarget && (
+        <div style={styles.modalOverlay}>
+          <div style={styles.modalCard}>
+            <h2 style={{ margin: '0 0 10px 0', color: colors.textMain }}>Excluir Equipamento?</h2>
+            <p style={{ color: colors.textMuted, fontSize: '14px', marginBottom: '25px' }}>
+              Tem certeza que deseja remover o equipamento <strong>{formatName(deleteTarget.deviceId)}</strong>? Esta ação não pode ser desfeita.
+            </p>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+              <button onClick={() => setDeleteTarget(null)} style={styles.btnSecondary}>Cancelar</button>
+              <button onClick={confirmDeleteDevice} style={styles.btnDanger}>Sim, Excluir</button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {modalConfig.isOpen && (
         <div style={styles.modalOverlay}>
           <div style={styles.modalCard}>
@@ -240,7 +274,17 @@ export default function Dashboard({ config, onSave, gatewayId, token, setToken }
                      
                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '20px' }}>
                        {equipamentos.length > 0 ? (
-                          equipamentos.map(([id, device]) => <DeviceCard key={id} deviceId={id} device={device} />)
+                          equipamentos.map(([id, device]) => (
+                            <DeviceCard 
+                              key={id} 
+                              deviceId={id} 
+                              device={device} 
+                              isEngineeringMode={isEngineeringMode}
+                              onToggle={(devId, status) => handleDeviceToggle(areaId, lineId, devId, status)}
+                              onEdit={() => setDeviceTarget({ areaId, lineId, deviceId: id, device })}
+                              onDelete={() => setDeleteTarget({ areaId, lineId, deviceId: id })}
+                            />
+                          ))
                        ) : (
                           <div style={{ padding: '15px', backgroundColor: colors.bg, border: `1px dashed ${colors.border}`, borderRadius: '8px', color: colors.textMuted, fontSize: '13px', gridColumn: '1 / -1', textAlign: 'center' }}>Nenhum equipamento alocado a esta linha.</div>
                        )}
@@ -262,11 +306,18 @@ export default function Dashboard({ config, onSave, gatewayId, token, setToken }
           plantModel={plantModel} 
           targetArea={deviceTarget.areaId} 
           targetLine={deviceTarget.lineId} 
+          initialDeviceId={deviceTarget.deviceId} 
+          initialDeviceData={deviceTarget.device}
           onSave={(id, data) => { 
             const newConfig = JSON.parse(JSON.stringify(config))
             const targetLine = newConfig.plant.areas[deviceTarget.areaId].lines[deviceTarget.lineId]
             
             if(!targetLine.devices) targetLine.devices = {}
+            
+            if (deviceTarget.deviceId && deviceTarget.deviceId !== id) {
+              delete targetLine.devices[deviceTarget.deviceId]
+            }
+            
             targetLine.devices[id] = data
             
             onSave(newConfig) 
