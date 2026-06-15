@@ -49,7 +49,7 @@
         ],
         "x": 74,
         "y": 99,
-        "w": 492,
+        "w": 532,
         "h": 142
     },
     {
@@ -67,9 +67,9 @@
             "a88317af959e8167",
             "215475b220f7c97d"
         ],
-        "x": 74,
-        "y": 259,
-        "w": 402,
+        "x": 634,
+        "y": 99,
+        "w": 502,
         "h": 142
     },
     {
@@ -122,6 +122,26 @@
         "y": 99,
         "w": 1162,
         "h": 122
+    },
+    {
+        "id": "3cae7c106a179c06",
+        "type": "group",
+        "z": "20080e9522dba17a",
+        "name": "setupConnectors",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "2c41a02cebeecc73",
+            "c7a1c23d89bb859a",
+            "67e473f58890e577",
+            "fefc695b1d1202e1",
+            "d688dac75e8ef6e9"
+        ],
+        "x": 74,
+        "y": 259,
+        "w": 672,
+        "h": 142
     },
     {
         "id": "2312654bef2ae844",
@@ -223,9 +243,10 @@
         "links": [
             "1eed795d89c44e79"
         ],
-        "x": 455,
+        "x": 510,
         "y": 200,
-        "wires": []
+        "wires": [],
+        "l": true
     },
     {
         "id": "a90949c5da48bfdc",
@@ -250,31 +271,33 @@
         "type": "link in",
         "z": "20080e9522dba17a",
         "g": "0f9186a82e87dfc2",
-        "name": "link in 1",
+        "name": "Message In",
         "links": [
             "a16033606934f38c"
         ],
-        "x": 115,
-        "y": 360,
+        "x": 730,
+        "y": 200,
         "wires": [
             [
                 "a88317af959e8167",
                 "215475b220f7c97d"
             ]
-        ]
+        ],
+        "l": true
     },
     {
         "id": "a88317af959e8167",
         "type": "mqtt sparkplug out",
         "z": "20080e9522dba17a",
+        "d": true,
         "g": "0f9186a82e87dfc2",
         "name": "UNS Broker (GCP)",
         "topic": "",
         "qos": "0",
         "retain": "",
         "broker": "97528de95b131960",
-        "x": 280,
-        "y": 360,
+        "x": 940,
+        "y": 200,
         "wires": []
     },
     {
@@ -291,9 +314,126 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "counter",
-        "x": 310,
-        "y": 300,
+        "x": 970,
+        "y": 140,
         "wires": []
+    },
+    {
+        "id": "2c41a02cebeecc73",
+        "type": "inject",
+        "z": "20080e9522dba17a",
+        "g": "3cae7c106a179c06",
+        "name": "startMessaging",
+        "props": [
+            {
+                "p": "payload"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": true,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "",
+        "payloadType": "date",
+        "x": 200,
+        "y": 320,
+        "wires": [
+            [
+                "c7a1c23d89bb859a"
+            ]
+        ]
+    },
+    {
+        "id": "c7a1c23d89bb859a",
+        "type": "switch",
+        "z": "20080e9522dba17a",
+        "g": "3cae7c106a179c06",
+        "name": "checkEdgeManifest",
+        "property": "manifest",
+        "propertyType": "global",
+        "rules": [
+            {
+                "t": "null"
+            },
+            {
+                "t": "nnull"
+            }
+        ],
+        "checkall": "true",
+        "repair": false,
+        "outputs": 2,
+        "x": 410,
+        "y": 320,
+        "wires": [
+            [
+                "67e473f58890e577"
+            ],
+            [
+                "fefc695b1d1202e1"
+            ]
+        ]
+    },
+    {
+        "id": "67e473f58890e577",
+        "type": "link out",
+        "z": "20080e9522dba17a",
+        "g": "3cae7c106a179c06",
+        "name": "RequestConfig",
+        "mode": "link",
+        "links": [
+            "01fbaf9d9951d14a"
+        ],
+        "x": 620,
+        "y": 300,
+        "wires": [],
+        "l": true
+    },
+    {
+        "id": "fefc695b1d1202e1",
+        "type": "function",
+        "z": "20080e9522dba17a",
+        "g": "3cae7c106a179c06",
+        "name": "setupConnectors",
+        "func": "const manifest = global.get(\"manifest\");\nconst gateway_id = global.get(\"gateway_id\");\n\nnode.warn(manifest.config.receivers);\n\nif (!manifest || !manifest.config || !manifest.config.receivers) {\n    node.status({ fill: \"red\", shape: \"ring\", text: \"Manifesto Inválido\" });\n    node.error(\"Manifesto recebido não possui 'receivers'.\");\n    return\n}\n\nconst connectors = manifest.config.receivers\nlet mqttConfig = null;\nfor (const key in connectors) {\n    const connector = connectors[key];\n    if (connector.protocol === \"mqtt\") {\n        mqttConfig = connector;\n        break;\n    }\n}\n\nif (!mqttConfig) {\n    node.status({ fill: \"yellow\", shape: \"ring\", text: \"MQTT não configurado\" });\n    node.warn(\"Nenhum receiver com protocol='mqtt' foi encontrado no manifesto.\");\n    return;\n}\n\nconst brokerUrl = `mqtt://${mqttConfig.host}:${mqttConfig.port}`;\n\nlet client = context.get('mqttClient');\nlet currentUrl = context.get('currentBrokerUrl');\nif (client && client.connected && currentUrl === brokerUrl) {\n    node.status({ fill: \"green\", shape: \"dot\", text: \"Já Conectado\" });\n    return; \n}\n\nif (client) {\n    client.end();\n}\n\nconst spB = sparkplugPayload.get(\"spBv1.0\");\nconst nDeathPayload = spB.encodePayload({\n    timestamp: Date.now(),\n    metrics: [{ name: \"bdSeq\", type: \"UInt64\", value: 0 }]\n});\n\nclient = mqtt.connect(brokerUrl, {\n    clientId: gateway_id, \n    will: {\n        topic: `spBv1.0/${manifest.config.site}/NDEATH/${gateway_id}`,\n        payload: nDeathPayload,\n        qos: 0,\n        retain: false\n    }\n});\n\nclient.on('connect', () => {\n    node.status({ fill: \"green\", shape: \"dot\", text: \"Broker Conectado\" });\n    \n    global.set('mqttClient', client); \n    \n    msg.payload = { status: \"CONECTADO\", manifestoAtivo: manifest };\n    node.send(msg);\n});\n\nclient.on('error', (err) => {\n    node.status({ fill: \"red\", shape: \"ring\", text: \"Erro de Conexão\" });\n    node.error(\"Falha no MQTT: \", err);\n});\n\nclient.on('offline', () => {\n    node.status({ fill: \"yellow\", shape: \"ring\", text: \"Offline\" });\n});\n\ncontext.set('mqttClient', client);\ncontext.set('currentBrokerUrl', brokerUrl);\n\nnode.on('close', function(removed, done) {\n    if (client) {\n        client.end(true, () => {\n            node.log(\"Conexão MQTT encerrada pelo fechamento do nó.\");\n            done();\n        });\n    } else {\n        done();\n    }\n});",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [
+            {
+                "var": "mqtt",
+                "module": "mqtt"
+            },
+            {
+                "var": "sparkplugPayload",
+                "module": "sparkplug-payload"
+            }
+        ],
+        "x": 630,
+        "y": 340,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "d688dac75e8ef6e9",
+        "type": "link in",
+        "z": "20080e9522dba17a",
+        "g": "3cae7c106a179c06",
+        "name": "newManifest",
+        "links": [
+            "f50f0e7c477377e5"
+        ],
+        "x": 430,
+        "y": 360,
+        "wires": [
+            [
+                "fefc695b1d1202e1"
+            ]
+        ],
+        "l": true
     },
     {
         "id": "a2c12bcdbb991cf7",
@@ -458,7 +598,9 @@
         "z": "be71d2b93d53caac",
         "g": "a092e4acc9b2bb17",
         "name": "Controller In",
-        "links": [],
+        "links": [
+            "67e473f58890e577"
+        ],
         "x": 185,
         "y": 140,
         "wires": [
@@ -684,7 +826,9 @@
         "g": "a092e4acc9b2bb17",
         "name": "Controller Out",
         "mode": "link",
-        "links": [],
+        "links": [
+            "d688dac75e8ef6e9"
+        ],
         "x": 1135,
         "y": 180,
         "wires": []
