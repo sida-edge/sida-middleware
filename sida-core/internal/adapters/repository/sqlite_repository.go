@@ -13,13 +13,7 @@ type sqliteManifestRepo struct {
 	db *sql.DB
 }
 
-func NewSQLiteManifestRepository(dbPath string) (*sqliteManifestRepo, error) {
-	dsn := dbPath + "?_journal_mode=WAL&_busy_timeout=5000"
-	db, err := sql.Open("sqlite3", dsn)
-	if err != nil {
-		return nil, err
-	}
-
+func NewSQLiteManifestRepository(db *sql.DB) (*sqliteManifestRepo, error) {
 	query := `
 	CREATE TABLE IF NOT EXISTS edge_manifests (
 		gateway_id TEXT PRIMARY KEY,
