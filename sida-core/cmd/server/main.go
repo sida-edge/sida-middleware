@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"syscall"
 	"time"
+	"database/sql"
 
 	"sida-core/internal/adapters/handler"
 	"sida-core/internal/adapters/repository"
@@ -29,7 +30,7 @@ func main() {
 	dsn := dbPath + "?_journal_mode=WAL&_busy_timeout=5000"
 	db, err := sql.Open("sqlite3", dsn)
 	if err != nil {
-		return nil, err
+		log.Fatal("SQLite fatal error:", err)
 	}
 
 	defer db.Close()
