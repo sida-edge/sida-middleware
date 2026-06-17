@@ -1,6 +1,7 @@
 package ports
 
 import (
+	"encoding/json"
 	"context"
 	"sida-core/internal/core/domain"
 )
