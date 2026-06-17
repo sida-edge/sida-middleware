@@ -87,12 +87,17 @@
             "1ed9ef381529fe5c",
             "37fed7b31a998b66",
             "43fd630789b23562",
-            "2eaae339269ab06b"
+            "2eaae339269ab06b",
+            "6f9671d7a3dfdabf",
+            "eb555e75fc17430c",
+            "9d27a1415f491dbc",
+            "f853084e4951664c",
+            "2d8c6d84e253344b"
         ],
-        "x": 54,
-        "y": 59,
-        "w": 692,
-        "h": 162
+        "x": 34,
+        "y": 39,
+        "w": 892,
+        "h": 222
     },
     {
         "id": "a092e4acc9b2bb17",
@@ -139,6 +144,29 @@
         "x": 74,
         "y": 259,
         "w": 892,
+        "h": 142
+    },
+    {
+        "id": "fd50d99e0df2f9e4",
+        "type": "group",
+        "z": "be71d2b93d53caac",
+        "name": "store-and-forward",
+        "style": {
+            "stroke": "#92d04f",
+            "label": true,
+            "color": "#777777"
+        },
+        "nodes": [
+            "58707d6834a970f9",
+            "451267583e47c925",
+            "aef027c552fc3e11",
+            "c5115ad91d580029",
+            "21c35530601a19d7",
+            "d79fbae1969217e0"
+        ],
+        "x": 14,
+        "y": 239,
+        "w": 582,
         "h": 142
     },
     {
@@ -411,11 +439,11 @@
         "links": [
             "b6034584ef370295"
         ],
-        "x": 160,
+        "x": 140,
         "y": 140,
         "wires": [
             [
-                "1ed9ef381529fe5c"
+                "6f9671d7a3dfdabf"
             ]
         ],
         "l": true
@@ -438,8 +466,8 @@
                 "module": "sparkplug-payload"
             }
         ],
-        "x": 370,
-        "y": 160,
+        "x": 550,
+        "y": 140,
         "wires": [
             [
                 "43fd630789b23562",
@@ -456,11 +484,12 @@
         "links": [
             "d5ea1ef0df385798"
         ],
-        "x": 190,
+        "x": 170,
         "y": 180,
         "wires": [
             [
-                "1ed9ef381529fe5c"
+                "6f9671d7a3dfdabf",
+                "9d27a1415f491dbc"
             ]
         ],
         "l": true
@@ -479,8 +508,8 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "counter",
-        "x": 610,
-        "y": 100,
+        "x": 790,
+        "y": 80,
         "wires": []
     },
     {
@@ -493,9 +522,107 @@
         "links": [
             "d1928eef1a094621"
         ],
-        "x": 600,
-        "y": 160,
+        "x": 780,
+        "y": 140,
         "wires": [],
+        "l": true
+    },
+    {
+        "id": "6f9671d7a3dfdabf",
+        "type": "function",
+        "z": "f4a91dd7bfc833e7",
+        "g": "ba6a1b32fd321ca2",
+        "name": "retentionRouter",
+        "func": "const client = global.get(\"mqttClient\");\nconst contextPayload = msg.payload;\n\nif (contextPayload.data) {\n\n    if (client && client.connected) {\n        node.status({ fill: \"green\", shape: \"dot\", text: \"Connector Online\" });\n        node.send([msg, null]);\n    }\n\n    else {\n        node.status({ fill: \"yellow\", shape: \"ring\", text: \"Connector Offline - Salvando na API\" });\n        \n        let msgHttp = {\n            method: \"POST\",\n            url: \"http://sida-core:8080/api/buffer\",\n            headers: { \"Content-Type\": \"application/json\" },\n            payload: contextPayload\n        };\n        \n        node.send([null, msgHttp]);\n    }\n} else {\n    node.send([msg, null]);\n}\n",
+        "outputs": 2,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 340,
+        "y": 160,
+        "wires": [
+            [
+                "1ed9ef381529fe5c"
+            ],
+            [
+                "eb555e75fc17430c"
+            ]
+        ]
+    },
+    {
+        "id": "eb555e75fc17430c",
+        "type": "link out",
+        "z": "f4a91dd7bfc833e7",
+        "g": "ba6a1b32fd321ca2",
+        "name": "BufferQueue",
+        "mode": "link",
+        "links": [
+            "58707d6834a970f9"
+        ],
+        "x": 530,
+        "y": 180,
+        "wires": [],
+        "l": true
+    },
+    {
+        "id": "9d27a1415f491dbc",
+        "type": "delay",
+        "z": "f4a91dd7bfc833e7",
+        "g": "ba6a1b32fd321ca2",
+        "name": "waitNBirth",
+        "pauseType": "delay",
+        "timeout": "2",
+        "timeoutUnits": "seconds",
+        "rate": "1",
+        "nbRateUnits": "1",
+        "rateUnits": "second",
+        "randomFirst": "1",
+        "randomLast": "5",
+        "randomUnits": "seconds",
+        "drop": false,
+        "allowrate": false,
+        "outputs": 1,
+        "x": 330,
+        "y": 220,
+        "wires": [
+            [
+                "f853084e4951664c"
+            ]
+        ]
+    },
+    {
+        "id": "f853084e4951664c",
+        "type": "link out",
+        "z": "f4a91dd7bfc833e7",
+        "g": "ba6a1b32fd321ca2",
+        "name": "RequestQueue",
+        "mode": "link",
+        "links": [
+            "aef027c552fc3e11"
+        ],
+        "x": 520,
+        "y": 220,
+        "wires": [],
+        "l": true
+    },
+    {
+        "id": "2d8c6d84e253344b",
+        "type": "link in",
+        "z": "f4a91dd7bfc833e7",
+        "g": "ba6a1b32fd321ca2",
+        "name": "BufferIn",
+        "links": [
+            "f50f0e7c477377e5"
+        ],
+        "x": 370,
+        "y": 120,
+        "wires": [
+            [
+                "1ed9ef381529fe5c"
+            ]
+        ],
         "l": true
     },
     {
@@ -507,13 +634,14 @@
         "links": [
             "67e473f58890e577"
         ],
-        "x": 185,
+        "x": 130,
         "y": 140,
         "wires": [
             [
                 "5ddbf214fb94523a"
             ]
-        ]
+        ],
+        "l": true
     },
     {
         "id": "c7534669245d4787",
@@ -733,10 +861,128 @@
         "name": "Controller Out",
         "mode": "link",
         "links": [
-            "d688dac75e8ef6e9"
+            "d688dac75e8ef6e9",
+            "2d8c6d84e253344b"
         ],
         "x": 1135,
         "y": 180,
+        "wires": []
+    },
+    {
+        "id": "58707d6834a970f9",
+        "type": "link in",
+        "z": "be71d2b93d53caac",
+        "g": "fd50d99e0df2f9e4",
+        "name": "StoreAndForward",
+        "links": [
+            "eb555e75fc17430c"
+        ],
+        "x": 120,
+        "y": 280,
+        "wires": [
+            [
+                "451267583e47c925"
+            ]
+        ],
+        "l": true
+    },
+    {
+        "id": "451267583e47c925",
+        "type": "http request",
+        "z": "be71d2b93d53caac",
+        "g": "fd50d99e0df2f9e4",
+        "name": "StoreAndForward",
+        "method": "POST",
+        "ret": "obj",
+        "paytoqs": "ignore",
+        "url": "",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "insecureHTTPParser": false,
+        "authType": "",
+        "senderr": false,
+        "headers": [],
+        "x": 330,
+        "y": 280,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "aef027c552fc3e11",
+        "type": "link in",
+        "z": "be71d2b93d53caac",
+        "g": "fd50d99e0df2f9e4",
+        "name": "FlushData",
+        "links": [
+            "f853084e4951664c"
+        ],
+        "x": 100,
+        "y": 340,
+        "wires": [
+            [
+                "c5115ad91d580029"
+            ]
+        ],
+        "l": true
+    },
+    {
+        "id": "c5115ad91d580029",
+        "type": "http request",
+        "z": "be71d2b93d53caac",
+        "g": "fd50d99e0df2f9e4",
+        "name": "pullBuffer",
+        "method": "GET",
+        "ret": "obj",
+        "paytoqs": "ignore",
+        "url": "http://sida-core:8080/api/buffer/flush",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "insecureHTTPParser": false,
+        "authType": "",
+        "senderr": false,
+        "headers": [],
+        "x": 260,
+        "y": 340,
+        "wires": [
+            [
+                "21c35530601a19d7"
+            ]
+        ]
+    },
+    {
+        "id": "21c35530601a19d7",
+        "type": "function",
+        "z": "be71d2b93d53caac",
+        "g": "fd50d99e0df2f9e4",
+        "name": "bufferDistributor",
+        "func": "const respostaApi = msg.payload;\n\nif (respostaApi && respostaApi.status === \"success\" && Array.isArray(respostaApi.data)) {\n    const pacotes = respostaApi.data;\n    \n    if (pacotes.length > 0) {\n        node.status({ fill: \"blue\", shape: \"dot\", text: `Injetando ${pacotes.length} retidos` });\n        \n        pacotes.forEach(pacote => {\n            let msgRecuperada = {\n                topic: \"data\", \n                payload: pacote\n            };\n            \n            node.send(msgRecuperada);\n        });\n        \n    } else {\n        node.status({ fill: \"grey\", shape: \"ring\", text: \"Buffer estava vazio\" });\n    }\n} else {\n    node.error(\"Resposta inesperada da API de Buffer\", msg);\n}",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 420,
+        "y": 340,
+        "wires": [
+            [
+                "d79fbae1969217e0"
+            ]
+        ]
+    },
+    {
+        "id": "d79fbae1969217e0",
+        "type": "link out",
+        "z": "be71d2b93d53caac",
+        "g": "fd50d99e0df2f9e4",
+        "name": "ControllerOut",
+        "mode": "link",
+        "links": [],
+        "x": 555,
+        "y": 340,
         "wires": []
     },
     {
