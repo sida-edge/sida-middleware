@@ -329,7 +329,17 @@ export default function Dashboard({ config, onSave, gatewayId, token, setToken }
                         
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '20px' }}>
                           {equipamentos.length > 0 ? (
-                              equipamentos.map(([id, device]) => <DeviceCard key={id} deviceId={id} device={device} />)
+                            equipamentos.map(([id, device]) => (
+                              <DeviceCard 
+                                key={id} 
+                                deviceId={id} 
+                                device={device} 
+                                isEngineeringMode={isEngineeringMode}
+                                onToggle={(devId, status) => handleDeviceToggle(areaId, lineId, devId, status)}
+                                onEdit={() => setDeviceTarget({ areaId, lineId, deviceId: id, device })}
+                                onDelete={() => setDeleteTarget({ areaId, lineId, deviceId: id })}
+                              />
+                            ))
                           ) : (
                               <div style={{ padding: '15px', backgroundColor: colors.bg, border: `1px dashed ${colors.border}`, borderRadius: '8px', color: colors.textMuted, fontSize: '13px', gridColumn: '1 / -1', textAlign: 'center' }}>Nenhum equipamento alocado a esta linha.</div>
                           )}

@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"syscall"
 	"time"
+	"database/sql"
 
 	"sida-core/internal/adapters/handler"
 	"sida-core/internal/adapters/repository"
@@ -26,9 +27,23 @@ func main() {
 	dbPath := "./data/sida_config.db"
 	os.MkdirAll(filepath.Dir(dbPath), os.ModePerm)
 
-	repo, err := repository.NewSQLiteManifestRepository(dbPath)
+	dsn := dbPath + "?_journal_mode=WAL&_busy_timeout=5000"
+	db, err := sql.Open("sqlite3", dsn)
 	if err != nil {
 		log.Fatal("SQLite fatal error:", err)
+	}
+
+	defer db.Close()
+	db.SetMaxOpenConns(1)
+
+	manifestRepo, err := repository.NewSQLiteManifestRepository(db)
+	if err != nil {
+		log.Fatal("SQLite fatal error:", err)
+	}
+
+	bufferRepo, err := repository.NewSQLiteBufferRepository(db)
+	if err != nil {
+		log.Fatal(err)
 	}
 	log.Println("Database connected.")
 
@@ -40,12 +55,13 @@ func main() {
 	authService := services.NewAuthService()
 	authHandler := handler.NewAuthHandler(authService)
 	systemHandler := handler.NewSystemHandler()
-	manifestHandler := handler.NewManifestHandler(repo, zmqPub)
+	manifestHandler := handler.NewManifestHandler(manifestRepo, zmqPub)
+	bufferHandler := handler.NewBufferHandler(bufferRepo)
 
 	gin.SetMode(gin.ReleaseMode)
 	router := gin.Default()
 
-	api.SetupRoutes(router, manifestHandler, authHandler, systemHandler, authService)
+	api.SetupRoutes(router, manifestHandler, authHandler, systemHandler, authService, bufferHandler)
 
 	srv := &http.Server{
 		Addr:    ":8000",
