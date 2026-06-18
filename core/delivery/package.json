@@ -1,0 +1,12 @@
+{
+    "name": "sida-delivery",
+    "description": "A Node-RED Project",
+    "version": "0.0.1",
+    "private": true,
+    "dependencies": {
+        "node-red-contrib-mqtt-sparkplug-plus": "~2.2.3",
+        "node-red-contrib-zeromq": "~0.0.10",
+        "mqtt": "^5.7.0",
+        "sparkplug-payload": "^1.0.3"
+    }
+}

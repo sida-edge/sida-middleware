@@ -1,0 +1,256 @@
+[
+    {
+        "id": "e5656582753b429d",
+        "type": "tab",
+        "label": "Messaging",
+        "disabled": false,
+        "info": "",
+        "env": []
+    },
+    {
+        "id": "d46c639dccb35b93",
+        "type": "tab",
+        "label": "Processing",
+        "disabled": false,
+        "info": "",
+        "env": []
+    },
+    {
+        "id": "c5dad7add5b1f5e2",
+        "type": "group",
+        "z": "e5656582753b429d",
+        "name": "ZMQ Sender",
+        "style": {
+            "stroke": "#3f93cf",
+            "label": true,
+            "color": "#000000"
+        },
+        "nodes": [
+            "9777d0e0424f6471",
+            "e6b176b13edd8d7e",
+            "11698cb6176c5018",
+            "5d69200bf3f042a3"
+        ],
+        "x": 644,
+        "y": 99,
+        "w": 542,
+        "h": 142
+    },
+    {
+        "id": "9216a46aa9549ca7",
+        "type": "group",
+        "z": "e5656582753b429d",
+        "name": "ZMQ Receiver",
+        "style": {
+            "stroke": "#3f93cf",
+            "label": true,
+            "color": "#000000"
+        },
+        "nodes": [
+            "e124097c63c28226",
+            "ded72fadc62f0c4f",
+            "14529bf8204abc32"
+        ],
+        "x": 74,
+        "y": 99,
+        "w": 492,
+        "h": 142
+    },
+    {
+        "id": "9777d0e0424f6471",
+        "type": "link in",
+        "z": "e5656582753b429d",
+        "g": "c5dad7add5b1f5e2",
+        "name": "Message In",
+        "links": [
+            "acfca44b976320ff"
+        ],
+        "x": 685,
+        "y": 200,
+        "wires": [
+            [
+                "e6b176b13edd8d7e"
+            ]
+        ]
+    },
+    {
+        "id": "e6b176b13edd8d7e",
+        "type": "json",
+        "z": "e5656582753b429d",
+        "g": "c5dad7add5b1f5e2",
+        "name": "ToString",
+        "property": "payload",
+        "action": "str",
+        "pretty": false,
+        "x": 780,
+        "y": 200,
+        "wires": [
+            [
+                "11698cb6176c5018",
+                "5d69200bf3f042a3"
+            ]
+        ]
+    },
+    {
+        "id": "11698cb6176c5018",
+        "type": "zeromq out",
+        "z": "e5656582753b429d",
+        "g": "c5dad7add5b1f5e2",
+        "name": "ZMQ Output",
+        "topic": "",
+        "fields": "topic,payload",
+        "server": "ipc:///tmp/.ipc/context.ipc",
+        "isserver": true,
+        "intype": "push",
+        "x": 970,
+        "y": 200,
+        "wires": []
+    },
+    {
+        "id": "5d69200bf3f042a3",
+        "type": "debug",
+        "z": "e5656582753b429d",
+        "g": "c5dad7add5b1f5e2",
+        "name": "Messaging Output Monitor",
+        "active": true,
+        "tosidebar": false,
+        "console": false,
+        "tostatus": true,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "counter",
+        "x": 1020,
+        "y": 140,
+        "wires": []
+    },
+    {
+        "id": "e124097c63c28226",
+        "type": "zeromq in",
+        "z": "e5656582753b429d",
+        "g": "9216a46aa9549ca7",
+        "name": "ZMQ Receiver",
+        "topic": "",
+        "fields": "topic,payload",
+        "server": "ipc:///tmp/.ipc/ingestion.ipc",
+        "output": "json",
+        "isserver": false,
+        "intype": "pull",
+        "x": 170,
+        "y": 200,
+        "wires": [
+            [
+                "ded72fadc62f0c4f",
+                "14529bf8204abc32"
+            ]
+        ]
+    },
+    {
+        "id": "ded72fadc62f0c4f",
+        "type": "debug",
+        "z": "e5656582753b429d",
+        "g": "9216a46aa9549ca7",
+        "name": "Messaging Input Monitor",
+        "active": false,
+        "tosidebar": false,
+        "console": false,
+        "tostatus": true,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "counter",
+        "x": 410,
+        "y": 140,
+        "wires": []
+    },
+    {
+        "id": "14529bf8204abc32",
+        "type": "json",
+        "z": "e5656582753b429d",
+        "g": "9216a46aa9549ca7",
+        "name": "ToObject",
+        "property": "payload",
+        "action": "",
+        "pretty": false,
+        "x": 360,
+        "y": 200,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "3be7abbd6c871e1c",
+        "type": "link in",
+        "z": "d46c639dccb35b93",
+        "name": "Receiver Queue",
+        "links": [
+            "d7b7f82ac221738d"
+        ],
+        "x": 155,
+        "y": 200,
+        "wires": [
+            [
+                "b141eabb8b0941f6"
+            ]
+        ]
+    },
+    {
+        "id": "b141eabb8b0941f6",
+        "type": "debug",
+        "z": "d46c639dccb35b93",
+        "name": "debug 1",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 300,
+        "y": 100,
+        "wires": []
+    },
+    {
+        "id": "89a98dd98d6da6db",
+        "type": "inject",
+        "z": "d46c639dccb35b93",
+        "name": "",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "",
+        "payloadType": "date",
+        "x": 1040,
+        "y": 100,
+        "wires": [
+            [
+                "acfca44b976320ff"
+            ]
+        ]
+    },
+    {
+        "id": "acfca44b976320ff",
+        "type": "link out",
+        "z": "d46c639dccb35b93",
+        "name": "Sender Queue",
+        "mode": "link",
+        "links": [
+            "9777d0e0424f6471"
+        ],
+        "x": 1175,
+        "y": 200,
+        "wires": []
+    }
+]
