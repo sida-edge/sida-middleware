@@ -78,7 +78,7 @@
         "id": "8ef01d727620bf3e",
         "type": "group",
         "z": "bf8d16b5667222e0",
-        "name": "Modbus",
+        "name": "SetupClients",
         "style": {
             "label": true
         },
@@ -96,34 +96,24 @@
         "h": 142
     },
     {
-        "id": "937213232cd58bf4",
-        "type": "modbus-client",
-        "name": "ClienteModBus",
-        "clienttype": "tcp",
-        "bufferCommands": true,
-        "stateLogEnabled": false,
-        "queueLogEnabled": false,
-        "failureLogEnabled": true,
-        "tcpHost": "host.docker.internal",
-        "tcpPort": "5020",
-        "tcpType": "DEFAULT",
-        "serialPort": "/dev/ttyUSB",
-        "serialType": "RTU-BUFFERD",
-        "serialBaudrate": 9600,
-        "serialDatabits": 8,
-        "serialStopbits": 1,
-        "serialParity": "none",
-        "serialConnectionDelay": 100,
-        "serialAsciiResponseStartDelimiter": "0x3A",
-        "unit_id": 1,
-        "commandDelay": 1,
-        "clientTimeout": 1000,
-        "reconnectOnTimeout": true,
-        "reconnectTimeout": 2000,
-        "parallelUnitIdsAllowed": true,
-        "showErrors": false,
-        "showWarnings": true,
-        "showLogs": true
+        "id": "38373b49dbe342a8",
+        "type": "group",
+        "z": "9e19e885c5971d19",
+        "name": "Processor",
+        "style": {
+            "label": true,
+            "color": "#000000"
+        },
+        "nodes": [
+            "e49bd44efe452f73",
+            "653a12304f363ae3",
+            "d066b0653a83c8c3",
+            "e17fabc35a2d0660"
+        ],
+        "x": 274,
+        "y": 179,
+        "w": 472,
+        "h": 162
     },
     {
         "id": "abab80c8e67aac5c",
@@ -302,8 +292,8 @@
         "type": "function",
         "z": "bf8d16b5667222e0",
         "g": "8ef01d727620bf3e",
-        "name": "setupModbus",
-        "func": "(async function () {\n    const manifest = global.get(\"manifest\");\n    const gateway_id = global.get(\"gateway_id\");\n\n    node.warn(manifest);\n\n    if (!manifest || !manifest.config || !manifest.config.plant || !manifest.config.plant.areas) {\n        node.warn(\"Manifesto inválido no Messaging. Estrutura de Planta/Áreas ausente.\");\n        return;\n    }\n\n    let active_clients = global.get(\"modbus_clients\") || {};\n\n    for (let id in active_clients) {\n        if (active_clients[id].client && active_clients[id].client.isOpen) {\n            active_clients[id].client.close();\n        }\n    }\n\n    active_clients = {};\n    const areas = manifest.config.plant.areas;\n\n    for (const areaId of Object.keys(areas)) {\n        const lines = areas[areaId].lines || {};\n        for (const lineId of Object.keys(lines)) {\n            const devices = lines[lineId].devices || {};\n            for (const deviceId of Object.keys(devices)) {\n                const dev = devices[deviceId];\n                if (dev.enabled !== true || dev.connection.protocol !== \"modbus_tcp\") {\n                    continue;\n                }\n                const client = new ModbusRTU();\n\n                try {\n                    await client.connectTCP(dev.connection.host, { port: dev.connection.port || 502 });\n                    client.setID(dev.connection.unit_id || 1);\n\n                    active_clients[deviceId] = {\n                        client: client,\n                        config: dev,\n                        gateway_id: gateway_id\n                    };\n\n                    node.warn(`[Messaging] Conexão ESTABELECIDA com ${deviceId}`);\n                } catch (erro) {\n                    node.warn(`[Messaging] Erro ao conectar com ${deviceId}: ${erro.message}`);\n                }\n            }\n        }\n    }\n\n    global.set(\"modbus_clients\", active_clients);\n    node.warn(\"Clientes ativos no momento: \" + Object.keys(active_clients).length);\n\n    msg.payload = \"Running\";\n    node.send(msg);\n\n})();\n\nreturn null;",
+        "name": "setupClient",
+        "func": "(async function () {\n    const manifest = global.get(\"manifest\");\n    const gateway_id = global.get(\"gateway_id\");\n\n    node.warn(manifest);\n\n    if (!manifest || !manifest.config || !manifest.config.plant || !manifest.config.plant.areas) {\n        node.warn(\"Manifesto inválido no Messaging. Estrutura de Planta/Áreas ausente.\");\n        return;\n    }\n\n    let modbus_clients = global.get(\"modbus_clients\") || {};\n    let opcua_clients = global.get(\"opcua_clients\") || {};\n\n    for (let id in modbus_clients) {\n        if (modbus_clients[id].client && modbus_clients[id].client.isOpen) {\n            modbus_clients[id].client.close();\n        }\n    }\n\n    for (let id in opcua_clients) {\n        try {\n            if (opcua_clients[id].session) await opcua_clients[id].session.close();\n            if (opcua_clients[id].client) await opcua_clients[id].client.disconnect();\n        } catch (erro) {\n            node.warn(`[Messaging] Erro ao fechar OPC UA antigo de ${id}: ${erro.message}`);\n        }\n    }\n\n    modbus_clients = {};\n    opcua_clients = {};\n    const areas = manifest.config.plant.areas;\n\n    for (const areaId of Object.keys(areas)) {\n        const lines = areas[areaId].lines || {};\n        for (const lineId of Object.keys(lines)) {\n            const devices = lines[lineId].devices || {};\n            for (const deviceId of Object.keys(devices)) {\n                const dev = devices[deviceId];\n                if (dev.enabled !== true) continue;\n\n                const protocol = dev.connection.protocol;\n\n                if (protocol === \"modbus_tcp\") {\n                    const client = new ModbusRTU();\n                    try {\n                        await client.connectTCP(dev.connection.host, { port: dev.connection.port || 502 });\n                        client.setID(dev.connection.unit_id || 1);\n\n                        modbus_clients[deviceId] = {\n                            client: client,\n                            config: dev,\n                            gateway_id: gateway_id\n                        };\n                        node.warn(`[Messaging] Conexão MODBUS estabelecida com ${deviceId}`);\n                    } catch (erro) {\n                        node.warn(`[Messaging] Erro ao conectar MODBUS com ${deviceId}: ${erro.message}`);\n                    }\n                }\n\n                else if (protocol === \"opc_ua\") {\n                    try {\n                        const client = opcua.OPCUAClient.create({\n                            endpointMustExist: false,\n                            connectionStrategy: {\n                                maxRetry: 2,\n                                initialDelay: 1000,\n                                maxDelay: 2000\n                            }\n                        });\n\n                        await client.connect(dev.connection.endpoint_url);\n                        const session = await client.createSession();\n\n                        opcua_clients[deviceId] = {\n                            client: client,\n                            session: session,\n                            config: dev,\n                            gateway_id: gateway_id\n                        };\n                        node.warn(`[Messaging] Conexão OPC UA estabelecida com ${deviceId}`);\n                    } catch (erro) {\n                        node.warn(`[Messaging] Erro ao conectar OPC UA com ${deviceId}: ${erro.message}`);\n                    }\n                }\n            }\n        }\n    }\n\n    global.set(\"modbus_clients\", modbus_clients);\n    global.set(\"opcua_clients\", opcua_clients);\n    \n    node.warn(`Clientes ativos -> Modbus: ${Object.keys(modbus_clients).length} | OPC UA: ${Object.keys(opcua_clients).length}`);\n\n    msg.payload = \"Running\";\n    node.send(msg);;\n\n})();\n\nreturn null;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
@@ -313,9 +303,13 @@
             {
                 "var": "ModbusRTU",
                 "module": "modbus-serial"
+            },
+            {
+                "var": "opcua",
+                "module": "node-opcua"
             }
         ],
-        "x": 600,
+        "x": 590,
         "y": 380,
         "wires": [
             [
@@ -327,28 +321,32 @@
         "id": "e49bd44efe452f73",
         "type": "link out",
         "z": "9e19e885c5971d19",
+        "g": "38373b49dbe342a8",
         "name": "Sender Queue",
         "mode": "link",
         "links": [
             "abab80c8e67aac5c"
         ],
-        "x": 515,
-        "y": 240,
-        "wires": []
+        "x": 640,
+        "y": 260,
+        "wires": [],
+        "l": true
     },
     {
         "id": "653a12304f363ae3",
         "type": "link in",
         "z": "9e19e885c5971d19",
+        "g": "38373b49dbe342a8",
         "name": "Receiver Queue",
         "links": [
             "8cbeb60de162ae13"
         ],
-        "x": 285,
-        "y": 240,
+        "x": 315,
+        "y": 260,
         "wires": [
             [
-                "d066b0653a83c8c3"
+                "d066b0653a83c8c3",
+                "e17fabc35a2d0660"
             ]
         ]
     },
@@ -356,39 +354,43 @@
         "id": "d066b0653a83c8c3",
         "type": "function",
         "z": "9e19e885c5971d19",
-        "name": "Polling",
-        "func": "const active_clients = global.get(\"modbus_clients\");\nnode.warn(active_clients);\nif (!active_clients) return null;\n\nlet timers = context.get(\"timersAtivos\") || {};\nfor(let key in timers) {\n    clearInterval(timers[key]);\n}\ntimers = {};\n\nObject.keys(active_clients).forEach((deviceId) => {\n    const { client, config, gateway_id } = active_clients[deviceId]\n\n    const scanRate = config.connection.scan_rate_ms || 1000;\n    const metrics = config.metrics_mapping || {};\n\n    let intervalId = setInterval(async () => {\n        if (!client.isOpen) return;\n        try {\n            let data_payload = {};\n            for (let addrKey of Object.keys(metrics)) {\n                const metric = metrics[addrKey];\n\n                let address = parseInt(addrKey);\n                if (address >= 40001 && address <= 49999) address -= 40001;\n                else if (address >= 30001 && address <= 39999) address -= 30001;\n\n                let quantity = (metric.data_type === \"float\" || metric.data_type === \"int32\") ? 2 : 1;\n                if (metric.data_type == \"double\" || metric.data_type == \"int64\") quantity = 4;\n\n                let data;\n                if (metric.register_type === \"holding\" || addrKey.startsWith(\"4\"))\n                    data = await client.readHoldingRegisters(address, quantity);\n                else if (metric.register_type === \"input\" || addrKey.startsWith(\"3\"))\n                    data = await client.readInputRegisters(address, quantity); \n\n                data_payload[addrKey] = (data.data.length === 1) ? data.data[0] : data.data;\n            }\n            node.warn(msg.payload);\n\n            node.send({\n                payload: {\n                    timestamp: Date.now(),\n                    gateway_id: gateway_id,\n                    source: {\n                        device_id: deviceId,\n                        source_protocol: config.connection.protocol\n                    },\n                    data: data_payload\n                }\n            });\n        } catch (erro) {\n            node.warn(`[Messaging] Erro de leitura em ${deviceId}: ${erro.message}`);\n        }\n    }, scanRate);\n\n    timers[deviceId] = intervalId;\n});\n\ncontext.set(\"timersAtivos\", timers);\nnode.status({ fill: \"green\", shape: \"dot\", text: \"Lendo e processando...\" });\n\nnode.on(\"close\", function () {\n    let timersAtivos = context.get(\"timersAtivos\") || {};\n    for (let key in timersAtivos) clearInterval(timersAtivos[key]);\n    context.set(\"timersAtivos\", {});\n});\n\nreturn null;",
+        "g": "38373b49dbe342a8",
+        "name": "modbusPolling",
+        "func": "const active_clients = global.get(\"modbus_clients\");\nif (!active_clients) return null;\n\nlet timers = context.get(\"timersAtivos\") || {};\nfor(let key in timers) {\n    clearInterval(timers[key]);\n}\ntimers = {};\n\nObject.keys(active_clients).forEach((deviceId) => {\n    const { client, config, gateway_id } = active_clients[deviceId]\n\n    const scanRate = config.connection.scan_rate_ms || 1000;\n    const metrics = config.metrics_mapping || {};\n\n    let intervalId = setInterval(async () => {\n        if (!client.isOpen) return;\n        try {\n            let data_payload = {};\n            for (let addrKey of Object.keys(metrics)) {\n                const metric = metrics[addrKey];\n\n                let address = parseInt(addrKey);\n                if (address >= 40001 && address <= 49999) address -= 40001;\n                else if (address >= 30001 && address <= 39999) address -= 30001;\n\n                let quantity = (metric.data_type === \"float\" || metric.data_type === \"int32\") ? 2 : 1;\n                if (metric.data_type == \"double\" || metric.data_type == \"int64\") quantity = 4;\n\n                let data;\n                if (metric.register_type === \"holding\" || addrKey.startsWith(\"4\"))\n                    data = await client.readHoldingRegisters(address, quantity);\n                else if (metric.register_type === \"input\" || addrKey.startsWith(\"3\"))\n                    data = await client.readInputRegisters(address, quantity); \n\n                data_payload[addrKey] = (data.data.length === 1) ? data.data[0] : data.data;\n            }\n            node.warn(msg.payload);\n\n            node.send({\n                payload: {\n                    timestamp: Date.now(),\n                    gateway_id: gateway_id,\n                    source: {\n                        device_id: deviceId,\n                        source_protocol: config.connection.protocol\n                    },\n                    data: data_payload\n                }\n            });\n        } catch (erro) {\n            node.warn(`[Messaging] Erro de leitura em ${deviceId}: ${erro.message}`);\n        }\n    }, scanRate);\n\n    timers[deviceId] = intervalId;\n});\n\ncontext.set(\"timersAtivos\", timers);\nif (active_clients.length > 0) node.status({ fill: \"green\", shape: \"dot\", text: \"Lendo e processando...\" });\nelse node.status({ fill: \"pink\", shape: \"dot\", text: \"Sem clientes Modbus ativos\" });\n\nnode.on(\"close\", function () {\n    let timersAtivos = context.get(\"timersAtivos\") || {};\n    for (let key in timersAtivos) clearInterval(timersAtivos[key]);\n    context.set(\"timersAtivos\", {});\n});\n\nreturn null;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 390,
-        "y": 240,
+        "x": 440,
+        "y": 220,
         "wires": [
             [
-                "e49bd44efe452f73",
-                "138de548d248b8ba"
+                "e49bd44efe452f73"
             ]
         ]
     },
     {
-        "id": "138de548d248b8ba",
-        "type": "debug",
+        "id": "e17fabc35a2d0660",
+        "type": "function",
         "z": "9e19e885c5971d19",
-        "name": "Processing Monitor",
-        "active": true,
-        "tosidebar": false,
-        "console": false,
-        "tostatus": true,
-        "complete": "payload",
-        "targetType": "msg",
-        "statusVal": "",
-        "statusType": "counter",
-        "x": 590,
-        "y": 180,
-        "wires": []
+        "g": "38373b49dbe342a8",
+        "name": "opcuaPolling",
+        "func": "const active_clients = global.get(\"opcua_clients\");\nif (!active_clients) return null;\n\nlet timers = context.get(\"timersAtivos_opcua\") || {};\nfor(let key in timers) {\n    clearInterval(timers[key]);\n}\ntimers = {};\n\nObject.keys(active_clients).forEach((deviceId) => {\n    const { session, config, gateway_id } = active_clients[deviceId];\n\n    const scanRate = config.connection.scan_rate_ms || 1000;\n    const metrics = config.metrics_mapping || {};\n\n    const nodesToRead = [];\n    const metricKeys = Object.keys(metrics);\n\n    metricKeys.forEach(addrKey => {\n        const metric = metrics[addrKey];\n        if (metric.node_id) {\n            nodesToRead.push({\n                nodeId: metric.node_id,\n                attributeId: 13\n            });\n        }\n    });\n\n    if (nodesToRead.length === 0) return;\n\n    let intervalId = setInterval(async () => {\n        if (!session) return;\n        \n        try {\n            const dataValues = await session.read(nodesToRead);\n\n            let data_payload = {};\n\n            dataValues.forEach((dataValue, index) => {\n                const originalKey = metricKeys[index];\n                \n                let valor = (dataValue.statusCode && dataValue.statusCode.value === 0) \n                            ? dataValue.value.value \n                            : null; \n\n                data_payload[originalKey] = valor;\n            });\n\n            node.send({\n                payload: {\n                    timestamp: Date.now(),\n                    gateway_id: gateway_id,\n                    source: {\n                        device_id: deviceId,\n                        source_protocol: config.connection.protocol\n                    },\n                    data: data_payload\n                }\n            });\n\n        } catch (erro) {\n            node.warn(`[Messaging] Erro de leitura OPC UA em ${deviceId}: ${erro.message}`);\n        }\n    }, scanRate);\n\n    timers[deviceId] = intervalId;\n});\n\ncontext.set(\"timersAtivos_opcua\", timers);\nif (active_clients.length > 0) {\n    node.status({ fill: \"blue\", shape: \"dot\", text: \"Lendo OPC UA em Bulk...\" });\n} else {\n    node.status({ fill: \"pink\", shape: \"dot\", text: \"Sem clientes OPC-UA ativos\" });\n}\n\nnode.on(\"close\", function () {\n    let timersAtivos = context.get(\"timersAtivos_opcua\") || {};\n    for (let key in timersAtivos) clearInterval(timersAtivos[key]);\n    context.set(\"timersAtivos_opcua\", {});\n});\n\nreturn null;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 430,
+        "y": 300,
+        "wires": [
+            [
+                "e49bd44efe452f73"
+            ]
+        ]
     },
     {
         "id": "364461ecab765c2c",
