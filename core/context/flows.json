@@ -83,11 +83,12 @@
             "6cea4ac52afc38d5",
             "cec62d0a43816e75",
             "01b034a87e3e1257",
-            "d9dad6cb238539c0"
+            "d9dad6cb238539c0",
+            "dda2bedf73dfdda1"
         ],
-        "x": 74,
+        "x": 54,
         "y": 99,
-        "w": 1312,
+        "w": 1332,
         "h": 122
     },
     {
@@ -570,5 +571,25 @@
         "y": 180,
         "wires": [],
         "l": true
+    },
+    {
+        "id": "dda2bedf73dfdda1",
+        "type": "zeromq in",
+        "z": "fe5e6d54acd5dc89",
+        "g": "59b78ef69a7353b5",
+        "name": "manifestUpdate",
+        "topic": "sida/manifest",
+        "fields": "topic,payload",
+        "server": "tcp://sida-core:5556",
+        "output": "buffer",
+        "isserver": false,
+        "intype": "sub",
+        "x": 160,
+        "y": 180,
+        "wires": [
+            [
+                "c86bd3eec099f455"
+            ]
+        ]
     }
 ]
