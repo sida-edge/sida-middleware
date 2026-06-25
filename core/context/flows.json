@@ -16,6 +16,14 @@
         "env": []
     },
     {
+        "id": "fe5e6d54acd5dc89",
+        "type": "tab",
+        "label": "Controller",
+        "disabled": false,
+        "info": "",
+        "env": []
+    },
+    {
         "id": "c5dad7add5b1f5e2",
         "type": "group",
         "z": "e5656582753b429d",
@@ -31,9 +39,9 @@
             "11698cb6176c5018",
             "5d69200bf3f042a3"
         ],
-        "x": 644,
+        "x": 654,
         "y": 99,
-        "w": 542,
+        "w": 652,
         "h": 142
     },
     {
@@ -54,8 +62,54 @@
         ],
         "x": 74,
         "y": 99,
-        "w": 492,
+        "w": 532,
         "h": 142
+    },
+    {
+        "id": "59b78ef69a7353b5",
+        "type": "group",
+        "z": "fe5e6d54acd5dc89",
+        "name": "Controller",
+        "style": {
+            "stroke": "#0070c0",
+            "label": true
+        },
+        "nodes": [
+            "643713d7acd50e0e",
+            "c86bd3eec099f455",
+            "ef61d971be61ed81",
+            "636916919bb1848a",
+            "987bd9c876bbd17c",
+            "6cea4ac52afc38d5",
+            "cec62d0a43816e75",
+            "01b034a87e3e1257",
+            "d9dad6cb238539c0"
+        ],
+        "x": 74,
+        "y": 99,
+        "w": 1312,
+        "h": 122
+    },
+    {
+        "id": "48657daa48033bec",
+        "type": "group",
+        "z": "d46c639dccb35b93",
+        "name": "Processor",
+        "style": {
+            "stroke": "#0070c0",
+            "label": true
+        },
+        "nodes": [
+            "3be7abbd6c871e1c",
+            "acfca44b976320ff",
+            "d97f83548be2d1c9",
+            "7f3705decff4d5c8",
+            "6cc13044102c4b03"
+        ],
+        "x": 114,
+        "y": 139,
+        "w": 812,
+        "h": 122
     },
     {
         "id": "9777d0e0424f6471",
@@ -66,13 +120,14 @@
         "links": [
             "acfca44b976320ff"
         ],
-        "x": 685,
+        "x": 750,
         "y": 200,
         "wires": [
             [
                 "e6b176b13edd8d7e"
             ]
-        ]
+        ],
+        "l": true
     },
     {
         "id": "e6b176b13edd8d7e",
@@ -83,7 +138,7 @@
         "property": "payload",
         "action": "str",
         "pretty": false,
-        "x": 780,
+        "x": 900,
         "y": 200,
         "wires": [
             [
@@ -103,7 +158,7 @@
         "server": "ipc:///tmp/.ipc/context.ipc",
         "isserver": true,
         "intype": "push",
-        "x": 970,
+        "x": 1090,
         "y": 200,
         "wires": []
     },
@@ -121,7 +176,7 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "counter",
-        "x": 1020,
+        "x": 1140,
         "y": 140,
         "wires": []
     },
@@ -191,66 +246,59 @@
         "links": [
             "3be7abbd6c871e1c"
         ],
-        "x": 455,
+        "x": 510,
         "y": 200,
-        "wires": []
+        "wires": [],
+        "l": true
     },
     {
         "id": "3be7abbd6c871e1c",
         "type": "link in",
         "z": "d46c639dccb35b93",
+        "g": "48657daa48033bec",
         "name": "Receiver Queue",
         "links": [
             "d7b7f82ac221738d"
         ],
-        "x": 155,
+        "x": 220,
         "y": 200,
         "wires": [
             [
-                "b141eabb8b0941f6"
+                "7f3705decff4d5c8"
             ]
-        ]
-    },
-    {
-        "id": "b141eabb8b0941f6",
-        "type": "debug",
-        "z": "d46c639dccb35b93",
-        "name": "debug 1",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "true",
-        "targetType": "full",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 300,
-        "y": 100,
-        "wires": []
-    },
-    {
-        "id": "89a98dd98d6da6db",
-        "type": "inject",
-        "z": "d46c639dccb35b93",
-        "name": "",
-        "props": [
-            {
-                "p": "payload"
-            },
-            {
-                "p": "topic",
-                "vt": "str"
-            }
         ],
-        "repeat": "",
-        "crontab": "",
-        "once": false,
-        "onceDelay": 0.1,
-        "topic": "",
-        "payload": "",
-        "payloadType": "date",
-        "x": 1040,
-        "y": 100,
+        "l": true
+    },
+    {
+        "id": "acfca44b976320ff",
+        "type": "link out",
+        "z": "d46c639dccb35b93",
+        "g": "48657daa48033bec",
+        "name": "Sender Queue",
+        "mode": "link",
+        "links": [
+            "9777d0e0424f6471"
+        ],
+        "x": 820,
+        "y": 180,
+        "wires": [],
+        "l": true
+    },
+    {
+        "id": "d97f83548be2d1c9",
+        "type": "function",
+        "z": "d46c639dccb35b93",
+        "g": "48657daa48033bec",
+        "name": "contextualizeData",
+        "func": "try {\n    const payloadIn = msg.payload;\n    if (!payloadIn?.source?.device_id || !payloadIn?.data) {\n        node.warn(\"Payload malformado ou incompleto. Ignorando mensagem.\");\n        return null; \n    }\n\n    const deviceId = payloadIn.source.device_id;\n    const manifest = global.get(\"manifest\");\n\n    if (!manifest?.config?.plant) {\n        node.error(\"Manifest ausente ou configuração da planta inválida no contexto global.\");\n        return null;\n    }\n\n    let deviceCache = context.get(\"deviceCache\") || {};\n    let currentManifestVersion = context.get(\"manifestVersion\");\n\n    if (!currentManifestVersion || manifest.updated_at !== currentManifestVersion) {\n        deviceCache = {};\n        const areas = manifest.config.plant.areas || {};\n        \n        for (const areaId in areas) {\n            const lines = areas[areaId].lines || {};\n            for (const lineId in lines) {\n                const devices = lines[lineId].devices || {};\n                for (const devId in devices) {\n                    deviceCache[devId] = devices[devId];\n                }\n            }\n        }\n        \n        context.set(\"deviceCache\", deviceCache);\n        context.set(\"manifestVersion\", manifest.updated_at);\n        node.log(\"Cache de dispositivos atualizado\");\n    }\n\n    const foundDevice = deviceCache[deviceId];\n\n    if (!foundDevice) {\n        node.warn(`Dispositivo '${deviceId}' não encontrado no manifest atual.`);\n        return null;\n    }\n\n    const plant = manifest.config.plant;\n    const assetPath = [\n        { type: \"enterprise\", id: plant.enterprise },\n        { type: \"site\", id: plant.site }\n    ].concat(foundDevice.asset_context?.path || []);\n\n    const mappedData = [];\n    const rawData = payloadIn.data;\n\n    for (const key in rawData) {\n        const mapping = foundDevice.metrics_mapping?.[key];\n\n        if (mapping) {\n            let finalValue = rawData[key];\n\n            if (mapping.scale_factor !== undefined && mapping.data_type !== \"boolean\" && mapping.data_type !== \"bool\") {\n                finalValue = parseFloat((finalValue * mapping.scale_factor).toFixed(4));\n            }\n\n            if (mapping.data_type === \"boolean\" || mapping.data_type === \"bool\") {\n                finalValue = Boolean(finalValue);\n            }\n\n            const unit = (mapping.unit === \"null\" || !mapping.unit) ? null : mapping.unit;\n\n            mappedData.push({\n                name: mapping.name,\n                value: finalValue,\n                unit: unit,\n                data_type: mapping.data_type === \"bool\" ? \"boolean\" : mapping.data_type\n            });\n        }\n    }\n\n    msg.payload = {\n        timestamp: payloadIn.timestamp,\n        source: {\n            type: \"edge_gateway\",\n            id: payloadIn.gateway_id || manifest.gateway_id\n        },\n        asset_context: {\n            standard: foundDevice.asset_context?.standard || \"ISA-95\",\n            path: assetPath\n        },\n        data: mappedData\n    };\n\n    return msg;\n\n} catch (err) {\n    node.error(`Erro crítico no processamento ISA-95: ${err.message}`, msg);\n    return null;\n}",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 630,
+        "y": 180,
         "wires": [
             [
                 "acfca44b976320ff"
@@ -258,16 +306,269 @@
         ]
     },
     {
-        "id": "acfca44b976320ff",
+        "id": "7f3705decff4d5c8",
+        "type": "switch",
+        "z": "d46c639dccb35b93",
+        "g": "48657daa48033bec",
+        "name": "checkEdgeManifest",
+        "property": "manifest",
+        "propertyType": "global",
+        "rules": [
+            {
+                "t": "nnull"
+            },
+            {
+                "t": "null"
+            }
+        ],
+        "checkall": "true",
+        "repair": false,
+        "outputs": 2,
+        "x": 410,
+        "y": 200,
+        "wires": [
+            [
+                "d97f83548be2d1c9"
+            ],
+            [
+                "6cc13044102c4b03"
+            ]
+        ]
+    },
+    {
+        "id": "6cc13044102c4b03",
         "type": "link out",
         "z": "d46c639dccb35b93",
-        "name": "Sender Queue",
+        "g": "48657daa48033bec",
+        "name": "RequestConfig",
         "mode": "link",
         "links": [
-            "9777d0e0424f6471"
+            "643713d7acd50e0e"
         ],
-        "x": 1175,
-        "y": 200,
-        "wires": []
+        "x": 620,
+        "y": 220,
+        "wires": [],
+        "l": true
+    },
+    {
+        "id": "643713d7acd50e0e",
+        "type": "link in",
+        "z": "fe5e6d54acd5dc89",
+        "g": "59b78ef69a7353b5",
+        "name": "Controller In",
+        "links": [
+            "6cc13044102c4b03"
+        ],
+        "x": 170,
+        "y": 140,
+        "wires": [
+            [
+                "c86bd3eec099f455"
+            ]
+        ],
+        "l": true
+    },
+    {
+        "id": "c86bd3eec099f455",
+        "type": "switch",
+        "z": "fe5e6d54acd5dc89",
+        "g": "59b78ef69a7353b5",
+        "name": "checkGatewayID",
+        "property": "gateway_id",
+        "propertyType": "global",
+        "rules": [
+            {
+                "t": "null"
+            },
+            {
+                "t": "nnull"
+            }
+        ],
+        "checkall": "true",
+        "repair": false,
+        "outputs": 2,
+        "x": 370,
+        "y": 160,
+        "wires": [
+            [
+                "ef61d971be61ed81"
+            ],
+            [
+                "987bd9c876bbd17c"
+            ]
+        ]
+    },
+    {
+        "id": "ef61d971be61ed81",
+        "type": "http request",
+        "z": "fe5e6d54acd5dc89",
+        "g": "59b78ef69a7353b5",
+        "name": "getEdgeConfig",
+        "method": "GET",
+        "ret": "obj",
+        "paytoqs": "ignore",
+        "url": "http://sida-core:8000/api/system/info",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "insecureHTTPParser": false,
+        "authType": "",
+        "senderr": false,
+        "headers": [],
+        "x": 580,
+        "y": 140,
+        "wires": [
+            [
+                "636916919bb1848a"
+            ]
+        ]
+    },
+    {
+        "id": "636916919bb1848a",
+        "type": "change",
+        "z": "fe5e6d54acd5dc89",
+        "g": "59b78ef69a7353b5",
+        "name": "setGatewayID",
+        "rules": [
+            {
+                "t": "set",
+                "p": "gateway_id",
+                "pt": "global",
+                "to": "payload.gateway_id",
+                "tot": "msg"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 760,
+        "y": 140,
+        "wires": [
+            [
+                "987bd9c876bbd17c"
+            ]
+        ]
+    },
+    {
+        "id": "987bd9c876bbd17c",
+        "type": "change",
+        "z": "fe5e6d54acd5dc89",
+        "g": "59b78ef69a7353b5",
+        "name": "setUrl",
+        "rules": [
+            {
+                "t": "set",
+                "p": "url",
+                "pt": "msg",
+                "to": "\"http://sida-core:8000/api/config/manifest?gateway_id=\" & $globalContext(\"gateway_id\")",
+                "tot": "jsonata"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 550,
+        "y": 180,
+        "wires": [
+            [
+                "6cea4ac52afc38d5"
+            ]
+        ]
+    },
+    {
+        "id": "6cea4ac52afc38d5",
+        "type": "http request",
+        "z": "fe5e6d54acd5dc89",
+        "g": "59b78ef69a7353b5",
+        "name": "getEdgeManifest",
+        "method": "GET",
+        "ret": "obj",
+        "paytoqs": "ignore",
+        "url": "",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "insecureHTTPParser": false,
+        "authType": "",
+        "senderr": false,
+        "headers": [],
+        "x": 710,
+        "y": 180,
+        "wires": [
+            [
+                "cec62d0a43816e75"
+            ]
+        ]
+    },
+    {
+        "id": "cec62d0a43816e75",
+        "type": "switch",
+        "z": "fe5e6d54acd5dc89",
+        "g": "59b78ef69a7353b5",
+        "name": "checkResponse",
+        "property": "statusCode",
+        "propertyType": "msg",
+        "rules": [
+            {
+                "t": "eq",
+                "v": "200",
+                "vt": "str"
+            }
+        ],
+        "checkall": "true",
+        "repair": false,
+        "outputs": 1,
+        "x": 900,
+        "y": 180,
+        "wires": [
+            [
+                "01b034a87e3e1257"
+            ]
+        ]
+    },
+    {
+        "id": "01b034a87e3e1257",
+        "type": "change",
+        "z": "fe5e6d54acd5dc89",
+        "g": "59b78ef69a7353b5",
+        "name": "setEdgeManifest",
+        "rules": [
+            {
+                "t": "set",
+                "p": "manifest",
+                "pt": "global",
+                "to": "payload",
+                "tot": "msg"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 1090,
+        "y": 180,
+        "wires": [
+            [
+                "d9dad6cb238539c0"
+            ]
+        ]
+    },
+    {
+        "id": "d9dad6cb238539c0",
+        "type": "link out",
+        "z": "fe5e6d54acd5dc89",
+        "g": "59b78ef69a7353b5",
+        "name": "Controller Out",
+        "mode": "link",
+        "links": [],
+        "x": 1280,
+        "y": 180,
+        "wires": [],
+        "l": true
     }
 ]
