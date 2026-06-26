@@ -50,7 +50,7 @@ func (h *ManifestHandler) UploadManifest(c *gin.Context) {
 		return
 	}
 
-	_ = h.zmq.PublishUpdate(manifest.GatewayID)
+	_ = h.zmq.PublishUpdate(manifest)
 
 	c.JSON(http.StatusOK, gin.H{
 		"status": "success", 
@@ -131,7 +131,7 @@ func (h *ManifestHandler) RemoveArea(c *gin.Context) {
 		return
 	}
 
-	_ = h.zmq.PublishUpdate(manifest.GatewayID)
+	_ = h.zmq.PublishUpdate(*manifest)
 
 	c.JSON(http.StatusOK, gin.H{
 		"status": "success",
@@ -191,7 +191,7 @@ func (h *ManifestHandler) RemoveLine(c *gin.Context) {
 		return
 	}
 	
-	_ = h.zmq.PublishUpdate(manifest.GatewayID)
+	_ = h.zmq.PublishUpdate(*manifest)
 
 	c.JSON(http.StatusOK, gin.H{
 		"status": "success",
@@ -261,8 +261,8 @@ func (h *ManifestHandler) RemoveDevice(c *gin.Context) {
 		return
 	}
 	
-	_ = h.zmq.PublishUpdate(manifest.GatewayID)
-	
+	_ = h.zmq.PublishUpdate(*manifest)
+
 	c.JSON(http.StatusOK, gin.H{
 		"status": "success",
 		"message": "Equipamento '" + deviceID + "' removido com sucesso da linha '" + lineID + "' da área '" + areaID + "'",
@@ -344,7 +344,7 @@ func (h *ManifestHandler) ToggleDeviceStatus(c *gin.Context) {
 		return
 	}
 
-	_ = h.zmq.PublishUpdate(manifest.GatewayID)
+	_ = h.zmq.PublishUpdate(*manifest)
 
 	c.JSON(http.StatusOK, gin.H{
 		"status": "success",

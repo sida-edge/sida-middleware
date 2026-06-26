@@ -2,8 +2,11 @@ package services
 
 import (
 	"log"
+	"encoding/json"
 
 	"github.com/pebbe/zmq4"
+
+	"sida-core/internal/core/domain"
 )
 
 type ZMQPublisher struct {
@@ -25,10 +28,16 @@ func NewZMQPublisher(tcpPath string) (*ZMQPublisher, error) {
 	return &ZMQPublisher{socket: socket}, nil
 }
 
-func (p *ZMQPublisher) PublishUpdate(gatewayID string) error {
-	topic := "sida/manifest/" + gatewayID
+func (p *ZMQPublisher) PublishUpdate(manifest domain.Manifest) error {
+	topic := "sida/manifest/" + manifest.GatewayID
 
-	_, err := p.socket.SendMessage(topic, "RELOAD")
+	manifestJSON, err := json.Marshal(manifest)
+	if err != nil {
+		log.Printf("Erro ao serializar o manifesto: %v", err)
+		return err
+	}
+	
+	_, err = p.socket.SendMessage(topic, string(manifestJSON))
 	if err != nil {
 		log.Printf("Erro ao publicar no ZMQ: %v", err)
 		return err
