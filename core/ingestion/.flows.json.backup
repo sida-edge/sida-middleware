@@ -108,13 +108,12 @@
             "e49bd44efe452f73",
             "653a12304f363ae3",
             "d066b0653a83c8c3",
-            "138de548d248b8ba",
             "e17fabc35a2d0660"
         ],
-        "x": 244,
-        "y": 159,
-        "w": 562,
-        "h": 182
+        "x": 274,
+        "y": 179,
+        "w": 472,
+        "h": 162
     },
     {
         "id": "abab80c8e67aac5c",
@@ -329,7 +328,7 @@
             "abab80c8e67aac5c"
         ],
         "x": 640,
-        "y": 240,
+        "y": 260,
         "wires": [],
         "l": true
     },
@@ -342,8 +341,8 @@
         "links": [
             "8cbeb60de162ae13"
         ],
-        "x": 285,
-        "y": 240,
+        "x": 315,
+        "y": 260,
         "wires": [
             [
                 "d066b0653a83c8c3",
@@ -365,31 +364,12 @@
         "finalize": "",
         "libs": [],
         "x": 440,
-        "y": 240,
+        "y": 220,
         "wires": [
             [
-                "e49bd44efe452f73",
-                "138de548d248b8ba"
+                "e49bd44efe452f73"
             ]
         ]
-    },
-    {
-        "id": "138de548d248b8ba",
-        "type": "debug",
-        "z": "9e19e885c5971d19",
-        "g": "38373b49dbe342a8",
-        "name": "Processing Monitor",
-        "active": true,
-        "tosidebar": false,
-        "console": false,
-        "tostatus": true,
-        "complete": "payload",
-        "targetType": "msg",
-        "statusVal": "",
-        "statusType": "counter",
-        "x": 670,
-        "y": 200,
-        "wires": []
     },
     {
         "id": "e17fabc35a2d0660",
@@ -407,7 +387,9 @@
         "x": 430,
         "y": 300,
         "wires": [
-            []
+            [
+                "e49bd44efe452f73"
+            ]
         ]
     },
     {

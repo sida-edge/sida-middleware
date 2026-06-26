@@ -92,7 +92,8 @@
             "eb555e75fc17430c",
             "9d27a1415f491dbc",
             "f853084e4951664c",
-            "2d8c6d84e253344b"
+            "2d8c6d84e253344b",
+            "280682499a563c46"
         ],
         "x": 34,
         "y": 39,
@@ -122,7 +123,7 @@
         ],
         "x": 14,
         "y": 99,
-        "w": 1162,
+        "w": 1292,
         "h": 122
     },
     {
@@ -166,7 +167,7 @@
         ],
         "x": 14,
         "y": 239,
-        "w": 582,
+        "w": 662,
         "h": 142
     },
     {
@@ -443,7 +444,8 @@
         "y": 140,
         "wires": [
             [
-                "6f9671d7a3dfdabf"
+                "6f9671d7a3dfdabf",
+                "280682499a563c46"
             ]
         ],
         "l": true
@@ -590,8 +592,7 @@
             [
                 "f853084e4951664c"
             ]
-        ],
-        "l": true
+        ]
     },
     {
         "id": "f853084e4951664c",
@@ -615,7 +616,7 @@
         "g": "ba6a1b32fd321ca2",
         "name": "BufferIn",
         "links": [
-            "f50f0e7c477377e5"
+            "d79fbae1969217e0"
         ],
         "x": 370,
         "y": 120,
@@ -625,6 +626,24 @@
             ]
         ],
         "l": true
+    },
+    {
+        "id": "280682499a563c46",
+        "type": "debug",
+        "z": "f4a91dd7bfc833e7",
+        "g": "ba6a1b32fd321ca2",
+        "name": "debug 1",
+        "active": true,
+        "tosidebar": false,
+        "console": false,
+        "tostatus": true,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "counter",
+        "x": 290,
+        "y": 80,
+        "wires": []
     },
     {
         "id": "01fbaf9d9951d14a",
@@ -862,12 +881,12 @@
         "name": "Controller Out",
         "mode": "link",
         "links": [
-            "d688dac75e8ef6e9",
-            "2d8c6d84e253344b"
+            "d688dac75e8ef6e9"
         ],
-        "x": 1135,
+        "x": 1200,
         "y": 180,
-        "wires": []
+        "wires": [],
+        "l": true
     },
     {
         "id": "58707d6834a970f9",
@@ -979,12 +998,15 @@
         "type": "link out",
         "z": "be71d2b93d53caac",
         "g": "fd50d99e0df2f9e4",
-        "name": "ControllerOut",
+        "name": "BufferOut",
         "mode": "link",
-        "links": [],
-        "x": 555,
+        "links": [
+            "2d8c6d84e253344b"
+        ],
+        "x": 590,
         "y": 340,
-        "wires": []
+        "wires": [],
+        "l": true
     },
     {
         "id": "7de90c1fbd8c9941",

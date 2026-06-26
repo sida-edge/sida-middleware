@@ -92,7 +92,8 @@
             "eb555e75fc17430c",
             "9d27a1415f491dbc",
             "f853084e4951664c",
-            "2d8c6d84e253344b"
+            "2d8c6d84e253344b",
+            "280682499a563c46"
         ],
         "x": 34,
         "y": 39,
@@ -197,7 +198,7 @@
         "g": "b169a9f9f2fdc84c",
         "name": "ToObject",
         "property": "payload",
-        "action": "",
+        "action": "obj",
         "pretty": false,
         "x": 360,
         "y": 200,
@@ -443,7 +444,8 @@
         "y": 140,
         "wires": [
             [
-                "6f9671d7a3dfdabf"
+                "6f9671d7a3dfdabf",
+                "280682499a563c46"
             ]
         ],
         "l": true
@@ -590,8 +592,7 @@
             [
                 "f853084e4951664c"
             ]
-        ],
-        "l": true
+        ]
     },
     {
         "id": "f853084e4951664c",
@@ -625,6 +626,24 @@
             ]
         ],
         "l": true
+    },
+    {
+        "id": "280682499a563c46",
+        "type": "debug",
+        "z": "f4a91dd7bfc833e7",
+        "g": "ba6a1b32fd321ca2",
+        "name": "debug 1",
+        "active": true,
+        "tosidebar": false,
+        "console": false,
+        "tostatus": true,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "counter",
+        "x": 290,
+        "y": 80,
+        "wires": []
     },
     {
         "id": "01fbaf9d9951d14a",
