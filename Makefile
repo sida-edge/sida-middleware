@@ -10,6 +10,10 @@ up-infra: init-network
 up-apps: init-network
 	docker compose -f middleware/docker-compose.yml up -d
 
+build:
+# 	docker compose -f infra/docker-compose.yml build
+	docker compose -f middleware/docker-compose.yml build
+
 start: up-apps
 	@echo "SIDA services are up and running."
 
