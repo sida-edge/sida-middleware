@@ -25,7 +25,7 @@ services:
       - TZ=America/Recife
       - FLOWS=flows.json
     ports:
-      - "1881:1880"
+      - "1880:1880"
     volumes:
       - ./core/ingestion:/data
       - sida_ipc:/tmp/.ipc
@@ -47,7 +47,7 @@ services:
       - TZ=America/Recife
       - FLOWS=flows.json
     ports:
-      - "1882:1880"
+      - "1881:1880"
     volumes:
       - ./core/context:/data
       - sida_ipc:/tmp/.ipc
@@ -67,7 +67,7 @@ services:
       - TZ=America/Recife
       - FLOWS=flows.json
     ports:
-      - "1883:1880"
+      - "1882:1880"
     volumes:
       - ./core/delivery:/data
       - sida_ipc:/tmp/.ipc
