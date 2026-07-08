@@ -1,0 +1,43 @@
+networks:
+  default:
+    external: true
+    name: sida-edge-net
+
+services:
+
+  sida-worker:
+    build: .
+    container_name: sida-memory-worker
+    depends_on:
+      - sida-influxdb
+      - sida-memgraph
+    restart: unless-stopped
+
+  sida-influxdb:
+    image: influxdb:2
+    container_name: sida-influxdb
+    ports:
+      - "8086:8086"
+    volumes:
+      - sida_influxdb_data:/var/lib/influxdb2
+      - sida_influxdb_config:/etc/influxdb2
+    restart: unless-stopped
+    environment:
+      - DOCKER_INFLUXDB_INIT_MODE=setup
+      - DOCKER_INFLUXDB_INIT_USERNAME=admin
+      - DOCKER_INFLUXDB_INIT_PASSWORD=adminpassword
+      - DOCKER_INFLUXDB_INIT_ORG=sida
+      - DOCKER_INFLUXDB_INIT_BUCKET=telemetria
+      - DOCKER_INFLUXDB_INIT_ADMIN_TOKEN=token-secreto-sida-123
+
+  sida-memgraph:
+    image: memgraph/memgraph-platform
+    container_name: sida-memgraph
+    ports:
+      - "7687:7687"
+      - "3000:3000"
+    restart: unless-stopped
+
+volumes:
+  sida_influxdb_data:
+  sida_influxdb_config:

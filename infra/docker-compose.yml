@@ -4,7 +4,7 @@ networks:
     name: sida-edge-net
 
 services:
-  mosquitto-local:
+  sida-broker:
     image: eclipse-mosquitto:2
     container_name: mosquitto-local
     ports:
