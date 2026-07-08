@@ -7,7 +7,7 @@ init-network:
 up-infra: init-network
 	docker compose -f infra/docker-compose.yml up -d
 
-up-apps: init-network
+up-apps: up-infra
 	docker compose -f middleware/docker-compose.yml up -d
 
 build:
