@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>SIDA UNS Web Client</title>
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <!-- Login view -->
+  <section id="login-view" class="view">
+    <form id="login-form" class="login-card" autocomplete="off">
+      <h1>SIDA UNS</h1>
+      <p class="subtitle">Cliente MQTT / Sparkplug B</p>
+      <label>
+        <span>Broker (WebSocket)</span>
+        <input id="broker-url" type="text" readonly />
+      </label>
+      <label>
+        <span>Usuário</span>
+        <input id="username" type="text" autocomplete="off" />
+      </label>
+      <label>
+        <span>Senha</span>
+        <input id="password" type="password" autocomplete="off" />
+      </label>
+      <button id="login-btn" type="submit">Conectar</button>
+      <div id="login-error" class="error" hidden></div>
+      <div id="login-status" class="status" hidden></div>
+    </form>
+  </section>
+
+  <!-- Dashboard view -->
+  <section id="dashboard-view" class="view" hidden>
+    <header class="topbar">
+      <div class="brand">SIDA UNS</div>
+      <div id="conn-banner" class="conn-banner"></div>
+      <button id="logout-btn" type="button">Desconectar</button>
+    </header>
+    <main class="layout">
+      <aside id="tree-panel" class="tree-panel">
+        <h2>Descoberta</h2>
+        <div id="device-tree" class="device-tree"></div>
+      </aside>
+      <div id="detail-panel" class="detail-panel">
+        <div id="detail-empty" class="empty-hint">
+          Selecione uma métrica na árvore para visualizar.
+        </div>
+        <div id="detail-content" hidden></div>
+      </div>
+    </main>
+  </section>
+
+  <!-- Runtime config injected by the container entrypoint from BROKER_WS_URL -->
+  <script src="./config.js"></script>
+  <!-- Vendored browser bundles (copied during Docker build) -->
+  <script src="./vendor/mqtt.min.js"></script>
+  <script src="./vendor/protobuf.min.js"></script>
+  <script type="module" src="./app.js"></script>
+</body>
+</html>

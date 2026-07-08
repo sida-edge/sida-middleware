@@ -1,0 +1,18 @@
+# Containerized acceptance-test runner: Playwright (with browsers preinstalled)
+# + paho-mqtt + protobuf tooling. Build context is the sida-uns-client root so
+# it can compile the SAME sparkplug_b.proto the client uses.
+FROM mcr.microsoft.com/playwright/python:v1.48.0-jammy
+
+WORKDIR /app
+COPY test/requirements.txt ./requirements.txt
+# Browsers are preinstalled in the base image; pin the playwright package to
+# match, and add the publisher/proto deps.
+RUN pip install --no-cache-dir playwright==1.48.0 paho-mqtt==2.1.0 \
+    protobuf==5.28.3 grpcio-tools==1.67.1
+
+COPY src/sparkplug/sparkplug_b.proto ./proto/sparkplug_b.proto
+COPY test/sparkplug_encode.py test/acceptance_test.py ./
+# Compile the shared proto into the Python module the encoder imports.
+RUN python -m grpc_tools.protoc -I ./proto --python_out=. ./proto/sparkplug_b.proto
+
+CMD ["python", "acceptance_test.py"]

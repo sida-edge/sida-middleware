@@ -1,0 +1,44 @@
+# Isolated acceptance-test stack (SDD 3.1). Standalone project — does NOT touch
+# the production docker-compose.yml or the GCP broker. Everything runs on an
+# internal network; the Playwright browser and publisher live in the test-runner
+# container, so no host Python/browser dependencies are required.
+name: sida-uns-accept
+
+services:
+  test-broker:
+    image: eclipse-mosquitto:2
+    container_name: sida-test-broker
+    entrypoint:
+      - /bin/sh
+      - -c
+      - >
+        mosquitto_passwd -b -c /mosquitto/config/pwfile sida sida123 &&
+        chown mosquitto:mosquitto /mosquitto/config/pwfile &&
+        chmod 0700 /mosquitto/config/pwfile &&
+        exec mosquitto -c /mosquitto/config/mosquitto.conf
+    volumes:
+      - ./mosquitto.test.conf:/mosquitto/config/mosquitto.conf:ro
+
+  sida-uns-client:
+    build: ..
+    image: sida-uns-client:latest
+    container_name: sida-test-client
+    environment:
+      # Browser runs inside test-runner on this network → in-network WS address.
+      - BROKER_WS_URL=ws://test-broker:9001
+      - HISTORY_MAX_POINTS=300
+    depends_on:
+      - test-broker
+
+  test-runner:
+    build:
+      context: ..
+      dockerfile: test/Dockerfile.runner
+    container_name: sida-test-runner
+    environment:
+      - CLIENT_URL=http://sida-uns-client:80
+      - BROKER_HOST=test-broker
+      - BROKER_TCP_PORT=1883
+    depends_on:
+      - test-broker
+      - sida-uns-client

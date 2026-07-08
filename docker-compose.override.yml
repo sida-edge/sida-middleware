@@ -1,0 +1,19 @@
+# docker-compose.override.yml
+# Adds the SIDA UNS Web Client to the existing sida_network WITHOUT modifying
+# docker-compose.yml or any existing service. `docker compose up` auto-merges
+# this file. To run only the new client: docker compose up -d sida-uns-client
+services:
+  sida-uns-client:
+    build: ./sida-uns-client
+    image: sida-uns-client:latest
+    container_name: sida-uns-client
+    environment:
+      # Address of the existing MQTT-over-WebSocket listener. Point this at the
+      # real broker (e.g. wss://broker.host:9001). No credentials are set here.
+      - BROKER_WS_URL=${BROKER_WS_URL:-ws://localhost:9001}
+      - HISTORY_MAX_POINTS=${HISTORY_MAX_POINTS:-300}
+    ports:
+      - "8080:80"
+    networks:
+      - sida_network
+    restart: unless-stopped
