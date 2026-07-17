@@ -85,7 +85,7 @@ func processaTopologia(payload schema.Payload, partesTopico []string) {
 
 	for _, metric := range payload.GetMetrics() {
 		if metric.GetName() == "bdSeq" || metric.GetName() == "Node Control/Rebirth" {
-			continue // Ignora métricas de controle interno
+			continue
 		}
 		
 		metricQuery := `
