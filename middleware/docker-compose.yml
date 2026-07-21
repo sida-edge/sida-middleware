@@ -4,6 +4,20 @@ networks:
     name: sida-edge-net
 
 services:
+
+  sida-ingestion:
+    build:
+      context: ./core/sida-ingestion
+      dockerfile: Dockerfile
+    container_name: sida-ingestion
+    volumes:
+      - sida_ipc:/tmp/.ipc
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      - sida-core
+    restart: unless-stopped
+
   sida-core:
     build: ./sida-core  
     container_name: sida-core
@@ -14,27 +28,27 @@ services:
       - sida_ipc:/tmp/.ipc
     restart: unless-stopped
 
-  poc-ingestion:
-    build:
-      context: .
-      dockerfile: ./core/Dockerfile
-      args:
-        - PROJECT_DIR=./core/ingestion
-    container_name: sida-poc-ingestion
-    environment:
-      - TZ=America/Recife
-      - FLOWS=flows.json
-    ports:
-      - "1880:1880"
-    volumes:
-      - ./core/ingestion:/data
-      - sida_ipc:/tmp/.ipc
-    extra_hosts:
-     - "host.docker.internal:host-gateway"
-    restart: unless-stopped
-    depends_on:
-      - sida-core
-    attach: false
+  # poc-ingestion:
+  #   build:
+  #     context: .
+  #     dockerfile: ./core/Dockerfile
+  #     args:
+  #       - PROJECT_DIR=./core/ingestion
+  #   container_name: sida-poc-ingestion
+  #   environment:
+  #     - TZ=America/Recife
+  #     - FLOWS=flows.json
+  #   ports:
+  #     - "1880:1880"
+  #   volumes:
+  #     - ./core/ingestion:/data
+  #     - sida_ipc:/tmp/.ipc
+  #   extra_hosts:
+  #    - "host.docker.internal:host-gateway"
+  #   restart: unless-stopped
+  #   depends_on:
+  #     - sida-core
+  #   attach: false
   
   poc-context:
     build:
