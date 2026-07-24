@@ -23,7 +23,7 @@ find_package(CURL REQUIRED)
 
 add_subdirectory(core)
 add_subdirectory(drivers/modbus)
-# add_subdirectory(drivers/opcua)
+add_subdirectory(drivers/opcua)
 
 # ---------------------------------------------------------
 # Executável Principal
@@ -34,6 +34,7 @@ target_link_libraries(ingestion_service
     PRIVATE 
     sida_core 
     sida_modbus 
+    sida_opcua
     cppzmq
     CURL::libcurl
 )

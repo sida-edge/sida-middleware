@@ -18,7 +18,7 @@ struct MetricMappingConfig {
     std::string unit;
     std::string data_type;       // "float", "int16", "int32", "uint16", "bool", "string"
     std::string register_type;   // "holding", "input", "coil", "discrete"
-    int address;
+    std::string address;         // For Modbus: register address; For OPC UA: node ID
 };
 
 struct DeviceConfig {
@@ -30,6 +30,14 @@ struct DeviceConfig {
     int scan_rate_ms;
     std::string byte_order;
     bool enabled;
+
+    std::string username; // For OPC UA
+    std::string password; // For OPC UA
+
+    std::string security_policy; // For OPC UA
+    std::string security_mode;   // For OPC UA
+
+    std::string endpoint_url; // For OPC UA
 
     std::map<std::string, MetricMappingConfig> metrics;
 };

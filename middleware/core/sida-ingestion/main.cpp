@@ -1,7 +1,9 @@
 #include "core/DriverWorker.h"
 #include "core/ThreadSafeQueue.h"
 #include "core/ManifestParser.h"
+
 #include "drivers/modbus/ModbusDriver.h"
+#include "drivers/opcua/OpcUaDriver.h"
 
 #include <zmq.hpp>
 #include <nlohmann/json.hpp>
@@ -106,7 +108,7 @@ int main() {
 
     while (system_running) {
         if (reload_manifest) {
-            std::cout << "[ORQUESTRADOR] Iniciando processo de Hot Reload...\n";
+            std::cout << "[SIDA_INGESTION] Iniciando processo de Hot Reload...\n";
             
             for (auto& w : workers) {
                 w->stop();
@@ -120,7 +122,7 @@ int main() {
                 try {
                     json info_json = json::parse(info_response);
                     gateway_id = info_json.value("gateway_id", "sida_default_gw");
-                    std::cout << "[ORQUESTRADOR] Identidade confirmada. Gateway ID: " << gateway_id << "\n";
+                    std::cout << "[SIDA_INGESTION] Identidade confirmada. Gateway ID: " << gateway_id << "\n";
                     
                     std::string manifest_url = "http://sida-core:8000/api/config/manifest?gateway_id=" + gateway_id;
                     std::string manifest_response;
@@ -140,31 +142,38 @@ int main() {
                                 workers.push_back(std::make_unique<sida::DriverWorker>(
                                     std::move(modbus_drv), d_cfg.scan_rate_ms, data_queue
                                 ));
+                            } else if (d_cfg.protocol == "opcua") {
+                                auto opcua_drv = std::make_unique<sida::OpcUaDriver>(d_cfg);
+                                workers.push_back(std::make_unique<sida::DriverWorker>(
+                                    std::move(opcua_drv), d_cfg.scan_rate_ms, data_queue
+                                ));
+                            } else {
+                                std::cerr << "[SIDA_INGESTION] Protocolo desconhecido para o dispositivo " << d_cfg.device_id << ": " << d_cfg.protocol << "\n";
                             }
                         }
 
                         for (auto& w : workers) {
                             w->start();
                         }
-                        std::cout << "[ORQUESTRADOR] Hot Reload concluido. " << workers.size() << " workers ativos.\n";
+                        std::cout << "[SIDA_INGESTION] Hot Reload concluido. " << workers.size() << " workers ativos.\n";
                     
                     } else {
-                        std::cerr << "[ORQUESTRADOR] Falha ao baixar manifesto. Sistema pausado.\n";
+                        std::cerr << "[SIDA_INGESTION] Falha ao baixar manifesto. Sistema pausado.\n";
                     }
 
                 } catch (const json::parse_error& e) {
                     std::cerr << "[ORQUESTRADOR] Erro ao decodificar /system/info: " << e.what() << "\n";
                 }
             } else {
-                std::cerr << "[ORQUESTRADOR] Falha ao obter identidade do gateway. Sistema pausado.\n";
+                std::cerr << "[SIDA_INGESTION] Falha ao obter identidade do gateway. Sistema pausado.\n";
             }
 
+            std::cout << "[SIDA_INGESTION] Loop principal ativo. Workers: " << workers.size() << "\n";
             reload_manifest = false; 
         }
 
         std::vector<sida::TagRecord> data_batch;
         if (data_queue.popFor(data_batch, std::chrono::milliseconds(500))) {
-            std::cout << "[ORQUESTRADOR] Dados recebidos da fila: " << data_batch.size() << "\n";
             if (data_batch.empty()) continue;
 
             json payload;
@@ -186,21 +195,15 @@ int main() {
 
             zmq::message_t msg(serialized.size());
             memcpy(msg.data(), serialized.data(), serialized.size());
-            std::cout << "[ORQUESTRADOR] Enviando dados para o ZMQ: " << serialized << "\n";
             auto result = zmq_push.send(msg, zmq::send_flags::dontwait);
-            std::cout << "Mensagem: " << msg.data() << "\n";
 
             if (!result) {
-                // Retornou false/nullopt porque o consumidor está offline ou a fila ZMQ encheu (SNDHWM)
-                std::cerr << "[ZMQ AVISO] Consumidor offline ou buffer cheio. Descartando pacote para proteger a memoria!\n";
-            } else {
-                // Apenas para debug, pode remover em produção
-                std::cout << "[ZMQ] Pacote enviado com sucesso.\n";
+                std::cerr << "[SIDA_INGESTION] Consumidor offline ou buffer cheio. Descartando pacote para proteger a memoria!\n";
             }
         }
-        std::cout << "[ORQUESTRADOR] Loop principal ativo. Workers: " << workers.size() << "\n";
     }
-    std::cout << "[ORQUESTRADOR] Sistema encerrando. Parando workers...\n";
+    
+    std::cout << "[SIDA_INGESTION] Sistema encerrando. Parando workers...\n";
     for (auto& w : workers) w->stop();
     curl_global_cleanup();
     system_running = false;

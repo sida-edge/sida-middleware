@@ -57,7 +57,7 @@ std::vector<sida::DeviceConfig> ManifestParser::parseEnabledDevices() {
                 auto conn = dev_obj["connection"];
                 std::string protocol = conn.value("protocol", "");
 
-                if (protocol == "modbus_tcp") {
+                if (protocol == "modbus_tcp" || protocol == "opcua") {
                     sida::DeviceConfig d_cfg;
                     d_cfg.device_id = device_id;
                     d_cfg.enabled = true;
@@ -67,6 +67,7 @@ std::vector<sida::DeviceConfig> ManifestParser::parseEnabledDevices() {
                     d_cfg.unit_id = conn.value("unit_id", 1);
                     d_cfg.scan_rate_ms = conn.value("scan_rate_ms", 1000);
                     d_cfg.byte_order = conn.value("byte_order", "ABCD");
+                    d_cfg.endpoint_url = conn.value("endpoint_url", "");
 
                     if (dev_obj.contains("metrics_mapping")) {
                         auto metrics = dev_obj["metrics_mapping"];
@@ -77,14 +78,7 @@ std::vector<sida::DeviceConfig> ManifestParser::parseEnabledDevices() {
                             m_cfg.register_type = met_obj.value("register_type", "holding");
                             m_cfg.unit = met_obj.value("unit", "");
                             m_cfg.scale_factor = met_obj.value("scale_factor", 1.0);
-                            
-                            std::string node_id = met_obj.value("node_id", metric_key);
-                            try {
-                                m_cfg.address = std::stoi(node_id);
-                            } catch (...) {
-                                m_cfg.address = 0;
-                                std::cerr << "[PARSER AVISO] Endereco Modbus invalido para " << metric_key << "\n";
-                            }
+                            m_cfg.address = met_obj.value("node_id", metric_key);
                             
                             d_cfg.metrics[metric_key] = m_cfg;
                         }
