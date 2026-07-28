@@ -198,8 +198,8 @@ export default function DeviceForm({
   };
 
   return (
-    <div style={styles.overlay}>
-      <div style={styles.modal}>
+    <div style={styles.overlay} className="sida-modal-overlay">
+      <div style={styles.modal} className="sida-modal">
         
         <div style={styles.header}>
           <div>
@@ -216,7 +216,7 @@ export default function DeviceForm({
         <div style={styles.content}>
           <div style={styles.sectionTitle}>1. Identificação e Rede</div>
           
-          <div style={styles.grid2}>
+          <div style={styles.grid2} className="sida-grid2">
             <div>
               <label style={styles.label}>Nome do Equipamento (Ex: Forno A)</label>
               <input style={styles.input} value={deviceName} onChange={e => setDeviceName(e.target.value)} autoFocus />

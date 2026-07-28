@@ -22,7 +22,7 @@ services:
     build: ./sida-core  
     container_name: sida-core
     ports:
-      - "8000:8000"
+      - "8010:8000"
     volumes:
       - ./sida-core/data:/app/data
       - sida_ipc:/tmp/.ipc
@@ -61,7 +61,7 @@ services:
       - TZ=America/Recife
       - FLOWS=flows.json
     ports:
-      - "1881:1880"
+      - "1891:1880"
     volumes:
       - ./core/context:/data
       - sida_ipc:/tmp/.ipc
@@ -81,7 +81,7 @@ services:
       - TZ=America/Recife
       - FLOWS=flows.json
     ports:
-      - "1882:1880"
+      - "1892:1880"
     volumes:
       - ./core/delivery:/data
       - sida_ipc:/tmp/.ipc
@@ -98,7 +98,7 @@ services:
     environment:
       - DISPLAY=host.docker.internal:0
     ports:
-      - "5020:5020"
+      - "5021:5020"
     restart: unless-stopped
     attach: false
 
