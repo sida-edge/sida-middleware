@@ -8,7 +8,7 @@ ModbusDriver::ModbusDriver(DeviceConfig config)
       ctx_(nullptr),
       connected_(false) 
 {
-    driver_id_ = "ModbusTCP_" + config_.device_id;
+    driver_id_ = config_.device_id;
 
     ctx_ = modbus_new_tcp(config_.host.c_str(), config_.port);
     if (ctx_ == nullptr) {
@@ -24,7 +24,13 @@ ModbusDriver::~ModbusDriver() {
 }
 
 bool ModbusDriver::connect() {
-    if (ctx_ == nullptr) return false;
+    if (ctx_ == nullptr) {
+        ctx_ = modbus_new_tcp(config_.host.c_str(), config_.port);
+        if (ctx_ == nullptr) {
+            std::cerr << "[DRIVE_MODBUS] Failed to create Modbus context\n";
+            return false;
+        }
+    };
 
     modbus_set_slave(ctx_, config_.unit_id);
     modbus_set_response_timeout(ctx_, 2, 0);
@@ -42,17 +48,18 @@ bool ModbusDriver::connect() {
 }
 
 void ModbusDriver::disconnect() {
-    if (ctx_ && connected_) {
-        modbus_close(ctx_);
-        connected_ = false;
+    if (ctx_) { 
+        modbus_close(ctx_); 
+        ctx_ = nullptr;
         std::cout << "[DRIVE_MODBUS] Disconnected from " << config_.device_id << "\n";
     }
+    connected_ = false;
 }
 
 std::vector<sida::TagRecord> ModbusDriver::pollData() {
     std::vector<sida::TagRecord> data;
+    
     if (!connected_ || ctx_ == nullptr) {
-        std::cerr << "[DRIVE_MODBUS] Device " << config_.device_id << " is not connected.\n";
         return data;
     }
 
@@ -79,7 +86,9 @@ std::vector<sida::TagRecord> ModbusDriver::pollData() {
 
         if (rc == -1) {
             std::cerr << "[DRIVE_MODBUS] Read failed for " << metric.name << ": " << modbus_strerror(errno) << "\n";
-            break;
+            
+            connected_ = false; 
+            break; 
         }
 
         TagValue value;
@@ -98,8 +107,8 @@ std::vector<sida::TagRecord> ModbusDriver::pollData() {
     }
 
     if (!connected_) {
-        std::cerr << "[DRIVE_MODBUS] Device " << config_.device_id << " is not connected.\n";
         disconnect();
+        data.clear();
     }
 
     return data;

@@ -14,7 +14,7 @@ services:
       - sida-influxdb
       - sida-memgraph
     environment:
-      - MQTT_BROKER_URL=tcp://mosquitto-local:1883
+      - MQTT_BROKER_URL=tcp://sida-mosquitto-edge:1883
       - MQTT_CLIENT_ID=sida-worker-edge
       - MQTT_TOPIC=spBv1.0/#
       - INFLUX_TOKEN=token-super-secreto-sida-edge
