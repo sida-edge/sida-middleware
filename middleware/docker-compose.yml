@@ -28,13 +28,13 @@ services:
       - sida_ipc:/tmp/.ipc
     restart: unless-stopped
   
-  poc-context:
+  sida-context:
     build:
       context: .
       dockerfile: ./core/Dockerfile
       args:
         - PROJECT_DIR=./core/context
-    container_name: sida-poc-context
+    container_name: sida-context
     environment:
       - TZ=America/Recife
       - FLOWS=flows.json
@@ -48,13 +48,13 @@ services:
       - sida-core
     attach: false
 
-  poc-delivery:
+  sida-delivery:
     build:
       context: .
       dockerfile: ./core/Dockerfile
       args:
         - PROJECT_DIR=./core/delivery
-    container_name: sida-poc-delivery
+    container_name: sida-delivery
     environment:
       - TZ=America/Recife
       - FLOWS=flows.json
@@ -66,18 +66,6 @@ services:
     restart: unless-stopped
     depends_on:
       - sida-core
-    attach: false
-
-  plc-simulator:
-    image: ghcr.io/sida-edge/simulador:latest
-    container_name: sida-simulator
-    profiles:
-      - "sim"
-    environment:
-      - DISPLAY=host.docker.internal:0
-    ports:
-      - "5020:5020"
-    restart: unless-stopped
     attach: false
 
 volumes:
