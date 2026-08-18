@@ -52,12 +52,14 @@ func (h *SystemHandler) SetupEdgeGateway(c *gin.Context) {
 
 func (h *SystemHandler) GetSystemInfo(c *gin.Context) {
 	gatewayID := os.Getenv("EDGE_GATEWAY_ID")
+	
 	if gatewayID == "" {
 		c.JSON(http.StatusOK, gin.H{
 			"provisioned": false,
 		})
 		return
 	}
+
 	c.JSON(http.StatusOK, gin.H{
 		"provisioned": true,
 		"gateway_id": gatewayID,

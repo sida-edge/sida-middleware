@@ -42,6 +42,8 @@ func (h *ManifestHandler) UploadManifest(c *gin.Context) {
 		UpdatedAt: time.Now(),
 	}
 
+	fmt.Println("Manifesto recebido para o gateway:", manifest.GatewayID)
+
 	if err := h.repo.Save(c.Request.Context(), manifest); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": "Erro ao salvar no banco",
@@ -59,15 +61,7 @@ func (h *ManifestHandler) UploadManifest(c *gin.Context) {
 }
 
 func (h *ManifestHandler) GetManifest(c *gin.Context) {
-	gatewayID := c.Query("gateway_id")
-	if gatewayID == "" {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "O parâmetro gateway_id é obrigatório",
-		})
-		return
-	}
-
-	manifest, err := h.repo.GetByID(c.Request.Context(), gatewayID)
+	manifest, err := h.repo.Get(c.Request.Context())
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": "Erro interno no banco de dados",
@@ -78,7 +72,7 @@ func (h *ManifestHandler) GetManifest(c *gin.Context) {
 
 	if manifest == nil {
 		c.JSON(http.StatusNotFound, gin.H{
-			"error": "Nenhum manifesto encontrado para este gateway",
+			"error": "Nenhum manifesto encontrado",
 		})
 		return
 	}
@@ -86,186 +80,8 @@ func (h *ManifestHandler) GetManifest(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"gateway_id": manifest.GatewayID,
 		"config":     manifest.Config,
-	})
-}
+		"updated_at": manifest.UpdatedAt,
 
-func (h *ManifestHandler) RemoveArea(c *gin.Context) {
-	areaID := c.Param("area")
-
-	gatewayID := os.Getenv("EDGE_GATEWAY_ID")
-	if gatewayID == "" {
-		gatewayID = "sida_edge_001"
-	}
-	
-	manifest, err := h.repo.GetByID(c.Request.Context(), gatewayID)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Erro ao ler o manifesto atual do banco",
-			"details": err.Error(),
-		})
-		return
-	}
-
-	if manifest.Config.Plant.Areas == nil {
-		c.JSON(http.StatusNotFound, gin.H{
-			"error": "O manifesto está vazio, não há áreas para remover",
-		})
-		return
-	}
-
-	if _, exists := manifest.Config.Plant.Areas[areaID]; !exists {
-		c.JSON(http.StatusNotFound, gin.H{
-			"error": "Área '" + areaID + "' não encontrada",
-		})
-		return
-	}
-
-	delete(manifest.Config.Plant.Areas, areaID)
-	manifest.UpdatedAt = time.Now()
-
-	if err := h.repo.Save(c.Request.Context(), *manifest); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Erro ao persistir a exclusão no banco",
-			"details": err.Error(),
-		})
-		return
-	}
-
-	_ = h.zmq.PublishUpdate(*manifest)
-
-	c.JSON(http.StatusOK, gin.H{
-		"status": "success",
-		"message": "Área '" + areaID + "' removida com sucesso",
-	})
-}
-
-func (h *ManifestHandler) RemoveLine(c *gin.Context) {
-	areaID := c.Param("area")
-	lineID := c.Param("line")
-	
-	gatewayID := os.Getenv("EDGE_GATEWAY_ID")
-	if gatewayID == "" {
-		gatewayID = "sida_edge_001"
-	}
-	
-	manifest, err := h.repo.GetByID(c.Request.Context(), gatewayID)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Erro ao ler o manifesto atual do banco",
-			"details": err.Error(),
-		})
-		return
-	}
-	
-	if manifest.Config.Plant.Areas == nil {
-		c.JSON(http.StatusNotFound, gin.H{
-			"error": "O manifesto está vazio, não há áreas para remover linhas",
-		})
-		return
-	}
-	
-	area, areaExists := manifest.Config.Plant.Areas[areaID]
-	if !areaExists {
-		c.JSON(http.StatusNotFound, gin.H{
-			"error": "Área '" + areaID + "' não encontrada",
-		})
-		return
-	}
-
-	if _, lineExists := area.Lines[lineID]; !lineExists {
-		c.JSON(http.StatusNotFound, gin.H{
-			"error": "Linha '" + lineID + "' não encontrada na área '" + areaID + "'",
-		})
-		return
-	}
-	
-	delete(area.Lines, lineID)
-	manifest.Config.Plant.Areas[areaID] = area
-	manifest.UpdatedAt = time.Now()
-
-	if err := h.repo.Save(c.Request.Context(), *manifest); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Erro ao persistir a exclusão no banco",
-			"details": err.Error(),
-		})
-		return
-	}
-	
-	_ = h.zmq.PublishUpdate(*manifest)
-
-	c.JSON(http.StatusOK, gin.H{
-		"status": "success",
-		"message": "Linha '" + lineID + "' removida com sucesso da área '" + areaID + "'",
-	})
-}
-
-func (h *ManifestHandler) RemoveDevice(c *gin.Context) {
-	areaID := c.Param("area")
-	lineID := c.Param("line")
-	deviceID := c.Param("id")
-
-	gatewayID := os.Getenv("EDGE_GATEWAY_ID")
-	if gatewayID == "" {
-		gatewayID = "sida_edge_001"
-	}
-
-	manifest, err := h.repo.GetByID(c.Request.Context(), gatewayID)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Erro ao ler o manifesto atual do banco",
-			"details": err.Error(),
-		})
-		return
-	}
-
-	if manifest.Config.Plant.Areas == nil {
-		c.JSON(http.StatusNotFound, gin.H{
-			"error": "O manifesto está vazio, não há áreas para remover equipamentos",
-		})
-		return
-	}
-
-	area, areaExists := manifest.Config.Plant.Areas[areaID]
-	if !areaExists {
-		c.JSON(http.StatusNotFound, gin.H{
-			"error": "Área '" + areaID + "' não encontrada",
-		})
-		return
-	}
-	
-	line, lineExists := area.Lines[lineID]
-	if !lineExists {
-		c.JSON(http.StatusNotFound, gin.H{
-			"error": "Linha '" + lineID + "' não encontrada na área '" + areaID + "'",
-		})
-		return
-	}
-	
-	if _, deviceExists := line.Devices[deviceID]; !deviceExists {
-		c.JSON(http.StatusNotFound, gin.H{
-			"error": "Equipamento '" + deviceID + "' não encontrado na linha '" + lineID + "' da área '" + areaID + "'",
-		})
-		return
-	}
-
-	delete(line.Devices, deviceID)
-	area.Lines[lineID] = line
-	manifest.Config.Plant.Areas[areaID] = area
-	manifest.UpdatedAt = time.Now()
-
-	if err := h.repo.Save(c.Request.Context(), *manifest); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Erro ao persistir a exclusão no banco",
-			"details": err.Error(),
-		})
-		return
-	}
-	
-	_ = h.zmq.PublishUpdate(*manifest)
-
-	c.JSON(http.StatusOK, gin.H{
-		"status": "success",
-		"message": "Equipamento '" + deviceID + "' removido com sucesso da linha '" + lineID + "' da área '" + areaID + "'",
 	})
 }
 
@@ -291,7 +107,7 @@ func (h *ManifestHandler) ToggleDeviceStatus(c *gin.Context) {
 		gatewayID = "sida_edge_001"
 	}
 
-	manifest, err := h.repo.GetByID(c.Request.Context(), gatewayID)
+	manifest, err := h.repo.Get(c.Request.Context())
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": "Erro ao ler o manifesto",

@@ -4,7 +4,7 @@ import SetupWizard from './components/SetupWizard'
 import Dashboard from './components/Dashboard'
 
 function App() {
-  const [appState, setAppState] = useState('booting') 
+  const [appState, setAppState] = useState('booting')
   const [gatewayId, setGatewayId] = useState(null)
   const [config, setConfig] = useState(null)
   
@@ -22,23 +22,37 @@ function App() {
 
   const checkIdentity = async () => {
     try {
-      const res = await fetch('/api/system/info')
-      if (!res.ok) throw new Error('Servidor Go respondeu com erro.')
+      const res = await fetch('/internal/info')
+      
+      if (!res.ok)
+        throw new Error('[sida-core] Falha ao verificar identidade')
+
       const data = await res.json()
-      if (data.provisioned) {
-        setGatewayId(data.gateway_id)
-        loadManifest(data.gateway_id)
-      } else {
-        setAppState('unprovisioned')
-      }
+      if (data.provisioned)
+        loadConfig(data)
+      
+      setAppState(data.provisioned ? 'provisioned' : 'unprovisioned')
+      
     } catch (error) {
+      console.error("Erro ao verificar identidade", error)
       setAppState('error')
     }
   }
 
+  const loadConfig = async (data) => {
+    if (!data.gateway_id) {
+      console.error("[sida-core] Falha ao carregar configuração: gateway_id ausente")
+      setAppState('error')
+      return
+    }
+
+    setGatewayId(data.gateway_id)
+    loadManifest(data.gateway_id)
+  }
+
   const loadManifest = async (id) => {
      try {
-      const res = await fetch(`/api/config/manifest?gateway_id=${id}`)
+      const res = await fetch(`/internal/manifest`)
       if (res.ok) {
         const data = await res.json()
         setConfig(data.config || {})
@@ -68,7 +82,7 @@ function App() {
     const authHeader = activeToken.startsWith('Bearer') ? activeToken : `Bearer ${activeToken}`;
 
     try {
-      const res = await fetch('/api/config/manifest', {
+      const res = await fetch('/internal/manifest', {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
@@ -97,6 +111,7 @@ function App() {
   const isSetup = !config.plant;
 
   return (
+    setGatewayId(gatewayId),
     <div style={{ flex: 1, width: '100%', backgroundColor: '#f1f5f9', display: 'flex', flexDirection: 'column' }}>
       {isSetup ? (
         <SetupWizard currentConfig={config} onSave={saveManifest} />

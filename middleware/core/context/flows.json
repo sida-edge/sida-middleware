@@ -76,20 +76,19 @@
         },
         "nodes": [
             "643713d7acd50e0e",
-            "c86bd3eec099f455",
-            "ef61d971be61ed81",
-            "636916919bb1848a",
-            "987bd9c876bbd17c",
             "6cea4ac52afc38d5",
             "cec62d0a43816e75",
             "01b034a87e3e1257",
             "d9dad6cb238539c0",
-            "dda2bedf73dfdda1"
+            "dda2bedf73dfdda1",
+            "5b7f58bb5ff94212",
+            "e63b51f1307e85c5",
+            "4b1c11678526036b"
         ],
         "x": 54,
         "y": 99,
-        "w": 1332,
-        "h": 122
+        "w": 992,
+        "h": 162
     },
     {
         "id": "48657daa48033bec",
@@ -364,121 +363,10 @@
         "y": 140,
         "wires": [
             [
-                "c86bd3eec099f455"
+                "6cea4ac52afc38d5"
             ]
         ],
         "l": true
-    },
-    {
-        "id": "c86bd3eec099f455",
-        "type": "switch",
-        "z": "fe5e6d54acd5dc89",
-        "g": "59b78ef69a7353b5",
-        "name": "checkGatewayID",
-        "property": "gateway_id",
-        "propertyType": "global",
-        "rules": [
-            {
-                "t": "null"
-            },
-            {
-                "t": "nnull"
-            }
-        ],
-        "checkall": "true",
-        "repair": false,
-        "outputs": 2,
-        "x": 370,
-        "y": 160,
-        "wires": [
-            [
-                "ef61d971be61ed81"
-            ],
-            [
-                "987bd9c876bbd17c"
-            ]
-        ]
-    },
-    {
-        "id": "ef61d971be61ed81",
-        "type": "http request",
-        "z": "fe5e6d54acd5dc89",
-        "g": "59b78ef69a7353b5",
-        "name": "getEdgeConfig",
-        "method": "GET",
-        "ret": "obj",
-        "paytoqs": "ignore",
-        "url": "http://sida-core:8000/api/system/info",
-        "tls": "",
-        "persist": false,
-        "proxy": "",
-        "insecureHTTPParser": false,
-        "authType": "",
-        "senderr": false,
-        "headers": [],
-        "x": 580,
-        "y": 140,
-        "wires": [
-            [
-                "636916919bb1848a"
-            ]
-        ]
-    },
-    {
-        "id": "636916919bb1848a",
-        "type": "change",
-        "z": "fe5e6d54acd5dc89",
-        "g": "59b78ef69a7353b5",
-        "name": "setGatewayID",
-        "rules": [
-            {
-                "t": "set",
-                "p": "gateway_id",
-                "pt": "global",
-                "to": "payload.gateway_id",
-                "tot": "msg"
-            }
-        ],
-        "action": "",
-        "property": "",
-        "from": "",
-        "to": "",
-        "reg": false,
-        "x": 760,
-        "y": 140,
-        "wires": [
-            [
-                "987bd9c876bbd17c"
-            ]
-        ]
-    },
-    {
-        "id": "987bd9c876bbd17c",
-        "type": "change",
-        "z": "fe5e6d54acd5dc89",
-        "g": "59b78ef69a7353b5",
-        "name": "setUrl",
-        "rules": [
-            {
-                "t": "set",
-                "p": "url",
-                "pt": "msg",
-                "to": "\"http://sida-core:8000/api/config/manifest?gateway_id=\" & $globalContext(\"gateway_id\")",
-                "tot": "jsonata"
-            }
-        ],
-        "action": "",
-        "property": "",
-        "from": "",
-        "to": "",
-        "reg": false,
-        "x": 550,
-        "y": 180,
-        "wires": [
-            [
-                "6cea4ac52afc38d5"
-            ]
-        ]
     },
     {
         "id": "6cea4ac52afc38d5",
@@ -489,7 +377,7 @@
         "method": "GET",
         "ret": "obj",
         "paytoqs": "ignore",
-        "url": "",
+        "url": "http://sida-core:8000/internal/manifest",
         "tls": "",
         "persist": false,
         "proxy": "",
@@ -497,11 +385,12 @@
         "authType": "",
         "senderr": false,
         "headers": [],
-        "x": 710,
-        "y": 180,
+        "x": 350,
+        "y": 160,
         "wires": [
             [
-                "cec62d0a43816e75"
+                "cec62d0a43816e75",
+                "4b1c11678526036b"
             ]
         ]
     },
@@ -523,11 +412,12 @@
         "checkall": "true",
         "repair": false,
         "outputs": 1,
-        "x": 900,
-        "y": 180,
+        "x": 540,
+        "y": 160,
         "wires": [
             [
-                "01b034a87e3e1257"
+                "01b034a87e3e1257",
+                "5b7f58bb5ff94212"
             ]
         ]
     },
@@ -551,8 +441,8 @@
         "from": "",
         "to": "",
         "reg": false,
-        "x": 1090,
-        "y": 180,
+        "x": 750,
+        "y": 160,
         "wires": [
             [
                 "d9dad6cb238539c0"
@@ -567,8 +457,8 @@
         "name": "Controller Out",
         "mode": "link",
         "links": [],
-        "x": 1280,
-        "y": 180,
+        "x": 940,
+        "y": 160,
         "wires": [],
         "l": true
     },
@@ -588,8 +478,72 @@
         "y": 180,
         "wires": [
             [
-                "c86bd3eec099f455"
+                "6cea4ac52afc38d5"
             ]
         ]
+    },
+    {
+        "id": "5b7f58bb5ff94212",
+        "type": "debug",
+        "z": "fe5e6d54acd5dc89",
+        "g": "59b78ef69a7353b5",
+        "name": "debug 1",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 720,
+        "y": 200,
+        "wires": []
+    },
+    {
+        "id": "e63b51f1307e85c5",
+        "type": "inject",
+        "z": "fe5e6d54acd5dc89",
+        "g": "59b78ef69a7353b5",
+        "name": "",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "",
+        "payloadType": "date",
+        "x": 180,
+        "y": 220,
+        "wires": [
+            [
+                "6cea4ac52afc38d5"
+            ]
+        ]
+    },
+    {
+        "id": "4b1c11678526036b",
+        "type": "debug",
+        "z": "fe5e6d54acd5dc89",
+        "g": "59b78ef69a7353b5",
+        "name": "debug 2",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 520,
+        "y": 200,
+        "wires": []
     }
 ]

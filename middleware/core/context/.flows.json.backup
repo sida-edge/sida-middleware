@@ -76,20 +76,18 @@
         },
         "nodes": [
             "643713d7acd50e0e",
-            "c86bd3eec099f455",
-            "ef61d971be61ed81",
-            "636916919bb1848a",
-            "987bd9c876bbd17c",
             "6cea4ac52afc38d5",
             "cec62d0a43816e75",
             "01b034a87e3e1257",
             "d9dad6cb238539c0",
-            "dda2bedf73dfdda1"
+            "dda2bedf73dfdda1",
+            "5b7f58bb5ff94212",
+            "e63b51f1307e85c5"
         ],
         "x": 54,
         "y": 99,
-        "w": 1332,
-        "h": 122
+        "w": 992,
+        "h": 162
     },
     {
         "id": "48657daa48033bec",
@@ -291,7 +289,7 @@
         "z": "d46c639dccb35b93",
         "g": "48657daa48033bec",
         "name": "contextualizeData",
-        "func": "try {\n    const payloadIn = msg.topic;\n    if (!payloadIn?.source?.device_id || !payloadIn?.data) {\n        return null;\n    }\n\n    const deviceId = payloadIn.source.device_id;\n    const manifest = global.get(\"manifest\");\n\n    if (!manifest?.config?.plant) {\n        node.error(\"Manifest ausente ou configuração da planta inválida no contexto global.\");\n        return null;\n    }\n\n    let deviceCache = context.get(\"deviceCache\") || {};\n    let lastValuesCache = context.get(\"lastValuesCache\") || {};\n\n    const currentManifestHash = JSON.stringify(manifest);\n    let cachedManifestHash = context.get(\"manifestHash\");\n\n    if (!cachedManifestHash || currentManifestHash !== cachedManifestHash) {\n        deviceCache = {};\n        lastValuesCache = {};\n\n        const areas = manifest.config.plant.areas || {};\n        for (const areaId in areas) {\n            const lines = areas[areaId].lines || {};\n            for (const lineId in lines) {\n                const devices = lines[lineId].devices || {};\n                for (const devId in devices) {\n                    deviceCache[devId] = devices[devId];\n                }\n            }\n        }\n\n        context.set(\"deviceCache\", deviceCache);\n        context.set(\"lastValuesCache\", lastValuesCache);\n        context.set(\"manifestHash\", currentManifestHash);\n        node.log(\"Cache de dispositivos e estados atualizados via Hash do Manifest\");\n    }\n\n    const foundDevice = deviceCache[deviceId];\n\n    if (!foundDevice) {\n        node.warn(`Dispositivo '${deviceId}' não encontrado no manifest atual.`);\n        return null;\n    }\n\n    const plant = manifest.config.plant;\n    const assetPath = [\n        { type: \"enterprise\", id: plant.enterprise },\n        { type: \"site\", id: plant.site }\n    ].concat(foundDevice.asset_context?.path || []);\n\n    const rawData = payloadIn.data;\n    node.warn(\"Dados recebidos: \" + JSON.stringify(rawData));\n    if (rawData[\"@status\"] !== undefined && rawData[\"@status\"] === 0) {\n        \n        const device_id_isa95 = assetPath\n            .filter(p => [\"area\", \"line\", \"equipment\"].includes(p.type))\n            .map(p => p.id)\n            .join('_');\n            \n        msg.topic = \"device_offline\";\n        msg.payload = { device_id: device_id_isa95 };\n        \n        node.warn(`Alerta de sistema: Dispositivo ${device_id_isa95} caiu!`);\n        return msg; \n    }\n\n    const mappedData = [];\n    const deviceState = lastValuesCache[deviceId] || {};\n\n    for (const key in rawData) {\n        const mapping = foundDevice.metrics_mapping?.[key]\n            || Object.values(foundDevice.metrics_mapping || {}).find(m => m.name === key);\n\n        if (mapping) {\n            let finalValue = rawData[key];\n\n            if (Array.isArray(finalValue) && finalValue.length >= 2) {\n                const buffer = Buffer.alloc(4);\n                buffer.writeUint16BE(finalValue[0], 0);\n                buffer.writeUint16BE(finalValue[1], 2);\n                finalValue = buffer.readFloatBE(0);\n            }\n\n            if (mapping.scale_factor !== undefined && mapping.data_type !== \"boolean\" && mapping.data_type !== \"bool\") {\n                finalValue = parseFloat((finalValue * mapping.scale_factor).toFixed(4));\n            }\n\n            if (mapping.data_type === \"boolean\" || mapping.data_type === \"bool\") {\n                finalValue = Boolean(finalValue);\n            }\n\n            const lastValue = deviceState[mapping.name];\n            if (lastValue !== finalValue) {\n\n                deviceState[mapping.name] = finalValue;\n\n                const unit = (mapping.unit === \"null\" || !mapping.unit) ? null : mapping.unit;\n                mappedData.push({\n                    name: mapping.name,\n                    value: finalValue,\n                    unit: unit,\n                    data_type: mapping.data_type === \"bool\" ? \"boolean\" : mapping.data_type\n                });\n            }\n        }\n    }\n\n    lastValuesCache[deviceId] = deviceState;\n    context.set(\"lastValuesCache\", lastValuesCache);\n\n    if (mappedData.length === 0) {\n        return null;\n    }\n\n    msg.payload = {\n        timestamp: payloadIn.timestamp,\n        source: {\n            type: \"edge_gateway\",\n            id: payloadIn.gateway_id || manifest.gateway_id\n        },\n        asset_context: {\n            standard: foundDevice.asset_context?.standard || \"ISA-95\",\n            path: assetPath\n        },\n        data: mappedData\n    };\n\n    return msg;\n\n} catch (err) {\n    node.error(`Erro crítico no processamento ISA-95: ${err.message}`, msg);\n    return null;\n}",
+        "func": "try {\n    const payloadIn = msg.topic;\n    if (!payloadIn?.source?.device_id || !payloadIn?.data) {\n        return null;\n    }\n\n    const deviceId = payloadIn.source.device_id;\n    const manifest = global.get(\"manifest\");\n\n    if (!manifest?.config?.plant) {\n        node.error(\"Manifest ausente ou configuração da planta inválida no contexto global.\");\n        return null;\n    }\n\n    let deviceCache = context.get(\"deviceCache\") || {};\n    let lastValuesCache = context.get(\"lastValuesCache\") || {};\n\n    const currentManifestHash = JSON.stringify(manifest);\n    let cachedManifestHash = context.get(\"manifestHash\");\n\n    if (!cachedManifestHash || currentManifestHash !== cachedManifestHash) {\n        deviceCache = {};\n        lastValuesCache = {};\n\n        const areas = manifest.config.plant.areas || {};\n        for (const areaId in areas) {\n            const lines = areas[areaId].lines || {};\n            for (const lineId in lines) {\n                const devices = lines[lineId].devices || {};\n                for (const devId in devices) {\n                    deviceCache[devId] = devices[devId];\n                }\n            }\n        }\n\n        context.set(\"deviceCache\", deviceCache);\n        context.set(\"lastValuesCache\", lastValuesCache);\n        context.set(\"manifestHash\", currentManifestHash);\n        node.log(\"Cache de dispositivos e estados atualizados via Hash do Manifest\");\n    }\n\n    const foundDevice = deviceCache[deviceId];\n\n    if (!foundDevice) {\n        node.warn(`Dispositivo '${deviceId}' não encontrado no manifest atual.`);\n        return null;\n    }\n\n    const plant = manifest.config.plant;\n    const assetPath = [\n        { type: \"enterprise\", id: plant.enterprise },\n        { type: \"site\", id: plant.site }\n    ].concat(foundDevice.asset_context?.path || []);\n\n    const rawData = payloadIn.data;\n    if (rawData[\"@status\"] !== undefined && rawData[\"@status\"] === 0) {\n        \n        const device_id_isa95 = assetPath\n            .filter(p => [\"area\", \"line\", \"equipment\"].includes(p.type))\n            .map(p => p.id)\n            .join('_');\n            \n        msg.topic = \"device_offline\";\n        msg.payload = { device_id: device_id_isa95 };\n        \n        node.warn(`Alerta de sistema: Dispositivo ${device_id_isa95} caiu!`);\n        return msg; \n    }\n\n    const mappedData = [];\n    const deviceState = lastValuesCache[deviceId] || {};\n\n    for (const key in rawData) {\n        const mapping = foundDevice.metrics_mapping?.[key]\n            || Object.values(foundDevice.metrics_mapping || {}).find(m => m.name === key);\n\n        if (mapping) {\n            let finalValue = rawData[key];\n\n            if (Array.isArray(finalValue) && finalValue.length >= 2) {\n                const buffer = Buffer.alloc(4);\n                buffer.writeUint16BE(finalValue[0], 0);\n                buffer.writeUint16BE(finalValue[1], 2);\n                finalValue = buffer.readFloatBE(0);\n            }\n\n            if (mapping.scale_factor !== undefined && mapping.data_type !== \"boolean\" && mapping.data_type !== \"bool\") {\n                finalValue = parseFloat((finalValue * mapping.scale_factor).toFixed(4));\n            }\n\n            if (mapping.data_type === \"boolean\" || mapping.data_type === \"bool\") {\n                finalValue = Boolean(finalValue);\n            }\n\n            const lastValue = deviceState[mapping.name];\n            if (lastValue !== finalValue) {\n\n                deviceState[mapping.name] = finalValue;\n\n                const unit = (mapping.unit === \"null\" || !mapping.unit) ? null : mapping.unit;\n                mappedData.push({\n                    name: mapping.name,\n                    value: finalValue,\n                    unit: unit,\n                    data_type: mapping.data_type === \"bool\" ? \"boolean\" : mapping.data_type\n                });\n            }\n        }\n    }\n\n    lastValuesCache[deviceId] = deviceState;\n    context.set(\"lastValuesCache\", lastValuesCache);\n\n    if (mappedData.length === 0) {\n        return null;\n    }\n\n    msg.payload = {\n        timestamp: payloadIn.timestamp,\n        source: {\n            type: \"edge_gateway\",\n            id: payloadIn.gateway_id || manifest.gateway_id\n        },\n        asset_context: {\n            standard: foundDevice.asset_context?.standard || \"ISA-95\",\n            path: assetPath\n        },\n        data: mappedData\n    };\n\n    return msg;\n\n} catch (err) {\n    node.error(`Erro crítico no processamento ISA-95: ${err.message}`, msg);\n    return null;\n}",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
@@ -364,121 +362,10 @@
         "y": 140,
         "wires": [
             [
-                "c86bd3eec099f455"
+                "6cea4ac52afc38d5"
             ]
         ],
         "l": true
-    },
-    {
-        "id": "c86bd3eec099f455",
-        "type": "switch",
-        "z": "fe5e6d54acd5dc89",
-        "g": "59b78ef69a7353b5",
-        "name": "checkGatewayID",
-        "property": "gateway_id",
-        "propertyType": "global",
-        "rules": [
-            {
-                "t": "null"
-            },
-            {
-                "t": "nnull"
-            }
-        ],
-        "checkall": "true",
-        "repair": false,
-        "outputs": 2,
-        "x": 370,
-        "y": 160,
-        "wires": [
-            [
-                "ef61d971be61ed81"
-            ],
-            [
-                "987bd9c876bbd17c"
-            ]
-        ]
-    },
-    {
-        "id": "ef61d971be61ed81",
-        "type": "http request",
-        "z": "fe5e6d54acd5dc89",
-        "g": "59b78ef69a7353b5",
-        "name": "getEdgeConfig",
-        "method": "GET",
-        "ret": "obj",
-        "paytoqs": "ignore",
-        "url": "http://sida-core:8000/api/system/info",
-        "tls": "",
-        "persist": false,
-        "proxy": "",
-        "insecureHTTPParser": false,
-        "authType": "",
-        "senderr": false,
-        "headers": [],
-        "x": 580,
-        "y": 140,
-        "wires": [
-            [
-                "636916919bb1848a"
-            ]
-        ]
-    },
-    {
-        "id": "636916919bb1848a",
-        "type": "change",
-        "z": "fe5e6d54acd5dc89",
-        "g": "59b78ef69a7353b5",
-        "name": "setGatewayID",
-        "rules": [
-            {
-                "t": "set",
-                "p": "gateway_id",
-                "pt": "global",
-                "to": "payload.gateway_id",
-                "tot": "msg"
-            }
-        ],
-        "action": "",
-        "property": "",
-        "from": "",
-        "to": "",
-        "reg": false,
-        "x": 760,
-        "y": 140,
-        "wires": [
-            [
-                "987bd9c876bbd17c"
-            ]
-        ]
-    },
-    {
-        "id": "987bd9c876bbd17c",
-        "type": "change",
-        "z": "fe5e6d54acd5dc89",
-        "g": "59b78ef69a7353b5",
-        "name": "setUrl",
-        "rules": [
-            {
-                "t": "set",
-                "p": "url",
-                "pt": "msg",
-                "to": "\"http://sida-core:8000/api/config/manifest?gateway_id=\" & $globalContext(\"gateway_id\")",
-                "tot": "jsonata"
-            }
-        ],
-        "action": "",
-        "property": "",
-        "from": "",
-        "to": "",
-        "reg": false,
-        "x": 550,
-        "y": 180,
-        "wires": [
-            [
-                "6cea4ac52afc38d5"
-            ]
-        ]
     },
     {
         "id": "6cea4ac52afc38d5",
@@ -489,7 +376,7 @@
         "method": "GET",
         "ret": "obj",
         "paytoqs": "ignore",
-        "url": "",
+        "url": "http://sida-core:8000/internal/manifest",
         "tls": "",
         "persist": false,
         "proxy": "",
@@ -497,8 +384,8 @@
         "authType": "",
         "senderr": false,
         "headers": [],
-        "x": 710,
-        "y": 180,
+        "x": 350,
+        "y": 160,
         "wires": [
             [
                 "cec62d0a43816e75"
@@ -523,11 +410,12 @@
         "checkall": "true",
         "repair": false,
         "outputs": 1,
-        "x": 900,
-        "y": 180,
+        "x": 540,
+        "y": 160,
         "wires": [
             [
-                "01b034a87e3e1257"
+                "01b034a87e3e1257",
+                "5b7f58bb5ff94212"
             ]
         ]
     },
@@ -551,8 +439,8 @@
         "from": "",
         "to": "",
         "reg": false,
-        "x": 1090,
-        "y": 180,
+        "x": 750,
+        "y": 160,
         "wires": [
             [
                 "d9dad6cb238539c0"
@@ -567,8 +455,8 @@
         "name": "Controller Out",
         "mode": "link",
         "links": [],
-        "x": 1280,
-        "y": 180,
+        "x": 940,
+        "y": 160,
         "wires": [],
         "l": true
     },
@@ -588,7 +476,54 @@
         "y": 180,
         "wires": [
             [
-                "c86bd3eec099f455"
+                "6cea4ac52afc38d5"
+            ]
+        ]
+    },
+    {
+        "id": "5b7f58bb5ff94212",
+        "type": "debug",
+        "z": "fe5e6d54acd5dc89",
+        "g": "59b78ef69a7353b5",
+        "name": "debug 1",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 720,
+        "y": 200,
+        "wires": []
+    },
+    {
+        "id": "e63b51f1307e85c5",
+        "type": "inject",
+        "z": "fe5e6d54acd5dc89",
+        "g": "59b78ef69a7353b5",
+        "name": "",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "",
+        "payloadType": "date",
+        "x": 180,
+        "y": 220,
+        "wires": [
+            [
+                "6cea4ac52afc38d5"
             ]
         ]
     }

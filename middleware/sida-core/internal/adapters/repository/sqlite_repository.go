@@ -15,11 +15,12 @@ type sqliteManifestRepo struct {
 
 func NewSQLiteManifestRepository(db *sql.DB) (*sqliteManifestRepo, error) {
 	query := `
-	CREATE TABLE IF NOT EXISTS edge_manifests (
-		gateway_id TEXT PRIMARY KEY,
+	CREATE TABLE IF NOT EXISTS edge_manifest (
+		id INTEGER PRIMARY KEY CHECK (id = 1),
 		config_json TEXT NOT NULL,
 		updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 	);`
+	
 	if _, err := db.Exec(query); err != nil {
 		return nil, err
 	}
@@ -34,25 +35,25 @@ func (r *sqliteManifestRepo) Save(ctx context.Context, manifest domain.Manifest)
 	}
 
 	query := `
-	INSERT INTO edge_manifests (gateway_id, config_json, updated_at)
-	VALUES (?, ?, ?)
-	ON CONFLICT(gateway_id) DO UPDATE SET 
+	INSERT INTO edge_manifest (id, config_json, updated_at)
+	VALUES (1, ?, ?)
+	ON CONFLICT(id) DO UPDATE SET 
 		config_json=excluded.config_json,
 		updated_at=excluded.updated_at;`
 
-	_, err = r.db.ExecContext(ctx, query, manifest.GatewayID, string(configBytes), manifest.UpdatedAt)
+	_, err = r.db.ExecContext(ctx, query, string(configBytes), manifest.UpdatedAt)
 	return err
 }
 
-func (r *sqliteManifestRepo) GetByID(ctx context.Context, gatewayID string) (*domain.Manifest, error) {
-	query := `SELECT gateway_id, config_json, updated_at FROM edge_manifests WHERE gateway_id = ?`
+func (r *sqliteManifestRepo) Get(ctx context.Context) (*domain.Manifest, error) {
+	query := `SELECT config_json, updated_at FROM edge_manifest WHERE id = 1`
 	
-	row := r.db.QueryRowContext(ctx, query, gatewayID)
+	row := r.db.QueryRowContext(ctx, query)
 
 	var m domain.Manifest
 	var configStr string
 
-	err := row.Scan(&m.GatewayID, &configStr, &m.UpdatedAt)
+	err := row.Scan(&configStr, &m.UpdatedAt)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, nil 
