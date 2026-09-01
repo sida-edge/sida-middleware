@@ -8,9 +8,13 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
+
+	"sida-core/internal/core/services"
 )
 
-type SystemHandler struct{}
+type SystemHandler struct{
+	zmq *services.ZMQService
+}
 
 func NewSystemHandler() *SystemHandler {
 	return &SystemHandler{}
@@ -63,6 +67,21 @@ func (h *SystemHandler) GetSystemInfo(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"provisioned": true,
 		"gateway_id": gatewayID,
+	})
+}
+
+func (h *SystemHandler) GetTelemetries(c *gin.Context) {
+	telemetries, err := h.zmq.Listen()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "Erro ao receber telemetrias.",
+			"details": err.Error(),
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"telemetries": telemetries,
 	})
 }
 

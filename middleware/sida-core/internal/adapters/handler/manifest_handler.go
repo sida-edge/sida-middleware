@@ -15,10 +15,10 @@ import (
 
 type ManifestHandler struct {
 	repo ports.ManifestRepository
-	zmq  *services.ZMQPublisher
+	zmq  *services.ZMQService
 }
 
-func NewManifestHandler(repo ports.ManifestRepository, zmq *services.ZMQPublisher) *ManifestHandler {
+func NewManifestHandler(repo ports.ManifestRepository, zmq *services.ZMQService) *ManifestHandler {
 	return &ManifestHandler{
 		repo: repo,
 		zmq:  zmq,
