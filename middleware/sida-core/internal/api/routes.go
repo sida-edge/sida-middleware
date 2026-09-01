@@ -52,5 +52,8 @@ func SetupRoutes(router *gin.Engine,
 		apiConfig.GET("/health", systemHandler.HealthCheck)
 		apiConfig.GET("/info", systemHandler.GetSystemInfo)
 		apiConfig.POST("/setup", systemHandler.SetupEdgeGateway)
+
+		// Telemetry routes
+		apiConfig.GET("/telemetries", RequireAuth(authService), systemHandler.GetTelemetries)
 	}
 }
