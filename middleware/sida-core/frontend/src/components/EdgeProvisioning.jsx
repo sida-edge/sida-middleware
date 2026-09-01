@@ -21,7 +21,7 @@ export default function EdgeProvisioning({ onProvisioned }) {
       if (!resSetup.ok) throw new Error('Falha ao registar identidade no Edge.')
       const setupData = await resSetup.json()
 
-      const resAuth = await fetch('/api/auth/unlock', {
+      const resAuth = await fetch('/internal/unlock', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ pin })

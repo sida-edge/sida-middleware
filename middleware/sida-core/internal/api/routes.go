@@ -39,14 +39,16 @@ func SetupRoutes(router *gin.Engine,
 		c.File("./public/index.html")
 	})
 
-	router.POST("/api/auth/unlock", authHandler.Unlock)
+	router.POST("/internal/unlock", authHandler.Unlock)
 
 	apiConfig := router.Group("/internal")
 	{
+		// Manifest routes
 		apiConfig.GET("/manifest", manifestHandler.GetManifest)
 		apiConfig.POST("/manifest", RequireAuth(authService), manifestHandler.UploadManifest)
 		apiConfig.PATCH("/:area/lines/:line/devices/:id/status", RequireAuth(authService), manifestHandler.ToggleDeviceStatus)
 		
+		// System routes
 		apiConfig.GET("/health", systemHandler.HealthCheck)
 		apiConfig.GET("/info", systemHandler.GetSystemInfo)
 		apiConfig.POST("/setup", systemHandler.SetupEdgeGateway)
