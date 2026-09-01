@@ -28,8 +28,10 @@ function App() {
         throw new Error('[sida-core] Falha ao verificar identidade')
 
       const data = await res.json()
-      if (data.provisioned)
-        loadConfig(data)
+      if (data.provisioned) {
+        setGatewayId(data.gateway_id)
+        loadManifest(data.gateway_id)
+      }
       
       setAppState(data.provisioned ? 'provisioned' : 'unprovisioned')
       
@@ -37,17 +39,6 @@ function App() {
       console.error("Erro ao verificar identidade", error)
       setAppState('error')
     }
-  }
-
-  const loadConfig = async (data) => {
-    if (!data.gateway_id) {
-      console.error("[sida-core] Falha ao carregar configuração: gateway_id ausente")
-      setAppState('error')
-      return
-    }
-
-    setGatewayId(data.gateway_id)
-    loadManifest(data.gateway_id)
   }
 
   const loadManifest = async (id) => {
