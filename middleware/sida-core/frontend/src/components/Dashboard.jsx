@@ -26,7 +26,7 @@ export default function Dashboard({ config, onSave, gatewayId, token, setToken }
 
   const handleUnlock = async () => {
     try {
-      const res = await fetch('/internal/unlock', {
+      const res = await fetch('/unlock', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ pin: pinInput })

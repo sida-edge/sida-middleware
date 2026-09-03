@@ -39,8 +39,6 @@ func SetupRoutes(router *gin.Engine,
 		c.File("./public/index.html")
 	})
 
-	router.POST("/internal/unlock", authHandler.Unlock)
-
 	apiConfig := router.Group("/internal")
 	{
 		// Manifest routes
@@ -55,5 +53,8 @@ func SetupRoutes(router *gin.Engine,
 
 		// Telemetry routes
 		apiConfig.GET("/telemetries", RequireAuth(authService), systemHandler.GetTelemetries)
+		
+		// Auth routes
+		apiConfig.POST("/unlock", authHandler.Unlock)
 	}
 }
