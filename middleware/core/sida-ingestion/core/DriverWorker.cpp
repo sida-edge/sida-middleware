@@ -33,17 +33,34 @@ void DriverWorker::stop() {
 }
 
 void DriverWorker::pollingLoop() {
+    bool was_connected = false;
+
     while (running_) {
         auto start_time = std::chrono::steady_clock::now();
 
         if (!driver_->isConnected()) {
+            
+            if (was_connected) {
+                std::cerr << "[WORKER] ALERTA: Conexão perdida! Disparando evento offline." << std::endl;
+                
+                std::vector<TagRecord> system_records;
+                TagRecord death_record = TagRecord(driver_->getId(), "@status", 0.0, "", false);
+                
+                system_records.push_back(death_record);
+                output_queue_.push(std::move(system_records));
+                
+                was_connected = false;
+            }
+
             std::cout << "[WORKER] Driver not connected. Attempting to connect..." << std::endl;
             if (!driver_->connect()) {
                 std::cout << "[WORKER] Connection failed. Retrying in " << poll_rate_ms_.count() << " ms." << std::endl;
                 std::this_thread::sleep_for(poll_rate_ms_);
                 continue;
             }
+            
             std::cout << "[WORKER] Connected to driver." << std::endl;
+            was_connected = true;
         }
 
         auto records = driver_->pollData();
@@ -57,7 +74,8 @@ void DriverWorker::pollingLoop() {
         if (elapsed_time < poll_rate_ms_) {
             std::this_thread::sleep_for(poll_rate_ms_ - elapsed_time);
         } else {
-            std::cerr << "[WORKER] Polling took longer than the specified poll rate of " << poll_rate_ms_.count() << " ms." << std::endl;
+            std::cerr << "[WORKER] Polling took longer than the specified poll rate of " 
+                      << poll_rate_ms_.count() << " ms." << std::endl;
         }
     }
     

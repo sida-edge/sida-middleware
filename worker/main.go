@@ -165,6 +165,48 @@ func processDataMessage(ctx context.Context, writeAPI api.WriteAPIBlocking, grou
 	log.Printf("[INFLUXDB] Telemetria gravada! Site: %s | Edge: %s | Device: %s", groupID, edgeNodeID, deviceID)
 }
 
+func processDeathMessage(ctx context.Context, driver neo4j.DriverWithContext, messageType, edgeNodeID, deviceID string) {
+	session := driver.NewSession(ctx, neo4j.SessionConfig{AccessMode: neo4j.AccessModeWrite})
+	defer session.Close(ctx)
+
+	var query string
+	params := map[string]any{
+		"edgeNodeId": edgeNodeID,
+		"timestamp":  time.Now().UnixMilli(),
+	}
+
+	if messageType == "DDEATH" && deviceID != "" {
+		// Pega só o último pedaço (deviceName) caso venha no formato Area_Linha_Equip
+		parts := strings.Split(deviceID, "_")
+		params["deviceName"] = parts[len(parts)-1] 
+
+		// Atualiza apenas o dispositivo específico
+		query = `
+		MATCH (e:EdgeNode {name: $edgeNodeId})-[:CONTROLS]->(d:Device {name: $deviceName})
+		SET d.status = 'Offline', d.lastSeen = $timestamp
+		`
+	} else if messageType == "NDEATH" {
+		// Atualiza o Edge Node E, em cascata, todos os dispositivos que ele controla
+		query = `
+		MATCH (e:EdgeNode {name: $edgeNodeId})
+		SET e.status = 'Offline', e.lastSeen = $timestamp
+		WITH e
+		OPTIONAL MATCH (e)-[:CONTROLS]->(d:Device)
+		SET d.status = 'Offline', d.lastSeen = $timestamp
+		`
+	}
+
+	_, err := session.ExecuteWrite(ctx, func(tx neo4j.ManagedTransaction) (any, error) {
+		return tx.Run(ctx, query, params)
+	})
+
+	if err != nil {
+		log.Printf("[ERRO] Falha ao registrar Óbito (%s) no Memgraph: %v", messageType, err)
+	} else {
+		log.Printf("[MEMGRAPH] Status atualizado para OFFLINE! Edge: %s | Device: %s", edgeNodeID, deviceID)
+	}
+}
+
 func main() {
 	brokerURL := getEnv("MQTT_BROKER_URL", "tcp://mosquitto-local:1883")
 	clientID := getEnv("MQTT_CLIENT_ID", "sida-worker-ingestor")
@@ -221,8 +263,8 @@ func main() {
 			processDataMessage(ctx, influxWriteAPI, groupID, edgeNodeID, deviceID, &spbPayload)
 
 		case "NDEATH", "DDEATH":
-			//TODO: Mudar status no grafo para "Offline"
-			log.Printf("Nó %s ficou offline.", edgeNodeID)
+			log.Printf("Processando Óbito (%s)...", messageType)
+			processDeathMessage(ctx, dbDriver, messageType, edgeNodeID, deviceID)
 		}
 	}
 

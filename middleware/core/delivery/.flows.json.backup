@@ -85,21 +85,16 @@
         "nodes": [
             "1eed795d89c44e79",
             "1ed9ef381529fe5c",
-            "37fed7b31a998b66",
             "43fd630789b23562",
             "2eaae339269ab06b",
-            "6f9671d7a3dfdabf",
-            "eb555e75fc17430c",
-            "9d27a1415f491dbc",
-            "f853084e4951664c",
-            "2d8c6d84e253344b",
-            "280682499a563c46",
-            "0c601b96c0057b51"
+            "78646b501d92a664",
+            "0d7d10f9e5348153",
+            "2880b81870000e30"
         ],
         "x": 34,
-        "y": 39,
+        "y": -1,
         "w": 892,
-        "h": 222
+        "h": 202
     },
     {
         "id": "a092e4acc9b2bb17",
@@ -146,29 +141,6 @@
         "x": 74,
         "y": 259,
         "w": 892,
-        "h": 142
-    },
-    {
-        "id": "fd50d99e0df2f9e4",
-        "type": "group",
-        "z": "be71d2b93d53caac",
-        "name": "store-and-forward",
-        "style": {
-            "stroke": "#92d04f",
-            "label": true,
-            "color": "#777777"
-        },
-        "nodes": [
-            "58707d6834a970f9",
-            "451267583e47c925",
-            "aef027c552fc3e11",
-            "c5115ad91d580029",
-            "21c35530601a19d7",
-            "d79fbae1969217e0"
-        ],
-        "x": 14,
-        "y": 239,
-        "w": 662,
         "h": 142
     },
     {
@@ -356,7 +328,7 @@
         "z": "20080e9522dba17a",
         "g": "3cae7c106a179c06",
         "name": "setupConnectors",
-        "func": "const manifest = global.get(\"manifest\");\nconst gateway_id = global.get(\"gateway_id\");\n\nif (!manifest || !manifest.config || !manifest.config.receivers) {\n    node.status({ fill: \"red\", shape: \"ring\", text: \"Manifesto Inválido\" });\n    node.error(\"Manifesto recebido não possui 'receivers'.\");\n    return\n}\n\nconst connectors = manifest.config.receivers\nlet mqttConfig = null;\nfor (const key in connectors) {\n    const connector = connectors[key];\n    if (connector.protocol === \"mqtt\") {\n        mqttConfig = connector;\n        break;\n    }\n}\n\nif (!mqttConfig) {\n    node.status({ fill: \"yellow\", shape: \"ring\", text: \"MQTT não configurado\" });\n    node.warn(\"Nenhum receiver com protocol='mqtt' foi encontrado no manifesto.\");\n    return;\n}\n\nconst brokerUrl = `mqtt://${mqttConfig.host}:${mqttConfig.port}`;\n\nlet client = context.get('mqttClient');\nlet currentUrl = context.get('currentBrokerUrl');\nif (client && client.connected && currentUrl === brokerUrl) {\n    node.warn(\"Connector '\" + mqttConfig.protocol + \"' ja configurado\");\n    return; \n}\n\nif (client) {\n    client.end();\n}\n\nconst spB = sparkplugPayload.get(\"spBv1.0\");\nconst nDeathPayload = spB.encodePayload({\n    timestamp: Date.now(),\n    metrics: [{ name: \"bdSeq\", type: \"UInt64\", value: 0 }]\n});\n\nclient = mqtt.connect(brokerUrl, {\n    clientId: gateway_id, \n    will: {\n        topic: `spBv1.0/${manifest.config.site}/NDEATH/${gateway_id}`,\n        payload: nDeathPayload,\n        qos: 0,\n        retain: false\n    }\n});\n\nclient.on('connect', () => {\n    node.status({ fill: \"green\", shape: \"dot\", text: \"Broker Conectado\" });\n    \n    global.set('mqttClient', client); \n    \n    msg.payload = { status: \"CONECTADO\", manifestoAtivo: manifest };\n    msg.topic = \"connection_status\"\n    node.send(msg);\n});\n\nclient.on('error', (/** @type {NodeMessage} */ err) => {\n    node.status({ fill: \"red\", shape: \"ring\", text: \"Erro de Conexão\" });\n    node.error(\"Falha no MQTT: \", err);\n});\n\nclient.on('offline', () => {\n    node.status({ fill: \"yellow\", shape: \"ring\", text: \"Offline\" });\n});\n\ncontext.set('mqttClient', client);\ncontext.set('currentBrokerUrl', brokerUrl);\n\nnode.on('close', function(removed, done) {\n    if (client) {\n        client.end(true, () => {\n            node.log(\"Conexão MQTT encerrada pelo fechamento do nó.\");\n            done();\n        });\n    } else {\n        done();\n    }\n});",
+        "func": "const manifest = global.get(\"manifest\");\nconst gateway_id = global.get(\"gateway_id\");\n\nif (!manifest || !manifest.config || !manifest.config.receivers) {\n    node.status({ fill: \"red\", shape: \"ring\", text: \"Manifesto Inválido\" });\n    node.error(\"Manifesto recebido não possui 'receivers'.\");\n    return;\n}\n\nconst plant = manifest.config.plant;\nconst groupId = `${plant.enterprise}_${plant.site}`;\n\nconst connectors = manifest.config.receivers;\nlet mqttConfig = null;\nfor (const key in connectors) {\n    const connector = connectors[key];\n    if (connector.protocol === \"mqtt\") {\n        mqttConfig = connector;\n        break;\n    }\n}\n\nif (!mqttConfig) {\n    node.status({ fill: \"yellow\", shape: \"ring\", text: \"MQTT não configurado\" });\n    node.warn(\"Nenhum receiver com protocol='mqtt' foi encontrado no manifesto.\");\n    return;\n}\n\nconst brokerUrl = `mqtt://${mqttConfig.host}:${mqttConfig.port}`;\n\nlet client = context.get('mqttClient');\nlet currentUrl = context.get('currentBrokerUrl');\nif (client && client.connected && currentUrl === brokerUrl) {\n    node.warn(\"Connector '\" + mqttConfig.protocol + \"' ja configurado\");\n    return;\n}\n\nif (client) {\n    client.end(true);\n}\n\nconst spB = sparkplugPayload.get(\"spBv1.0\");\n\nlet bdSeq = global.get(\"spb_bdSeq\") || 0;\n\nconst nDeathPayload = spB.encodePayload({\n    timestamp: Date.now(),\n    metrics: [{ name: \"bdSeq\", type: \"UInt64\", value: bdSeq }]\n});\n\nclient = mqtt.connect(brokerUrl, {\n    clientId: gateway_id,\n    will: {\n        topic: `spBv1.0/${groupId}/NDEATH/${gateway_id}`,\n        payload: nDeathPayload,\n        qos: 0,\n        retain: false\n    }\n});\n\nclient.on('connect', () => {\n    node.status({ fill: \"green\", shape: \"dot\", text: \"Broker Conectado\" });\n    global.set('mqttClient', client);\n\n    msg.payload = {\n        status: \"CONECTADO\",\n        manifestoAtivo: manifest,\n        bdSeqToUse: bdSeq\n    };\n    msg.topic = \"connection_status\";\n    node.send(msg);\n\n    global.set(\"spb_bdSeq\", (bdSeq + 1) % 256);\n});\n\nclient.on('error', (err) => {\n    node.status({ fill: \"red\", shape: \"ring\", text: \"Erro de Conexão\" });\n    node.error(\"Falha no MQTT: \", err);\n});\n\nclient.on('offline', () => {\n    node.status({ fill: \"yellow\", shape: \"ring\", text: \"Offline\" });\n});\n\ncontext.set('mqttClient', client);\ncontext.set('currentBrokerUrl', brokerUrl);\n\nnode.on('close', function (removed, done) {\n    if (client) {\n        client.end(true, () => {\n            node.log(\"Conexão MQTT encerrada pelo fechamento do nó.\");\n            done();\n        });\n    } else {\n        done();\n    }\n});",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
@@ -445,8 +417,7 @@
         "y": 140,
         "wires": [
             [
-                "6f9671d7a3dfdabf",
-                "280682499a563c46"
+                "78646b501d92a664"
             ]
         ],
         "l": true
@@ -457,7 +428,7 @@
         "z": "f4a91dd7bfc833e7",
         "g": "ba6a1b32fd321ca2",
         "name": "DeliveryProcessor",
-        "func": "const manifest = global.get(\"manifest\");\nconst gateway_id = global.get(\"gateway_id\");\nconst site = `${manifest.config.plant.enterprise}_${manifest.config.plant.site}`;\nconst spB = sparkplugPayload.get(\"spBv1.0\");\n\nif (msg.topic === \"connection_status\") {\n    let seq = 0;\n    global.set(\"spb_seq\", seq);\n    global.set(\"born_devices\", {});\n\n    const nBirthPayload = spB.encodePayload({\n        timestamp: Date.now(),\n        metrics: [{ name: \"Node Control/Rebirth\", type: \"Boolean\", value: false }],\n        seq: seq\n    });\n\n    global.set(\"spb_seq\", (seq + 1) % 256);\n\n    msg.topic = `spBv1.0/${site}/NBIRTH/${gateway_id}`;\n    msg.payload = nBirthPayload;\n    node.send(msg);\n    return;\n}\n\nif (msg.payload.data) {\n    const contextPayload = msg.payload;\n\n    if (!contextPayload || !contextPayload.asset_context || !contextPayload.data) {\n        node.error(\"Payload SIDA inválido ou sem contexto ISA-95.\");\n        return;\n    }\n\n    const pathItems = contextPayload.asset_context.path;\n    const device_id = pathItems\n        .filter((/** @type {{ type: string; }} */ p) => [\"area\", \"line\", \"equipment\"].includes(p.type))\n        .map((/** @type {{ id: any; }} */ p) => p.id)\n        .join('_');\n\n    function mapSpbType(type) {\n        const typeMap = { \"float\": \"Float\", \"double\": \"Double\", \"int\": \"Int32\", \"integer\": \"Int32\", \"boolean\": \"Boolean\", \"string\": \"String\" };\n        return typeMap[type.toLowerCase()] || \"String\";\n    }\n\n    const spbMetrics = contextPayload.data.map(d => {\n        let metric = { name: d.name, type: mapSpbType(d.data_type), value: d.value };\n        node.warn(metric);\n        if (d.unit) {\n            metric.properties = { \"engUnit\": { type: \"String\", value: d.unit } };\n        }\n        return metric;\n    });\n\n    let seq = global.get(\"spb_seq\") || 0;\n    let bornDevices = global.get(\"born_devices\") || {};\n\n    if (!bornDevices[device_id]) {\n        const dBirthPayload = spB.encodePayload({\n            timestamp: contextPayload.timestamp,\n            metrics: spbMetrics,\n            seq: seq\n        });\n\n        node.send({\n            topic: `spBv1.0/${site}/DBIRTH/${gateway_id}/${device_id}`,\n            payload: dBirthPayload\n        });\n\n        bornDevices[device_id] = true;\n        global.set(\"born_devices\", bornDevices);\n        seq = (seq + 1) % 256;\n    }\n\n    const dDataPayload = spB.encodePayload({\n        timestamp: contextPayload.timestamp,\n        metrics: spbMetrics,\n        seq: seq\n    });\n\n    global.set(\"spb_seq\", (seq + 1) % 256);\n\n    node.send({\n        topic: `spBv1.0/${site}/DDATA/${gateway_id}/${device_id}`,\n        payload: dDataPayload\n    });\n}",
+        "func": "const manifest = global.get(\"manifest\");\nconst gateway_id = global.get(\"gateway_id\") || manifest.gateway_id; \nconst site = `${manifest.config.plant.enterprise}_${manifest.config.plant.site}`;\nconst spB = sparkplugPayload.get(\"spBv1.0\");\n\n\nif (msg.topic === \"connection_status\") {\n    let seq = 0;\n    let bdSeq = msg.payload.bdSeqToUse; \n    \n    global.set(\"spb_seq\", seq);\n    global.set(\"born_devices\", {});\n\n    const nBirthPayload = spB.encodePayload({\n        timestamp: Date.now(),\n        metrics: [\n            { name: \"Node Control/Rebirth\", type: \"Boolean\", value: false },\n            { name: \"bdSeq\", type: \"UInt64\", value: bdSeq }\n        ],\n        seq: seq\n    });\n\n    global.set(\"spb_seq\", (seq + 1) % 256);\n    global.set(\"spb_bdSeq\", (bdSeq + 1) % 256);\n\n    msg.topic = `spBv1.0/${site}/NBIRTH/${gateway_id}`;\n    msg.payload = nBirthPayload;\n    node.send(msg);\n    return;\n}\nif (msg.topic === \"device_offline\") {\n    const offlineDeviceId = msg.payload.device_id;\n    let bornDevices = global.get(\"born_devices\") || {};\n\n    if (bornDevices[offlineDeviceId]) {\n        let seq = global.get(\"spb_seq\") || 0;\n        \n        const dDeathPayload = spB.encodePayload({\n            timestamp: Date.now(),\n            metrics: [], \n            seq: seq\n        });\n\n        global.set(\"spb_seq\", (seq + 1) % 256);\n\n        delete bornDevices[offlineDeviceId];\n        global.set(\"born_devices\", bornDevices);\n\n        msg.topic = `spBv1.0/${site}/DDEATH/${gateway_id}/${offlineDeviceId}`;\n        msg.payload = dDeathPayload;\n        node.send(msg);\n        \n        node.warn(`[SPARKPLUG] DDeath enviado. Dispositivo ${offlineDeviceId} desconectado.`);\n    }\n    \n    return;\n}\n\nif (msg.topic.includes(\"/NCMD/\")) {\n    try {\n        const decoded = spB.decodePayload(msg.payload);\n        const rebirthMetric = decoded.metrics.find(m => m.name === \"Node Control/Rebirth\");\n        \n        if (rebirthMetric && rebirthMetric.value === true) {\n            node.warn(\"SCADA solicitou Rebirth! Reiniciando ciclo de vida...\");\n            msg.topic = \"rebirth_command\";\n            node.send(msg); \n        }\n    } catch (e) {\n        node.error(\"Erro ao decodificar NCMD: \" + e.message);\n    }\n    return;\n}\n\n\nif (msg.payload && msg.payload.data) {\n    const contextPayload = msg.payload;\n\n    if (!contextPayload || !contextPayload.asset_context || !contextPayload.data) {\n        node.error(\"Payload SIDA inválido ou sem contexto ISA-95.\");\n        return;\n    }\n\n    const pathItems = contextPayload.asset_context.path;\n    const device_id = pathItems\n        .filter(p => [\"area\", \"line\", \"equipment\"].includes(p.type))\n        .map(p => p.id)\n        .join('_');\n\n    function mapSpbType(type, value) {\n        if (!type) {\n            if (typeof value === \"number\") return Number.isInteger(value) ? \"Int32\" : \"Float\";\n            if (typeof value === \"boolean\") return \"Boolean\";\n            return \"String\";\n        }\n        const typeMap = { \n            \"float\": \"Float\", \"float32\": \"Float\", \n            \"double\": \"Double\", \"float64\": \"Double\", \n            \"int\": \"Int32\", \"integer\": \"Int32\", \"int16\": \"Int32\", \"uint16\": \"Int32\", \"int32\": \"Int32\",\n            \"boolean\": \"Boolean\", \"bool\": \"Boolean\", \n            \"string\": \"String\" \n        };\n        return typeMap[type.toLowerCase()] || \"String\";\n    }\n\n    let seq = global.get(\"spb_seq\") || 0;\n    let bornDevices = global.get(\"born_devices\") || {};\n    const isDBirth = !bornDevices[device_id];\n\n    const spbMetrics = contextPayload.data.map(d => {\n        let expectedType = mapSpbType(d.data_type, d.value);\n        let finalValue = d.value;\n        \n        if (expectedType === \"String\" && typeof finalValue !== \"string\") {\n            finalValue = String(finalValue);\n        }\n\n        let metric = {\n            name: d.name,\n            type: expectedType,\n            value: finalValue\n        };\n\n        if (isDBirth && d.unit) {\n            metric.properties = { \"engUnit\": { type: \"String\", value: String(d.unit) } };\n        }\n\n        return metric;\n    });\n\n    if (isDBirth) {\n        const dBirthPayload = spB.encodePayload({\n            timestamp: contextPayload.timestamp,\n            metrics: spbMetrics,\n            seq: seq\n        });\n\n        bornDevices[device_id] = true;\n        global.set(\"born_devices\", bornDevices);\n        global.set(\"spb_seq\", (seq + 1) % 256);\n\n        msg.topic = `spBv1.0/${site}/DBIRTH/${gateway_id}/${device_id}`;\n        msg.payload = dBirthPayload;\n        node.send(msg);\n        \n        return; \n    }\n\n    const dDataPayload = spB.encodePayload({\n        timestamp: contextPayload.timestamp,\n        metrics: spbMetrics,\n        seq: seq\n    });\n\n    global.set(\"spb_seq\", (seq + 1) % 256);\n\n    msg.topic = `spBv1.0/${site}/DDATA/${gateway_id}/${device_id}`;\n    msg.payload = dDataPayload;\n    node.send(msg);\n}",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
@@ -470,33 +441,13 @@
             }
         ],
         "x": 550,
-        "y": 140,
+        "y": 160,
         "wires": [
             [
                 "43fd630789b23562",
-                "2eaae339269ab06b",
-                "0c601b96c0057b51"
+                "2eaae339269ab06b"
             ]
         ]
-    },
-    {
-        "id": "37fed7b31a998b66",
-        "type": "link in",
-        "z": "f4a91dd7bfc833e7",
-        "g": "ba6a1b32fd321ca2",
-        "name": "Config",
-        "links": [
-            "d5ea1ef0df385798"
-        ],
-        "x": 170,
-        "y": 180,
-        "wires": [
-            [
-                "6f9671d7a3dfdabf",
-                "9d27a1415f491dbc"
-            ]
-        ],
-        "l": true
     },
     {
         "id": "43fd630789b23562",
@@ -513,7 +464,7 @@
         "statusVal": "",
         "statusType": "counter",
         "x": 790,
-        "y": 80,
+        "y": 100,
         "wires": []
     },
     {
@@ -526,111 +477,81 @@
         "links": [
             "d1928eef1a094621"
         ],
-        "x": 780,
-        "y": 140,
+        "x": 760,
+        "y": 160,
         "wires": [],
         "l": true
     },
     {
-        "id": "6f9671d7a3dfdabf",
-        "type": "function",
+        "id": "78646b501d92a664",
+        "type": "switch",
         "z": "f4a91dd7bfc833e7",
         "g": "ba6a1b32fd321ca2",
-        "name": "retentionRouter",
-        "func": "const client = global.get(\"mqttClient\");\nconst contextPayload = msg.payload;\n\nif (contextPayload.data) {\n\n    if (client && client.connected) {\n        node.status({ fill: \"green\", shape: \"dot\", text: \"Connector Online\" });\n        node.send([msg, null]);\n    }\n\n    else {\n        node.status({ fill: \"yellow\", shape: \"ring\", text: \"Connector Offline - Salvando na API\" });\n        \n        let msgHttp = {\n            method: \"POST\",\n            url: \"http://sida-core:8080/api/buffer\",\n            headers: { \"Content-Type\": \"application/json\" },\n            payload: contextPayload\n        };\n        \n        node.send([null, msgHttp]);\n    }\n} else {\n    node.send([msg, null]);\n}\n",
+        "name": "SystemRouter",
+        "property": "payload.data[\"@status\"]",
+        "propertyType": "msg",
+        "rules": [
+            {
+                "t": "eq",
+                "v": "0",
+                "vt": "num"
+            },
+            {
+                "t": "else"
+            }
+        ],
+        "checkall": "true",
+        "repair": false,
         "outputs": 2,
-        "timeout": 0,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 340,
-        "y": 160,
+        "x": 320,
+        "y": 140,
         "wires": [
             [
-                "1ed9ef381529fe5c"
+                "0d7d10f9e5348153"
             ],
             [
-                "eb555e75fc17430c"
+                "1ed9ef381529fe5c"
             ]
         ]
     },
     {
-        "id": "eb555e75fc17430c",
-        "type": "link out",
+        "id": "0d7d10f9e5348153",
+        "type": "change",
         "z": "f4a91dd7bfc833e7",
         "g": "ba6a1b32fd321ca2",
-        "name": "BufferQueue",
-        "mode": "link",
-        "links": [
-            "58707d6834a970f9"
+        "name": "setDDeath",
+        "rules": [
+            {
+                "t": "set",
+                "p": "topic",
+                "pt": "msg",
+                "to": "device_offline",
+                "tot": "str"
+            },
+            {
+                "t": "set",
+                "p": "payload.device_id",
+                "pt": "msg",
+                "to": "payload.source.device_id",
+                "tot": "str"
+            }
         ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
         "x": 530,
-        "y": 180,
-        "wires": [],
-        "l": true
-    },
-    {
-        "id": "9d27a1415f491dbc",
-        "type": "delay",
-        "z": "f4a91dd7bfc833e7",
-        "g": "ba6a1b32fd321ca2",
-        "name": "waitNBirth",
-        "pauseType": "delay",
-        "timeout": "2",
-        "timeoutUnits": "seconds",
-        "rate": "1",
-        "nbRateUnits": "1",
-        "rateUnits": "second",
-        "randomFirst": "1",
-        "randomLast": "5",
-        "randomUnits": "seconds",
-        "drop": false,
-        "allowrate": false,
-        "outputs": 1,
-        "x": 330,
-        "y": 220,
-        "wires": [
-            [
-                "f853084e4951664c"
-            ]
-        ]
-    },
-    {
-        "id": "f853084e4951664c",
-        "type": "link out",
-        "z": "f4a91dd7bfc833e7",
-        "g": "ba6a1b32fd321ca2",
-        "name": "RequestQueue",
-        "mode": "link",
-        "links": [
-            "aef027c552fc3e11"
-        ],
-        "x": 520,
-        "y": 220,
-        "wires": [],
-        "l": true
-    },
-    {
-        "id": "2d8c6d84e253344b",
-        "type": "link in",
-        "z": "f4a91dd7bfc833e7",
-        "g": "ba6a1b32fd321ca2",
-        "name": "BufferIn",
-        "links": [
-            "d79fbae1969217e0"
-        ],
-        "x": 370,
         "y": 120,
         "wires": [
             [
-                "1ed9ef381529fe5c"
+                "1ed9ef381529fe5c",
+                "2880b81870000e30"
             ]
-        ],
-        "l": true
+        ]
     },
     {
-        "id": "280682499a563c46",
+        "id": "2880b81870000e30",
         "type": "debug",
         "z": "f4a91dd7bfc833e7",
         "g": "ba6a1b32fd321ca2",
@@ -643,26 +564,8 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "counter",
-        "x": 290,
-        "y": 80,
-        "wires": []
-    },
-    {
-        "id": "0c601b96c0057b51",
-        "type": "debug",
-        "z": "f4a91dd7bfc833e7",
-        "g": "ba6a1b32fd321ca2",
-        "name": "debug 2",
-        "active": false,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "payload",
-        "targetType": "msg",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 760,
-        "y": 200,
+        "x": 680,
+        "y": 40,
         "wires": []
     },
     {
@@ -905,126 +808,6 @@
         ],
         "x": 1200,
         "y": 180,
-        "wires": [],
-        "l": true
-    },
-    {
-        "id": "58707d6834a970f9",
-        "type": "link in",
-        "z": "be71d2b93d53caac",
-        "g": "fd50d99e0df2f9e4",
-        "name": "StoreAndForward",
-        "links": [
-            "eb555e75fc17430c"
-        ],
-        "x": 120,
-        "y": 280,
-        "wires": [
-            [
-                "451267583e47c925"
-            ]
-        ],
-        "l": true
-    },
-    {
-        "id": "451267583e47c925",
-        "type": "http request",
-        "z": "be71d2b93d53caac",
-        "g": "fd50d99e0df2f9e4",
-        "name": "StoreAndForward",
-        "method": "POST",
-        "ret": "obj",
-        "paytoqs": "ignore",
-        "url": "",
-        "tls": "",
-        "persist": false,
-        "proxy": "",
-        "insecureHTTPParser": false,
-        "authType": "",
-        "senderr": false,
-        "headers": [],
-        "x": 330,
-        "y": 280,
-        "wires": [
-            []
-        ]
-    },
-    {
-        "id": "aef027c552fc3e11",
-        "type": "link in",
-        "z": "be71d2b93d53caac",
-        "g": "fd50d99e0df2f9e4",
-        "name": "FlushData",
-        "links": [
-            "f853084e4951664c"
-        ],
-        "x": 100,
-        "y": 340,
-        "wires": [
-            [
-                "c5115ad91d580029"
-            ]
-        ],
-        "l": true
-    },
-    {
-        "id": "c5115ad91d580029",
-        "type": "http request",
-        "z": "be71d2b93d53caac",
-        "g": "fd50d99e0df2f9e4",
-        "name": "pullBuffer",
-        "method": "GET",
-        "ret": "obj",
-        "paytoqs": "ignore",
-        "url": "http://sida-core:8080/api/buffer/flush",
-        "tls": "",
-        "persist": false,
-        "proxy": "",
-        "insecureHTTPParser": false,
-        "authType": "",
-        "senderr": false,
-        "headers": [],
-        "x": 260,
-        "y": 340,
-        "wires": [
-            [
-                "21c35530601a19d7"
-            ]
-        ]
-    },
-    {
-        "id": "21c35530601a19d7",
-        "type": "function",
-        "z": "be71d2b93d53caac",
-        "g": "fd50d99e0df2f9e4",
-        "name": "bufferDistributor",
-        "func": "const respostaApi = msg.payload;\n\nif (respostaApi && respostaApi.status === \"success\" && Array.isArray(respostaApi.data)) {\n    const pacotes = respostaApi.data;\n    \n    if (pacotes.length > 0) {\n        node.status({ fill: \"blue\", shape: \"dot\", text: `Injetando ${pacotes.length} retidos` });\n        \n        pacotes.forEach(pacote => {\n            let msgRecuperada = {\n                topic: \"data\", \n                payload: pacote\n            };\n            \n            node.send(msgRecuperada);\n        });\n        \n    } else {\n        node.status({ fill: \"grey\", shape: \"ring\", text: \"Buffer estava vazio\" });\n    }\n} else {\n    node.error(\"Resposta inesperada da API de Buffer\", msg);\n}",
-        "outputs": 1,
-        "timeout": 0,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 420,
-        "y": 340,
-        "wires": [
-            [
-                "d79fbae1969217e0"
-            ]
-        ]
-    },
-    {
-        "id": "d79fbae1969217e0",
-        "type": "link out",
-        "z": "be71d2b93d53caac",
-        "g": "fd50d99e0df2f9e4",
-        "name": "BufferOut",
-        "mode": "link",
-        "links": [
-            "2d8c6d84e253344b"
-        ],
-        "x": 590,
-        "y": 340,
         "wires": [],
         "l": true
     },
