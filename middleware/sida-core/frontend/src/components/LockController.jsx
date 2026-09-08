@@ -5,7 +5,7 @@ export default function LockController({ isUnlocked, onUnlock, onLock }) {
   const [pin, setPin] = useState('')
 
   const handleUnlock = async () => {
-    const res = await fetch('/api/auth/unlock', {
+    const res = await fetch('/internal/unlock', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ pin })

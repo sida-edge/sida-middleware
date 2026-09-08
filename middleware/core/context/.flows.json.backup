@@ -408,7 +408,7 @@
         "method": "GET",
         "ret": "obj",
         "paytoqs": "ignore",
-        "url": "http://sida-core:8000/api/system/info",
+        "url": "http://sida-core:8000/internal/info",
         "tls": "",
         "persist": false,
         "proxy": "",
@@ -463,7 +463,7 @@
                 "t": "set",
                 "p": "url",
                 "pt": "msg",
-                "to": "\"http://sida-core:8000/api/config/manifest?gateway_id=\" & $globalContext(\"gateway_id\")",
+                "to": "\"http://sida-core:8000/internal/manifest?gateway_id=\" & $globalContext(\"gateway_id\")",
                 "tot": "jsonata"
             }
         ],

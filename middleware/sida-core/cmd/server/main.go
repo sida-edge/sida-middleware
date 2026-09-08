@@ -41,12 +41,6 @@ func main() {
 		log.Fatal("SQLite fatal error:", err)
 	}
 
-	bufferRepo, err := repository.NewSQLiteBufferRepository(db)
-	if err != nil {
-		log.Fatal(err)
-	}
-	log.Println("Database connected.")
-
 	zmqPub, err := services.NewZMQPublisher("0.0.0.0:5556")
 	if err != nil {
 		log.Fatal("Erro fatal ao iniciar ZeroMQ:", err)
@@ -56,12 +50,11 @@ func main() {
 	authHandler := handler.NewAuthHandler(authService)
 	systemHandler := handler.NewSystemHandler()
 	manifestHandler := handler.NewManifestHandler(manifestRepo, zmqPub)
-	bufferHandler := handler.NewBufferHandler(bufferRepo)
 
 	gin.SetMode(gin.ReleaseMode)
 	router := gin.Default()
 
-	api.SetupRoutes(router, manifestHandler, authHandler, systemHandler, authService, bufferHandler)
+	api.SetupRoutes(router, manifestHandler, authHandler, systemHandler, authService)
 
 	srv := &http.Server{
 		Addr:    ":8000",

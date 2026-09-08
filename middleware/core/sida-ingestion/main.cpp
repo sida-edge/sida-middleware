@@ -19,7 +19,7 @@
 
 using json = nlohmann::json;
 
-const std::string MANIFEST_API_URL = "http://sida-core:1880/api/manifest";
+const std::string MANIFEST_API_URL = "http://sida-core:1880/internal/manifest";
 
 std::atomic<bool> reload_manifest{true};
 std::atomic<bool> system_running{true};
@@ -115,7 +115,7 @@ int main() {
             }
             workers.clear(); 
 
-            std::string info_url = "http://sida-core:8000/api/system/info";
+            std::string info_url = "http://sida-core:8000/internal/info";
             std::string info_response;
             
             if (PerformHttpGet(info_url, info_response)) {
@@ -124,7 +124,7 @@ int main() {
                     gateway_id = info_json.value("gateway_id", "sida_default_gw");
                     std::cout << "[SIDA_INGESTION] Identidade confirmada. Gateway ID: " << gateway_id << "\n";
                     
-                    std::string manifest_url = "http://sida-core:8000/api/config/manifest?gateway_id=" + gateway_id;
+                    std::string manifest_url = "http://sida-core:8000/internal/manifest?gateway_id=" + gateway_id;
                     std::string manifest_response;
                     
                     if (PerformHttpGet(manifest_url, manifest_response)) {

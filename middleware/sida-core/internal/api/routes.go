@@ -31,8 +31,7 @@ func SetupRoutes(router *gin.Engine,
 				manifestHandler *handler.ManifestHandler,
 				authHandler *handler.AuthHandler,
 				systemHandler *handler.SystemHandler,
-				authService *services.AuthService,
-				bufferHandler *handler.BufferHandler) {
+				authService *services.AuthService) {
 
 	router.Static("/assets", "./public/assets")
 	router.StaticFile("/", "./public/index.html")
@@ -40,28 +39,19 @@ func SetupRoutes(router *gin.Engine,
 		c.File("./public/index.html")
 	})
 
-	router.GET("/api/health", systemHandler.HealthCheck)
-	router.POST("/api/auth/unlock", authHandler.Unlock)
-
-	apiConfig := router.Group("/api/config")
+	apiConfig := router.Group("/internal")
 	{
+		// Manifest routes
 		apiConfig.GET("/manifest", manifestHandler.GetManifest)
 		apiConfig.POST("/manifest", RequireAuth(authService), manifestHandler.UploadManifest)
-		apiConfig.DELETE("/area/:area", RequireAuth(authService), manifestHandler.RemoveArea)
-		apiConfig.DELETE("/:area/lines/:line", RequireAuth(authService), manifestHandler.RemoveLine)
-		apiConfig.DELETE("/:area/lines/:line/devices/:id", RequireAuth(authService), manifestHandler.RemoveDevice)
 		apiConfig.PATCH("/:area/lines/:line/devices/:id/status", RequireAuth(authService), manifestHandler.ToggleDeviceStatus)
-	}
 
-	apiSystem := router.Group("/api/system")
-	{
-		apiSystem.GET("/info", systemHandler.GetSystemInfo)
-		apiSystem.POST("/setup", systemHandler.SetupEdgeGateway)
-	}
+		// System routes
+		apiConfig.GET("/info", systemHandler.GetSystemInfo)
+		apiConfig.POST("/setup", systemHandler.SetupEdgeGateway)
+		apiConfig.GET("/health", systemHandler.HealthCheck)
 
-	apiBuffer := router.Group("/api/buffer")
-    {
-        apiBuffer.POST("/", bufferHandler.IngestBuffer)
-        apiBuffer.GET("/flush", bufferHandler.FlushBuffer)
-    }
+		// Auth routes
+		apiConfig.POST("/unlock", authHandler.Unlock)
+	}
 }

@@ -22,7 +22,7 @@ function App() {
 
   const checkIdentity = async () => {
     try {
-      const res = await fetch('/api/system/info')
+      const res = await fetch('/internal/info')
       if (!res.ok) throw new Error('Servidor Go respondeu com erro.')
       const data = await res.json()
       if (data.provisioned) {
@@ -38,7 +38,7 @@ function App() {
 
   const loadManifest = async (id) => {
      try {
-      const res = await fetch(`/api/config/manifest?gateway_id=${id}`)
+      const res = await fetch(`/internal/manifest?gateway_id=${id}`)
       if (res.ok) {
         const data = await res.json()
         setConfig(data.config || {})
@@ -68,7 +68,7 @@ function App() {
     const authHeader = activeToken.startsWith('Bearer') ? activeToken : `Bearer ${activeToken}`;
 
     try {
-      const res = await fetch('/api/config/manifest', {
+      const res = await fetch('/internal/manifest', {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',

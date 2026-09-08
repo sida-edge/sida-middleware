@@ -4,7 +4,6 @@ networks:
     name: sida-edge-net
 
 services:
-
   sida-ingestion:
     build:
       context: ./core/sida-ingestion
@@ -28,7 +27,7 @@ services:
       - sida_ipc:/tmp/.ipc
     restart: unless-stopped
   
-  poc-context:
+  sida-context:
     build:
       context: .
       dockerfile: ./core/Dockerfile
@@ -48,7 +47,7 @@ services:
       - sida-core
     attach: false
 
-  poc-delivery:
+  sida-delivery:
     build:
       context: .
       dockerfile: ./core/Dockerfile
@@ -66,18 +65,6 @@ services:
     restart: unless-stopped
     depends_on:
       - sida-core
-    attach: false
-
-  plc-simulator:
-    image: ghcr.io/sida-edge/simulador:latest
-    container_name: sida-simulator
-    profiles:
-      - "sim"
-    environment:
-      - DISPLAY=host.docker.internal:0
-    ports:
-      - "5020:5020"
-    restart: unless-stopped
     attach: false
 
 volumes:
