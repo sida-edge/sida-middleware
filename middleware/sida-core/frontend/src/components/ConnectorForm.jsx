@@ -51,11 +51,11 @@ export default function ConnectorForm({ initialConnectorId, initialData, onSave,
   }
 
   return (
-    <div style={styles.overlay}>
-      <div style={styles.modal}>
+    <div style={styles.overlay} className="sida-modal-overlay">
+      <div style={styles.modal} className="sida-modal">
         <h2 style={{ marginTop: 0 }}>{initialConnectorId ? 'Editar Conexão' : 'Nova Conexão Externa'}</h2>
         
-        <div style={styles.grid}>
+        <div style={styles.grid} className="sida-grid2">
           <div>
             <label style={styles.label}>ID / Nome da Conexão</label>
             <input style={styles.input} value={name} onChange={e => setName(e.target.value)} placeholder="Ex: nuvem_aws" disabled={!!initialConnectorId} />

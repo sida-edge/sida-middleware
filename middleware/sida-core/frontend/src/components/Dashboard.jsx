@@ -144,10 +144,10 @@ export default function Dashboard({ config, onSave, gatewayId, token, setToken }
   }
 
   return (
-    <div style={styles.layout}>
+    <div style={styles.layout} className="sida-layout">
       {deleteTarget && (
         <div style={styles.modalOverlay}>
-          <div style={styles.modalCard}>
+          <div style={styles.modalCard} className="sida-modal-card">
             <h2 style={{ margin: '0 0 10px 0', color: colors.textMain }}>Excluir Equipamento?</h2>
             <p style={{ color: colors.textMuted, fontSize: '14px', marginBottom: '25px' }}>
               Tem certeza que deseja remover o equipamento <strong>{formatName(deleteTarget.deviceId)}</strong>? Esta ação não pode ser desfeita.
@@ -162,7 +162,7 @@ export default function Dashboard({ config, onSave, gatewayId, token, setToken }
 
       {modalConfig.isOpen && (
         <div style={styles.modalOverlay}>
-          <div style={styles.modalCard}>
+          <div style={styles.modalCard} className="sida-modal-card">
             <h2 style={{ margin: '0 0 20px 0', color: colors.textMain }}>
               {modalConfig.type === 'area' ? 'Nova Área Operacional' : 'Adicionar Nova Linha'}
             </h2>
@@ -191,28 +191,28 @@ export default function Dashboard({ config, onSave, gatewayId, token, setToken }
         </div>
       )}
 
-      <div style={styles.sidebar}>
-        <div style={styles.sidebarHeader}>
+      <div style={styles.sidebar} className="sida-sidebar">
+        <div style={styles.sidebarHeader} className="sida-sidebar-header">
           <div style={{ fontSize: '12px', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px', marginBottom: '4px' }}>SIDA EDGE CORE</div>
           <div style={{ fontSize: '18px', fontWeight: '600' }}>{plantModel.site || 'Site Não Definido'}</div>
           <div style={{ fontSize: '13px', color: '#64748b', marginTop: '4px' }}>{plantModel.enterprise}</div>
         </div>
 
-        <div style={{ padding: '20px 0', flex: 1, overflowY: 'auto' }}>
+        <div style={{ padding: '20px 0', flex: 1, overflowY: 'auto' }} className="sida-sidebar-nav">
           <div style={{ padding: '0 24px', fontSize: '11px', color: '#64748b', fontWeight: 'bold', textTransform: 'uppercase', marginBottom: '10px' }}>Visão Geral</div>
-          <div style={styles.navItem(activeTab === 'all')} onClick={() => setActiveTab('all')}>Planta Completa</div>
-          <div style={styles.navItem(activeTab === 'connectors')} onClick={() => setActiveTab('connectors')}>External Connectors</div>
+          <div className={`sida-nav-item ${activeTab === 'all' ? 'active' : ''}`} style={styles.navItem(activeTab === 'all')} onClick={() => setActiveTab('all')}>Planta Completa</div>
+          <div className={`sida-nav-item ${activeTab === 'connectors' ? 'active' : ''}`} style={styles.navItem(activeTab === 'connectors')} onClick={() => setActiveTab('connectors')}>External Connectors</div>
           <div style={{ padding: '20px 24px 10px', fontSize: '11px', color: '#64748b', fontWeight: 'bold', textTransform: 'uppercase' }}>Áreas Operacionais</div>
           {Object.keys(plantModel.areas || {}).map((areaId) => (
-            <div key={areaId} style={styles.navItem(activeTab === areaId)} onClick={() => setActiveTab(areaId)}>
+            <div key={areaId} className={`sida-nav-item ${activeTab === areaId ? 'active' : ''}`} style={styles.navItem(activeTab === areaId)} onClick={() => setActiveTab(areaId)}>
               {formatName(areaId)}
             </div>
           ))}
         </div>
       </div>
 
-      <div style={styles.main}>
-        <div style={styles.topbar}>
+      <div style={styles.main} className="sida-main">
+        <div style={styles.topbar} className="sida-topbar">
           <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
              {isEngineeringMode 
                 ? <div style={styles.badgeWarning}><span style={{width:'8px',height:'8px',borderRadius:'50%',backgroundColor:colors.warning}}></span> MODO ENGENHARIA</div>
@@ -239,10 +239,10 @@ export default function Dashboard({ config, onSave, gatewayId, token, setToken }
           </div>
         )}
 
-        <div style={styles.content}>
+        <div style={styles.content} className="sida-content">
           {activeTab === 'connectors' ? (
             <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '30px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '30px' }} className="sida-header-flex">
                 <div>
                   <h1 style={{ margin: '0 0 5px 0', fontSize: '28px', color: colors.textMain }}>Conexões Externas</h1>
                   <p style={{ margin: 0, color: colors.textMuted, fontSize: '14px' }}>Destinos de integração para exportação de telemetria.</p>
@@ -252,7 +252,7 @@ export default function Dashboard({ config, onSave, gatewayId, token, setToken }
                 )}
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))', gap: '20px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))', gap: '20px' }} className="sida-grid">
                 {Object.entries(config.receivers || {}).map(([id, connector]) => (
                   <ConnectorCard 
                     key={id} 
@@ -290,7 +290,7 @@ export default function Dashboard({ config, onSave, gatewayId, token, setToken }
             </div>
           ) : (
             <>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '30px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '30px' }} className="sida-header-flex">
               <div>
                 <h1 style={{ margin: '0 0 5px 0', fontSize: '28px', color: colors.textMain }}>{activeTab === 'all' ? 'Planta Completa' : formatName(activeTab)}</h1>
                 <p style={{ margin: 0, color: colors.textMuted, fontSize: '14px' }}>Gestão e monitorização de ativos</p>
@@ -327,7 +327,7 @@ export default function Dashboard({ config, onSave, gatewayId, token, setToken }
                           )}
                         </div>
                         
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '20px' }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '20px' }} className="sida-grid">
                           {equipamentos.length > 0 ? (
                             equipamentos.map(([id, device]) => (
                               <DeviceCard 
