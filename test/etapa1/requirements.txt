@@ -4,5 +4,7 @@ pytest>=8.0
 paho-mqtt>=2.0
 requests>=2.31
 PyYAML>=6.0
+protobuf>=4.25          # decodifica os payloads Sparkplug B (plano A, S2)
+pyzmq>=25.0             # assina o PUB de manifesto :5556 (plano B, T1B.5)
 # Opcional (fallback quando nao ha `protoc` de sistema para o teste T1A.1):
 grpcio-tools>=1.60

@@ -158,14 +158,19 @@ func (s *PeerService) Start() error {
 	return nil
 }
 
-// Stop encerra os loops e fecha os sockets. Idempotente.
+// Stop encerra os loops e fecha os sockets. Idempotente e com teto de tempo:
+// nunca segura o shutdown do processo além de ~3s.
 func (s *PeerService) Stop() {
 	select {
 	case <-s.stop:
 	default:
 		close(s.stop)
 	}
-	<-s.done
+	select {
+	case <-s.done:
+	case <-time.After(3 * time.Second):
+		log.Println("peer-mesh: Stop() excedeu 3s; seguindo com o encerramento")
+	}
 }
 
 func (s *PeerService) run() {

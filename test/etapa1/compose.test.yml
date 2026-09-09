@@ -89,6 +89,7 @@ services:
     ports:
       - "18001:8000"
       - "15571:5557"
+      - "15561:5556"          # PUB de manifesto exposto ao host (checagem do T1B.5)
     networks:
       edge1_net:
         aliases: [sida-core]

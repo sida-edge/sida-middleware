@@ -175,3 +175,61 @@ def test_probe_e_liveness(plane_b_fleet):
     assert _peer_state(f, 3, "edge_001")["state"] == "alive"
 
     f.start(2)  # restaura para o resto da suite
+
+
+# --------------------------------------------------------------------------- T1B.5
+def test_wiring_e_shutdown(plane_b_fleet):
+    """O peer_service sobe no boot (log :5557) sem tocar no PUB de manifesto
+    (:5556, que segue entregando a um assinante) nem nas rotas; /api/system/info
+    segue 200; `docker stop` encerra a malha limpo e rapido."""
+    import hashlib
+
+    import requests
+    import zmq
+
+    f = plane_b_fleet
+    f.up(1)
+    assert f.wait_http(1), "edge1-core nao subiu"
+
+    l1 = f.logs(1)
+    assert "peer-mesh: ROUTER em tcp://0.0.0.0:5557" in l1, l1[-1500:]
+    assert "ZMQ Publisher rodando em tcp://0.0.0.0:5556" in l1, "PUB de manifesto (:5556) sumiu"
+
+    pj = f.peers_api(1)
+    assert pj["controller_id"] == "edge_001" and len(pj["peers"]) == 2, pj
+    assert f.api_get(1, "/api/system/info"), "/api/system/info nao respondeu 200"
+
+    # :5556 (papel do ontology-builder) ainda entrega manifesto a um assinante
+    sub = zmq.Context.instance().socket(zmq.SUB)
+    sub.setsockopt(zmq.SUBSCRIBE, b"sida/manifest")
+    sub.setsockopt(zmq.RCVTIMEO, 1500)
+    sub.connect(f"tcp://localhost:{f.PUB_PORT_HOST[1]}")
+    time.sleep(1.0)  # slow joiner do ZeroMQ
+
+    bearer = "Bearer session_" + hashlib.sha256(b"000000").hexdigest()
+    manifest = {"gateway_id": "sida_edge_001", "config": {"plant": {"enterprise": "E", "site": "S"}}}
+    got_pub = False
+    try:
+        for _ in range(8):
+            r = requests.post(f._url(1, "/api/config/manifest"), json=manifest,
+                              headers={"Authorization": bearer}, timeout=5)
+            assert r.status_code == 200, f"upload manifest: {r.status_code} {r.text}"
+            try:
+                topic, _body = sub.recv_multipart()
+                if topic.startswith(b"sida/manifest"):
+                    got_pub = True
+                    break
+            except zmq.Again:
+                time.sleep(0.5)
+    finally:
+        sub.close()
+    assert got_pub, ":5556 nao entregou o manifesto ao assinante apos o wiring do plano B"
+
+    # shutdown limpo e rapido (sem chegar ao SIGKILL do -t 10)
+    t0 = time.time()
+    f.stop(1)
+    dt = time.time() - t0
+    lg = f.logs(1)
+    assert "peer-mesh encerrada" in lg, f"peer-mesh nao encerrou no shutdown\n{lg[-1500:]}"
+    assert "SIDA-Core encerrado" in lg, f"shutdown nao chegou ao fim\n{lg[-1500:]}"
+    assert dt <= 10.0, f"shutdown lento demais ({dt:.1f}s) — possivel goroutine presa"

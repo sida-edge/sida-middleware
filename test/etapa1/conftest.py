@@ -221,6 +221,7 @@ class PlaneBFleet:
     CORE = {1: "edge1-core", 2: "edge2-core", 3: "edge3-core"}
     HTTP_PORT = {1: 18001, 2: 18002, 3: 18003}
     PEER_PORT_HOST = {1: 15571, 2: 15572, 3: 15573}
+    PUB_PORT_HOST = {1: 15561}   # :5556 (manifesto) exposto só no edge1 (T1B.5)
     CONTROLLER_ID = {1: "edge_001", 2: "edge_002", 3: "edge_003"}
 
     def __init__(self, compose: list[str], project: str):
