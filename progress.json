@@ -7,8 +7,8 @@
     "2. este arquivo marca a task 'concluida' (status, updated, commit)",
     "3. UM commit na branch interedge: '<tipo>(<escopo>): <descricao> [<ID>]'"
   ],
-  "updated": "2026-09-09T18:21:04Z",
-  "sprint_atual": "S2",
+  "updated": "2026-09-09T19:05:00Z",
+  "sprint_atual": "S3",
   "tasks": [
     {
       "sprint": "S1",
