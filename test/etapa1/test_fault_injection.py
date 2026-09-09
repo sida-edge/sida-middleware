@@ -185,3 +185,44 @@ def test_frota_integra_e_injecao(full_fleet, sniffer):
         requests.get(f"http://localhost:{f.HTTP_PORT[2]}/api/system/info", timeout=3)
 
     f.start_node(2)  # restaura para os testes seguintes
+
+
+# --------------------------------------------------------------------------- T4.4
+def test_deteccao_dois_planos(full_fleet, sniffer):
+    """Passos 3–5: LWT de edge_002 com o bdSeq casado (A); edge_001/edge_003
+    marcam edge_002 `down` dentro de PROBE_INTERVAL_MS x PEER_DOWN_AFTER_MISSES
+    (B); sobreviventes seguem publicando DDATA sem perda (C)."""
+    f = full_fleet
+    for n in (1, 2, 3):
+        assert f.wait_http(n)
+
+    nb2, _, _ = _fresh_cycle(f, sniffer, 2)
+    bdseq2 = _bdseq(nb2["pb"])
+    # deixa a malha convergir para alive
+    time.sleep(6)
+
+    t1 = time.time()
+    f.kill_node(2)  # morte abrupta -> LWT
+
+    # (A) plano norte: NDEATH via LWT com o bdSeq do ultimo NBIRTH de edge_002
+    nd = sniffer.wait("NDEATH", GW[2], after=t1, timeout=90)
+    assert _bdseq(nd["pb"]) == bdseq2, (
+        f"bdSeq do LWT ({_bdseq(nd['pb'])}) != ultimo NBIRTH de edge_002 ({bdseq2})"
+    )
+    t_ndeath = nd["ts"] - t1
+
+    # (B) plano leste-oeste: edge_001 e edge_003 marcam edge_002 down
+    d1 = _peer_down_at(f, 1, "edge_002", t1, timeout=15)
+    d3 = _peer_down_at(f, 3, "edge_002", t1, timeout=15)
+    assert d1 is not None and d3 is not None, f"edge_002 nao ficou down: d1={d1} d3={d3}"
+
+    # (C) sobreviventes publicam DDATA sem perda durante e apos a falha
+    time.sleep(10)
+    for n in (1, 3):
+        losses = _ddata_losses(sniffer, GW[n], t1, time.time())
+        assert losses == 0, f"{GW[n]}: {losses} lacuna(s) de DDATA na falha"
+    # sem rebirth espurio nos sobreviventes
+    for n in (1, 3):
+        assert not sniffer.snap("NBIRTH", GW[n], after=t1), f"{GW[n]} deu NBIRTH espurio"
+
+    f.start_node(2)
