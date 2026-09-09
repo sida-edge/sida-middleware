@@ -79,3 +79,43 @@ def test_persistencia_controllers(plane_b_fleet):
         1, "SELECT connected_controllers FROM controllers WHERE controller_id=?", ("edge_001",),
     )
     assert row2 and len(_json.loads(row2[0][0])) == 2, "registro de pares perdido apos restart"
+
+
+# --------------------------------------------------------------------------- T1B.3
+def test_troca_mensagem_mesh(plane_b_fleet):
+    """edge_001.WriteMessage(edge_002, payload) e edge_002 recebe o payload
+    integro via ReadMessage(); a troca usa :5557 e o :5556 segue intacto."""
+    f = plane_b_fleet
+    f.up(1, 2)
+    assert f.wait_http(1) and f.wait_http(2), "cores nao subiram"
+
+    # :5557 e :5556 coexistem
+    l1 = f.logs(1)
+    assert "peer-mesh: ROUTER em tcp://0.0.0.0:5557" in l1, f"peer-mesh nao logou o bind :5557\n{l1[-1500:]}"
+    assert "tcp://0.0.0.0:5556" in l1, "ZMQ Publisher de manifesto (:5556) sumiu"
+
+    nonce = f"ola-mesh-{int(time.time())}"
+    # da tempo para os DEALER conectarem
+    deadline = time.time() + 40
+    delivered = False
+    while time.time() < deadline:
+        r = f.api_post(1, "/api/system/peers/test/send", {"peer": "edge_002", "payload": nonce})
+        assert r.status_code in (202, 502), f"send inesperado: {r.status_code} {r.text}"
+        time.sleep(2)
+        inbox = f.api_get(2, "/api/system/peers/test/inbox").get("messages", [])
+        if nonce in inbox:
+            delivered = True
+            break
+    assert delivered, f"edge_002 nao recebeu {nonce!r} via a malha"
+
+    # e a volta: edge_002 -> edge_001
+    nonce2 = f"volta-{int(time.time())}"
+    got_back = False
+    deadline = time.time() + 30
+    while time.time() < deadline:
+        f.api_post(2, "/api/system/peers/test/send", {"peer": "edge_001", "payload": nonce2})
+        time.sleep(2)
+        if nonce2 in f.api_get(1, "/api/system/peers/test/inbox").get("messages", []):
+            got_back = True
+            break
+    assert got_back, f"edge_001 nao recebeu {nonce2!r} de volta"

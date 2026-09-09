@@ -44,6 +44,7 @@ x-core-env: &core-common-env
   PEER_PORT: "5557"
   PROBE_INTERVAL_MS: "1000"
   PEER_DOWN_AFTER_MISSES: "3"
+  PEER_MESH_TEST: "1"          # liga os hooks de teste da malha (/api/system/peers/test/*)
 
 services:
 

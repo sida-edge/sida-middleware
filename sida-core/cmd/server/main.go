@@ -87,16 +87,32 @@ func main() {
 		log.Fatal("Erro fatal ao iniciar ZeroMQ:", err)
 	}
 
+	// Plano B (leste-oeste): malha ZeroMQ ROUTER/DEALER em PEER_PORT, dedicada
+	// e distinta do PUB de manifesto em :5556. Só sobe se o nó tem CONTROLLER_ID.
+	var peerSvc *services.PeerService
+	if controllerReg.ControllerID != "" {
+		peerPort := strings.TrimSpace(os.Getenv("PEER_PORT"))
+		if peerPort == "" {
+			peerPort = "5557"
+		}
+		peerSvc = services.NewPeerService(controllerReg, peerPort)
+		if err := peerSvc.Start(); err != nil {
+			log.Printf("peer-mesh nao subiu: %v", err)
+			peerSvc = nil
+		}
+	}
+
 	authService := services.NewAuthService()
 	authHandler := handler.NewAuthHandler(authService)
 	systemHandler := handler.NewSystemHandler()
 	manifestHandler := handler.NewManifestHandler(manifestRepo, zmqPub)
 	bufferHandler := handler.NewBufferHandler(bufferRepo)
+	peerHandler := handler.NewPeerHandler(peerSvc)
 
 	gin.SetMode(gin.ReleaseMode)
 	router := gin.Default()
 
-	api.SetupRoutes(router, manifestHandler, authHandler, systemHandler, authService, bufferHandler)
+	api.SetupRoutes(router, manifestHandler, authHandler, systemHandler, authService, bufferHandler, peerHandler)
 
 	srv := &http.Server{
 		Addr:    ":8000",
@@ -121,6 +137,11 @@ func main() {
 
 	if err := srv.Shutdown(ctx); err != nil {
 		log.Fatal("Desligamento forçado do servidor:", err)
+	}
+
+	if peerSvc != nil {
+		peerSvc.Stop()
+		log.Println("peer-mesh encerrada")
 	}
 
 	if err := zmqPub.Close(); err != nil {

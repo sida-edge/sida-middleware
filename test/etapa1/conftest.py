@@ -281,13 +281,21 @@ class PlaneBFleet:
             time.sleep(2)
         return False
 
-    def peers_api(self, node, timeout=5) -> dict:
+    def _url(self, node, path):
+        return f"http://localhost:{self.HTTP_PORT[node]}{path}"
+
+    def api_get(self, node, path, timeout=5):
         import requests
-        r = requests.get(
-            f"http://localhost:{self.HTTP_PORT[node]}/api/system/peers", timeout=timeout
-        )
+        r = requests.get(self._url(node, path), timeout=timeout)
         r.raise_for_status()
         return r.json()
+
+    def api_post(self, node, path, payload, timeout=5):
+        import requests
+        return requests.post(self._url(node, path), json=payload, timeout=timeout)
+
+    def peers_api(self, node, timeout=5) -> dict:
+        return self.api_get(node, "/api/system/peers", timeout=timeout)
 
     def run_oneoff_core(self, name: str, env: dict, settle_s: float = 6.0) -> str:
         """Sobe um sida-core efemero (sem deps) com env custom, colhe o log e o remove."""
