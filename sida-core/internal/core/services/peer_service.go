@@ -87,6 +87,7 @@ type PeerService struct {
 	mu       sync.Mutex
 	buffer   map[string][][]byte // MessageBuffer: seção dedicada por remetente
 	liveness map[string]*peerLiveness
+	dupLogAt time.Time // rate-limit do log de CONTROLLER_ID duplicado
 
 	probeIntervalMs     int
 	peerDownAfterMisses int
@@ -233,6 +234,14 @@ func (s *PeerService) sendVia(out outFrame) {
 }
 
 func (s *PeerService) handle(from, mtype, body string) {
+	// Colisão de identidade (SDD 5.4, caso 9): se recebo tráfego de malha
+	// assinado com o MEU próprio CONTROLLER_ID, há um par duplicado. Recuso e
+	// registro em log claro (sem flap silencioso) — não é um par válido.
+	if from == s.self {
+		s.noteDuplicateID(from)
+		return
+	}
+
 	switch mtype {
 	case frameProbe:
 		s.enqueue(from, frameProbeAck, body)
@@ -370,6 +379,18 @@ func (s *PeerService) evaluateLiveness(interval time.Duration, downAfterMisses i
 		default:
 			lv.State = domain.PeerSuspect
 		}
+	}
+}
+
+func (s *PeerService) noteDuplicateID(id string) {
+	s.mu.Lock()
+	quiet := time.Since(s.dupLogAt) < 5*time.Second
+	if !quiet {
+		s.dupLogAt = time.Now()
+	}
+	s.mu.Unlock()
+	if !quiet {
+		log.Printf("peer-mesh: CONTROLLER_ID duplicado detectado na malha: %q — par recusado", id)
 	}
 }
 

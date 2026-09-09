@@ -13,9 +13,13 @@ Todos [heavy]: sobem 1..3 sida-core da compose.test.yml na mesh_net dedicada.
 """
 from __future__ import annotations
 
+import subprocess
 import time
+from contextlib import contextmanager
 
 import pytest
+
+from conftest import COMPOSE_TEST
 
 pytestmark = pytest.mark.heavy
 
@@ -233,3 +237,138 @@ def test_wiring_e_shutdown(plane_b_fleet):
     assert "peer-mesh encerrada" in lg, f"peer-mesh nao encerrou no shutdown\n{lg[-1500:]}"
     assert "SIDA-Core encerrado" in lg, f"shutdown nao chegou ao fim\n{lg[-1500:]}"
     assert dt <= 10.0, f"shutdown lento demais ({dt:.1f}s) — possivel goroutine presa"
+
+
+# ---------------------------------------------------------------- T4.2: casos 6, 7, 9
+def _wait_states(fleet, want: dict, timeout: float):
+    """want = {(node, peer_id): estado_esperado}. Espera todos baterem."""
+    deadline = time.time() + timeout
+    last = {}
+    while time.time() < deadline:
+        last = {}
+        ok = True
+        for (node, pid), exp in want.items():
+            st = _peer_state(fleet, node, pid)
+            last[(node, pid)] = st["state"] if st else None
+            if last[(node, pid)] != exp:
+                ok = False
+        if ok:
+            return
+        time.sleep(1)
+    raise AssertionError(f"liveness nao convergiu: quer={want} tem={last}")
+
+
+def test_flap_religamento(plane_b_fleet):
+    """Caso 6: edge_002 cai e volta em poucos segundos. edge_001/edge_003 o
+    marcam `down` (via suspect) e, ao voltar, `alive` de novo — a histerese
+    evita oscilacao e a malha entre os sobreviventes nao se corrompe."""
+    f = plane_b_fleet
+    f.up(1, 2, 3)
+    for n in (1, 2, 3):
+        assert f.wait_http(n), f"edge{n}-core nao subiu"
+    _wait_states(f, {(1, "edge_002"): "alive", (1, "edge_003"): "alive",
+                     (3, "edge_002"): "alive", (3, "edge_001"): "alive"}, 40)
+
+    f.stop(2)
+    _wait_states(f, {(1, "edge_002"): "down", (3, "edge_002"): "down"}, 15)
+    assert _peer_state(f, 1, "edge_003")["state"] == "alive", "flap contaminou edge_001<->edge_003"
+    assert _peer_state(f, 3, "edge_001")["state"] == "alive"
+
+    f.start(2)
+    assert f.wait_http(2), "edge2-core nao voltou"
+    _wait_states(f, {(1, "edge_002"): "alive", (3, "edge_002"): "alive",
+                     (2, "edge_001"): "alive", (2, "edge_003"): "alive",
+                     (1, "edge_003"): "alive", (3, "edge_001"): "alive"}, 40)
+
+
+def _container(node: int) -> str:
+    # compose.test.yml fixa container_name = e1-edge{N}-core
+    return f"e1-edge{node}-core"
+
+
+def _mesh_ip(fleet, node: int) -> str:
+    net = f"{fleet._project[1]}_mesh_net"
+    p = subprocess.run(
+        ["docker", "inspect", "-f",
+         '{{(index .NetworkSettings.Networks "' + net + '").IPAddress}}', _container(node)],
+        capture_output=True, text=True, timeout=20,
+    )
+    ip = p.stdout.strip()
+    assert ip, f"sem IP de {_container(node)} em {net}: {p.stderr}"
+    return ip
+
+
+@contextmanager
+def _partition(fleet, a: int, b: int):
+    """Bloqueia (iptables no netns de cada container) o trafego a<->b, mantendo
+    o resto da malha. Remove no fim; a teardown da fixture (`down -v`) tambem
+    limpa se algo escapar."""
+    ip_a, ip_b = _mesh_ip(fleet, a), _mesh_ip(fleet, b)
+
+    def _rule(op: str, node: int, other_ip: str):
+        subprocess.run(
+            ["docker", "run", "--rm", "--network", f"container:{_container(node)}",
+             "--cap-add", "NET_ADMIN", "alpine", "sh", "-c",
+             f"apk add -q iptables 2>/dev/null; "
+             f"iptables -{op} INPUT -s {other_ip} -j DROP; "
+             f"iptables -{op} OUTPUT -d {other_ip} -j DROP"],
+            capture_output=True, text=True, timeout=90,
+        )
+
+    _rule("A", a, ip_b)
+    _rule("A", b, ip_a)
+    try:
+        yield
+    finally:
+        _rule("D", a, ip_b)
+        _rule("D", b, ip_a)
+
+
+def test_particao_parcial(plane_b_fleet):
+    """Caso 7: regra de rede permite edge_001<->edge_002 e edge_002<->edge_003,
+    mas bloqueia edge_001<->edge_003. Cada no reporta sua visao LOCAL: edge_001
+    ve edge_003 down e edge_002 alive; edge_003 o simetrico; edge_002 ve os
+    dois alive. Sem eleicao/quorum — o plano B nao reconcilia."""
+    f = plane_b_fleet
+    f.up(1, 2, 3)
+    for n in (1, 2, 3):
+        assert f.wait_http(n), f"edge{n}-core nao subiu"
+    _wait_states(f, {(1, "edge_002"): "alive", (1, "edge_003"): "alive",
+                     (2, "edge_001"): "alive", (2, "edge_003"): "alive",
+                     (3, "edge_001"): "alive", (3, "edge_002"): "alive"}, 40)
+
+    with _partition(f, 1, 3):
+        _wait_states(f, {(1, "edge_003"): "down", (3, "edge_001"): "down"}, 20)
+        # visao local, sem consenso:
+        assert _peer_state(f, 1, "edge_002")["state"] == "alive", "edge_001 perdeu edge_002 (nao devia)"
+        assert _peer_state(f, 3, "edge_002")["state"] == "alive", "edge_003 perdeu edge_002 (nao devia)"
+        assert _peer_state(f, 2, "edge_001")["state"] == "alive", "edge_002 nao devia perder edge_001"
+        assert _peer_state(f, 2, "edge_003")["state"] == "alive", "edge_002 nao devia perder edge_003"
+
+    # ao remover a particao, edge_001<->edge_003 voltam a alive
+    _wait_states(f, {(1, "edge_003"): "alive", (3, "edge_001"): "alive"}, 40)
+
+
+def test_colisao_identidade(plane_b_fleet, tmp_path):
+    """Caso 9: dois nos com o MESMO CONTROLLER_ID. O peer_service detecta a
+    colisao no trafego da malha (assinado com o proprio id) e recusa o par
+    com log claro — condicao visivel, nao um flap silencioso."""
+    f = plane_b_fleet
+    dup = tmp_path / "compose.dup.yml"
+    dup.write_text(
+        "services:\n  edge2-core:\n    environment:\n      CONTROLLER_ID: edge_001\n",
+        encoding="utf-8",
+    )
+    r = subprocess.run(
+        [*f._compose, "-f", str(COMPOSE_TEST), "-f", str(dup), *f._project,
+         "up", "-d", "--build", "edge1-core", "edge2-core"],
+        capture_output=True, text=True, timeout=600, cwd=COMPOSE_TEST.parent,
+    )
+    assert r.returncode == 0, f"up com CONTROLLER_ID colidido falhou:\n{r.stderr}"
+    assert f.wait_http(1) and f.wait_http(2), "cores nao subiram"
+
+    time.sleep(10)  # deixa alguns ciclos de probe cruzarem
+    l1, l2 = f.logs(1), f.logs(2)
+    assert ("CONTROLLER_ID duplicado" in l1) or ("CONTROLLER_ID duplicado" in l2), (
+        f"colisao de CONTROLLER_ID nao registrada em log:\n--edge1--\n{l1[-1500:]}\n--edge2--\n{l2[-1500:]}"
+    )
