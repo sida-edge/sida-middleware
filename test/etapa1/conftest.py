@@ -415,8 +415,14 @@ class FullFleet:
     def stop_node(self, n, timeout=90):
         self._dc("stop", "-t", "10", *self.SERVICES_OF[n], timeout=timeout)
 
+    def kill_node(self, n, timeout=60):
+        self._dc("kill", "-s", "SIGKILL", *self.SERVICES_OF[n], timeout=timeout, check=False)
+
     def start_node(self, n, timeout=180):
         self._dc("start", *self.SERVICES_OF[n], timeout=timeout)
+
+    def restart_service(self, name, timeout=90):
+        self._dc("restart", "-t", "10", name, timeout=timeout)
 
     def logs(self, service, tail="all") -> str:
         p = self._dc("logs", "--no-color", "--tail", str(tail), service, timeout=40, check=False)
