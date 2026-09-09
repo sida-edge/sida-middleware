@@ -106,6 +106,9 @@ services:
       INGEST_BROKER_HOST: mqtt-ingest
       INGEST_BROKER_PORT: "1883"
       INGEST_TOPIC_ROOT: sida/ingest
+      # o Node-RED so substitui ${VAR} quando e o valor INTEIRO da propriedade;
+      # por isso o filtro do `mqtt in` e uma env propria, ja com o curinga.
+      INGEST_TOPIC_FILTER: sida/ingest/+/telemetry
     volumes:
       - ../../core/ingestion:/data
       - edge_ipc:/tmp/.ipc

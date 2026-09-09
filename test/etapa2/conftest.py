@@ -254,7 +254,7 @@ def etapa2_node(require_compose):
     plc-sim + esp32-sim. Para S6/S7."""
     f = Etapa2Fleet(require_compose, project="sida_e2")
     f.down()
-    f.seed()
+    f.seed("esp32_b")   # esp32_a: publicado pelo esp32-sim; esp32_b: sonda de latencia dos testes
     f.up(timeout=2400)
     time.sleep(3)
     try:

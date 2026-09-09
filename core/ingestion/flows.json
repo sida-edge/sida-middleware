@@ -632,5 +632,96 @@
                 "77e0020e57c60ee3"
             ]
         ]
+    },
+    {
+        "id": "8585ef16579040c1",
+        "type": "group",
+        "z": "bf8d16b5667222e0",
+        "name": "InterEdge Ingest (Etapa 2)",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "869076c4d7e0494a",
+            "99e4a5f4f7b2d719"
+        ],
+        "x": 14,
+        "y": 419,
+        "w": 512,
+        "h": 122
+    },
+    {
+        "id": "f399dbadf5300460",
+        "type": "mqtt-broker",
+        "name": "ingest_broker",
+        "broker": "${INGEST_BROKER_HOST}",
+        "port": "${INGEST_BROKER_PORT}",
+        "clientid": "",
+        "autoConnect": true,
+        "usetls": false,
+        "protocolVersion": "4",
+        "keepalive": "60",
+        "cleansession": true,
+        "autoUnsubscribe": true,
+        "birthTopic": "",
+        "birthQos": "0",
+        "birthRetain": "false",
+        "birthPayload": "",
+        "birthMsg": {},
+        "closeTopic": "",
+        "closeQos": "0",
+        "closeRetain": "false",
+        "closePayload": "",
+        "closeMsg": {},
+        "willTopic": "",
+        "willQos": "0",
+        "willRetain": "false",
+        "willPayload": "",
+        "willMsg": {},
+        "userProps": "",
+        "sessionExpiry": ""
+    },
+    {
+        "id": "869076c4d7e0494a",
+        "type": "mqtt in",
+        "z": "bf8d16b5667222e0",
+        "g": "8585ef16579040c1",
+        "name": "IngestTelemetry",
+        "topic": "${INGEST_TOPIC_FILTER}",
+        "qos": "0",
+        "datatype": "auto",
+        "broker": "f399dbadf5300460",
+        "nl": false,
+        "rap": true,
+        "rh": 0,
+        "inputs": 0,
+        "x": 130,
+        "y": 480,
+        "wires": [
+            [
+                "99e4a5f4f7b2d719"
+            ]
+        ]
+    },
+    {
+        "id": "99e4a5f4f7b2d719",
+        "type": "function",
+        "z": "bf8d16b5667222e0",
+        "g": "8585ef16579040c1",
+        "name": "interedgeAdapter",
+        "func": "// T2.3 — Adaptador de ingestao InterEdge (Etapa 2). Normaliza uma leitura de\n// dispositivo Classe 0/1 (broker de INGESTAO, sida/ingest/+/telemetry) para o\n// MESMO payload interno que o modbusPolling emite, e injeta no MESMO caminho\n// (Sender Queue -> ToString -> ZQM Output -> ipc:///tmp/.ipc/ingestion.ipc).\n// Stateless. Mensagem invalida -> node.warn + descarte (sem node.send).\n// O asset_context NUNCA e inventado aqui: vem do manifesto, resolvido pelo context.\n\nconst manifest = global.get(\"manifest\");\nconst gateway_id = global.get(\"gateway_id\");\n\nif (!manifest || !manifest.config || !manifest.config.plant || !manifest.config.plant.areas) {\n    node.warn(\"[interedge] descartado: manifesto ainda nao carregado\");\n    return null;\n}\n\nlet p = msg.payload;\nif (typeof p === \"string\") {\n    try { p = JSON.parse(p); } catch (e) { p = null; }\n}\nif (!p || typeof p !== \"object\" || typeof p.device_id !== \"string\" ||\n    !p.readings || typeof p.readings !== \"object\") {\n    node.warn(\"[interedge] descartado: telemetry malformada\");\n    return null;\n}\n\n// localiza o device no manifesto (mesmo percurso do setupClient)\nlet dev = null;\nconst areas = manifest.config.plant.areas;\nfor (const a of Object.keys(areas)) {\n    const lines = areas[a].lines || {};\n    for (const l of Object.keys(lines)) {\n        const devs = lines[l].devices || {};\n        if (devs[p.device_id]) { dev = devs[p.device_id]; break; }\n    }\n    if (dev) break;\n}\nif (!dev) {\n    node.warn(`[interedge] descartado: device_id '${p.device_id}' ausente no manifesto`);\n    return null;\n}\nif (dev.enabled !== true) {\n    node.warn(`[interedge] descartado: device '${p.device_id}' desabilitado`);\n    return null;\n}\nif (!dev.connection || dev.connection.protocol !== \"interedge\") {\n    node.warn(`[interedge] descartado: device '${p.device_id}' nao e protocolo interedge`);\n    return null;\n}\n\n// normaliza readings -> data. Convencao do SIDA: a INGESTAO envia valor cru,\n// o context aplica escala/tipo. So encaminhamos as metricas que o manifesto\n// declara (chave do metrics_mapping == nome logico no readings).\nconst mm = dev.metrics_mapping || {};\nconst data = {};\nfor (const k of Object.keys(p.readings)) {\n    if (mm[k] === undefined) {\n        node.warn(`[interedge] metrica '${k}' de '${p.device_id}' fora do metrics_mapping — ignorada`);\n        continue;\n    }\n    data[k] = p.readings[k];\n}\nif (Object.keys(data).length === 0) {\n    node.warn(`[interedge] descartado: nenhuma metrica mapeada em '${p.device_id}'`);\n    return null;\n}\n\nconst ts = Number(p.ts);\nnode.send({\n    payload: {\n        timestamp: (Number.isFinite(ts) && ts > 0) ? ts : Date.now(),\n        gateway_id: gateway_id,\n        source: { device_id: p.device_id, source_protocol: \"interedge\" },\n        data: data\n    }\n});\nreturn null;\n",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 350,
+        "y": 480,
+        "wires": [
+            [
+                "02d9ff725ecbb71c"
+            ]
+        ]
     }
 ]
