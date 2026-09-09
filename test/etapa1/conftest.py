@@ -22,6 +22,8 @@ COMPOSE_TEST = ETAPA1_DIR / "compose.test.yml"
 FLEET_DIR = REPO_ROOT / "deploy" / "fleet"
 SEED_SCRIPT = ETAPA1_DIR / "seed_node_config.py"
 PROTO = REPO_ROOT / "schemas" / "sparkplug_b.proto"
+SIDA_CORE = REPO_ROOT / "sida-core"
+GOMOD_VOLUME = "sida_e1_gomod"   # cache de modulos Go entre execucoes
 
 
 def pytest_addoption(parser):
@@ -208,3 +210,108 @@ def plane_a_node(require_compose):
         yield node
     finally:
         node.down()
+
+
+# --------------------------------------------------------------------------- plano B
+class PlaneBFleet:
+    """Sobe 1..3 `sida-core` (edge1..3) da compose.test.yml, ligados pela
+    mesh_net dedicada, para os testes do plano B (peer-mesh ZeroMQ InterEdge).
+    Os `*-core` publicam :8000 em 1800X e :5557 (peer-mesh) em 1557X no host."""
+
+    CORE = {1: "edge1-core", 2: "edge2-core", 3: "edge3-core"}
+    HTTP_PORT = {1: 18001, 2: 18002, 3: 18003}
+    PEER_PORT_HOST = {1: 15571, 2: 15572, 3: 15573}
+    CONTROLLER_ID = {1: "edge_001", 2: "edge_002", 3: "edge_003"}
+
+    def __init__(self, compose: list[str], project: str):
+        self._compose = compose
+        self._project = ["-p", project]
+
+    def _dc(self, *args, timeout=1200, check=True):
+        proc = subprocess.run(
+            [*self._compose, "-f", str(COMPOSE_TEST), *self._project, *args],
+            capture_output=True, text=True, timeout=timeout, cwd=COMPOSE_TEST.parent,
+        )
+        if check:
+            assert proc.returncode == 0, (
+                f"`compose {' '.join(args)}` falhou:\n{proc.stderr}\n{proc.stdout}"
+            )
+        return proc
+
+    def down(self):
+        self._dc("down", "-v", timeout=200, check=False)
+
+    def up(self, *nodes, timeout=1800):
+        self._dc("up", "-d", "--build", *[self.CORE[n] for n in nodes], timeout=timeout)
+
+    def restart(self, node, timeout=120):
+        self._dc("restart", "-t", "10", self.CORE[node], timeout=timeout)
+
+    def stop(self, node, timeout=60):
+        self._dc("stop", "-t", "10", self.CORE[node], timeout=timeout)
+
+    def start(self, node, timeout=120):
+        self._dc("start", self.CORE[node], timeout=timeout)
+
+    def logs(self, node) -> str:
+        p = self._dc("logs", "--no-color", self.CORE[node], timeout=30, check=False)
+        return p.stdout + p.stderr
+
+    def wait_http(self, node, path="/api/system/info", timeout=120) -> bool:
+        import requests
+        url = f"http://localhost:{self.HTTP_PORT[node]}{path}"
+        deadline = time.time() + timeout
+        while time.time() < deadline:
+            try:
+                if requests.get(url, timeout=3).status_code == 200:
+                    return True
+            except requests.RequestException:
+                pass
+            time.sleep(2)
+        return False
+
+    def peers_api(self, node, timeout=5) -> dict:
+        import requests
+        r = requests.get(
+            f"http://localhost:{self.HTTP_PORT[node]}/api/system/peers", timeout=timeout
+        )
+        r.raise_for_status()
+        return r.json()
+
+    def run_oneoff_core(self, name: str, env: dict, settle_s: float = 6.0) -> str:
+        """Sobe um sida-core efemero (sem deps) com env custom, colhe o log e o remove."""
+        args = ["run", "-d", "--name", name, "--no-deps"]
+        for k, v in env.items():
+            args += ["-e", f"{k}={v}"]
+        args.append("edge1-core")
+        self._dc(*args, timeout=400)
+        try:
+            time.sleep(settle_s)
+            p = subprocess.run(["docker", "logs", name],
+                               capture_output=True, text=True, timeout=30)
+            return p.stdout + p.stderr
+        finally:
+            subprocess.run(["docker", "rm", "-f", name],
+                           capture_output=True, text=True, timeout=30)
+
+    @staticmethod
+    def go_test(pkg: str = "./internal/core/domain/...", timeout: int = 600):
+        return subprocess.run(
+            ["docker", "run", "--rm",
+             "-v", f"{SIDA_CORE}:/app", "-w", "/app",
+             "-v", f"{GOMOD_VOLUME}:/go/pkg/mod",
+             "-e", "CGO_ENABLED=0",
+             "golang:alpine", "go", "test", pkg],
+            capture_output=True, text=True, timeout=timeout,
+        )
+
+
+@pytest.fixture(scope="session")
+def plane_b_fleet(require_compose):
+    """Frota do plano B; cada teste sobe os nós de que precisa (`fleet.up(1,2)`)."""
+    fleet = PlaneBFleet(require_compose, project="sida_e1_planeb")
+    fleet.down()
+    try:
+        yield fleet
+    finally:
+        fleet.down()

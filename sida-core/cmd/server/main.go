@@ -7,12 +7,15 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
+	"strconv"
+	"strings"
 	"syscall"
 	"time"
 	"database/sql"
 
 	"sida-core/internal/adapters/handler"
 	"sida-core/internal/adapters/repository"
+	"sida-core/internal/core/domain"
 	"sida-core/internal/core/services"
 	"sida-core/internal/api"
 
@@ -20,10 +23,30 @@ import (
 	"github.com/joho/godotenv"
 )
 
+func atoiOr(s string, def int) int {
+	if n, err := strconv.Atoi(strings.TrimSpace(s)); err == nil {
+		return n
+	}
+	return def
+}
+
 func main() {
 	log.Println("Iniciando SIDA-Core...")
 
 	_ = godotenv.Load("/app/data/.env")
+
+	// Plano B (leste-oeste / InterEdge): registro de pares a partir das envs de
+	// identidade do nó. O peer_service em si é cabeado no T1B.5.
+	controllerReg, err := domain.NewControllerRegisterFromEnv(
+		os.Getenv("CONTROLLER_ID"),
+		os.Getenv("PEERS"),
+		atoiOr(os.Getenv("PROBE_INTERVAL_MS"), 1000),
+		atoiOr(os.Getenv("PEER_DOWN_AFTER_MISSES"), 3),
+	)
+	if err != nil {
+		log.Printf("PEERS malformado, seguindo sem pares: %v", err)
+	}
+	log.Printf("peer register: %d pares", len(controllerReg.ConnectedControllers))
 	dbPath := "./data/sida_config.db"
 	os.MkdirAll(filepath.Dir(dbPath), os.ModePerm)
 
