@@ -248,16 +248,17 @@ def test_ddata_por_alias(plane_a_node, spb_bus):
     dev = plane_a_node.DEVICE_ID
     t = time.time()
     plane_a_node.restart_delivery()
-    spb_bus.wait_for("NBIRTH", after_ts=t, timeout=180)
-    dbirth = spb_bus.wait_for("DBIRTH", after_ts=t, timeout=120,
+    nbirth = spb_bus.wait_for("NBIRTH", after_ts=t, timeout=180)
+    dbirth = spb_bus.wait_for("DBIRTH", after_ts=nbirth["ts_recv"], timeout=120,
                               predicate=lambda e: e["device"] == dev)
     birth_aliases = {m.alias for m in dbirth["payload"].metrics if m.HasField("alias")}
     assert len(birth_aliases) >= 2, f"DBIRTH declarou poucos aliases: {birth_aliases}"
 
-    # nenhum DDATA da sessao antes do DBIRTH
+    # nenhum DDATA ENTRE o NBIRTH e o DBIRTH desta sessao (janela da sessao —
+    # DDATA de sessao anterior, antes do NBIRTH novo, e trafego residual)
     early = [e for e in spb_bus.snapshot("DDATA")
-             if e["device"] == dev and t <= e["ts_recv"] < dbirth["ts_recv"]]
-    assert not early, f"{len(early)} DDATA antes do DBIRTH da sessao"
+             if e["device"] == dev and nbirth["ts_recv"] <= e["ts_recv"] < dbirth["ts_recv"]]
+    assert not early, f"{len(early)} DDATA entre o NBIRTH e o DBIRTH da sessao"
 
     time.sleep(6)   # deixa alguns ciclos de DDATA acontecerem
     ddatas = [e for e in spb_bus.snapshot("DDATA")
