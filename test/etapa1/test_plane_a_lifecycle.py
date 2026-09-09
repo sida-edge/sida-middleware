@@ -239,3 +239,34 @@ def test_dbirth_define_aliases(plane_a_node, spb_bus):
 
     assert mm["Temperature"].alias != mm["Running"].alias, "aliases nao sao distintos"
     assert prop_str(mm["Temperature"], "engUnit") == "°C", "engUnit de Temperature perdido no DBIRTH"
+
+
+# --------------------------------------------------------------------------- T1A.5
+def test_ddata_por_alias(plane_a_node, spb_bus):
+    """Todo DDATA referencia metricas SO por alias (sem name); os aliases batem
+    com os do DBIRTH; nenhum DDATA antes do DBIRTH da sessao."""
+    dev = plane_a_node.DEVICE_ID
+    t = time.time()
+    plane_a_node.restart_delivery()
+    spb_bus.wait_for("NBIRTH", after_ts=t, timeout=180)
+    dbirth = spb_bus.wait_for("DBIRTH", after_ts=t, timeout=120,
+                              predicate=lambda e: e["device"] == dev)
+    birth_aliases = {m.alias for m in dbirth["payload"].metrics if m.HasField("alias")}
+    assert len(birth_aliases) >= 2, f"DBIRTH declarou poucos aliases: {birth_aliases}"
+
+    # nenhum DDATA da sessao antes do DBIRTH
+    early = [e for e in spb_bus.snapshot("DDATA")
+             if e["device"] == dev and t <= e["ts_recv"] < dbirth["ts_recv"]]
+    assert not early, f"{len(early)} DDATA antes do DBIRTH da sessao"
+
+    time.sleep(6)   # deixa alguns ciclos de DDATA acontecerem
+    ddatas = [e for e in spb_bus.snapshot("DDATA")
+              if e["device"] == dev and e["ts_recv"] >= dbirth["ts_recv"]]
+    assert len(ddatas) >= 2, f"poucos DDATA capturados ({len(ddatas)})"
+    for e in ddatas:
+        assert e["payload"].metrics, "DDATA sem metricas"
+        for m in e["payload"].metrics:
+            assert m.HasField("alias"), "metrica de DDATA sem alias"
+            assert m.alias in birth_aliases, f"alias {m.alias} do DDATA nao esta no DBIRTH"
+            assert not m.HasField("name") and not m.name, f"DDATA traz name='{m.name}' (so alias)"
+            assert has_scalar_value(m), "DDATA sem valor"
