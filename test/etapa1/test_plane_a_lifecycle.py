@@ -123,6 +123,22 @@ def bdseq_of(pb_payload):
     return None
 
 
+SCALAR_VALUE_FIELDS = ("int_value", "long_value", "float_value",
+                       "double_value", "boolean_value", "string_value")
+
+
+def has_scalar_value(m) -> bool:
+    return any(m.HasField(f) for f in SCALAR_VALUE_FIELDS)
+
+
+def prop_str(m, key: str):
+    ps = m.properties
+    for k, v in zip(ps.keys, ps.values):
+        if k == key:
+            return v.string_value
+    return None
+
+
 @pytest.fixture(scope="session")
 def spb_bus(require_paho, spb_pb2, plane_a_node):
     bus = SpbBus(require_paho, spb_pb2, plane_a_node.MQTT_HOST, plane_a_node.MQTT_PORT)
@@ -200,3 +216,26 @@ def test_nbirth_bdseq_e_reset(plane_a_node, spb_bus):
     assert dbirth_b["ts_recv"] >= t_b, "DBIRTH nao foi reemitido apos a reconexao (mapas nao limpos)"
     assert nbirth_b["payload"].seq == 0
     assert bdseq_of(nbirth_b["payload"]) >= bdseq_a + 1
+
+
+# --------------------------------------------------------------------------- T1A.4
+def test_dbirth_define_aliases(plane_a_node, spb_bus):
+    """O DBIRTH de Line_1/Pump_01 traz Temperature e Running como DEFINICOES:
+    name + datatype Sparkplug + alias inteiro distinto + engUnit; sem valores."""
+    dev = plane_a_node.DEVICE_ID
+    t = time.time()
+    plane_a_node.restart_delivery()
+    spb_bus.wait_for("NBIRTH", after_ts=t, timeout=180)
+    dbirth = spb_bus.wait_for("DBIRTH", after_ts=t, timeout=120,
+                              predicate=lambda e: e["device"] == dev)
+    mm = metric_map(dbirth["payload"])
+    assert {"Temperature", "Running"} <= set(mm), f"DBIRTH sem as metricas esperadas: {list(mm)}"
+
+    for name in ("Temperature", "Running"):
+        m = mm[name]
+        assert m.HasField("alias") and m.alias >= 1, f"{name}: alias inteiro ausente no DBIRTH"
+        assert m.datatype != 0, f"{name}: datatype Sparkplug ausente"
+        assert not has_scalar_value(m), f"{name}: DBIRTH traz valor (deveria ser so definicao)"
+
+    assert mm["Temperature"].alias != mm["Running"].alias, "aliases nao sao distintos"
+    assert prop_str(mm["Temperature"], "engUnit") == "°C", "engUnit de Temperature perdido no DBIRTH"
