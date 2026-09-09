@@ -94,7 +94,10 @@ func (h *ManifestHandler) RemoveArea(c *gin.Context) {
 
 	gatewayID := os.Getenv("EDGE_GATEWAY_ID")
 	if gatewayID == "" {
-		gatewayID = "sida_edge_001"
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "EDGE_GATEWAY_ID nao definido — a identidade do no vem do .env",
+		})
+		return
 	}
 	
 	manifest, err := h.repo.GetByID(c.Request.Context(), gatewayID)
@@ -145,7 +148,10 @@ func (h *ManifestHandler) RemoveLine(c *gin.Context) {
 	
 	gatewayID := os.Getenv("EDGE_GATEWAY_ID")
 	if gatewayID == "" {
-		gatewayID = "sida_edge_001"
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "EDGE_GATEWAY_ID nao definido — a identidade do no vem do .env",
+		})
+		return
 	}
 	
 	manifest, err := h.repo.GetByID(c.Request.Context(), gatewayID)
@@ -206,7 +212,10 @@ func (h *ManifestHandler) RemoveDevice(c *gin.Context) {
 
 	gatewayID := os.Getenv("EDGE_GATEWAY_ID")
 	if gatewayID == "" {
-		gatewayID = "sida_edge_001"
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "EDGE_GATEWAY_ID nao definido — a identidade do no vem do .env",
+		})
+		return
 	}
 
 	manifest, err := h.repo.GetByID(c.Request.Context(), gatewayID)
@@ -288,7 +297,10 @@ func (h *ManifestHandler) ToggleDeviceStatus(c *gin.Context) {
 
 	gatewayID := os.Getenv("EDGE_GATEWAY_ID")
 	if gatewayID == "" {
-		gatewayID = "sida_edge_001"
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "EDGE_GATEWAY_ID nao definido — a identidade do no vem do .env",
+		})
+		return
 	}
 
 	manifest, err := h.repo.GetByID(c.Request.Context(), gatewayID)

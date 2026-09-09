@@ -47,3 +47,7 @@ release notes/
 MEMORY.md
 historico.md
 .claude/settings.local.json
+
+# Dados efêmeros da frota de teste da Etapa 1 (semeados por seed_node_config.py)
+test/etapa1/_data/
+test/etapa1/.venv/
