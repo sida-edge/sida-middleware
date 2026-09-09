@@ -270,3 +270,27 @@ def test_ddata_por_alias(plane_a_node, spb_bus):
             assert m.alias in birth_aliases, f"alias {m.alias} do DDATA nao esta no DBIRTH"
             assert not m.HasField("name") and not m.name, f"DDATA traz name='{m.name}' (so alias)"
             assert has_scalar_value(m), "DDATA sem valor"
+
+
+# --------------------------------------------------------------------------- T1A.6
+def test_ndeath_gracioso(plane_a_node, spb_bus):
+    """docker stop (SIGTERM) gera UM NDEATH explicito com o bdSeq da sessao,
+    antes do close limpo; o Will nao dispara em duplicidade."""
+    t = time.time()
+    plane_a_node.restart_delivery()
+    nbirth = spb_bus.wait_for("NBIRTH", after_ts=t, timeout=180)
+    bdseq = bdseq_of(nbirth["payload"])
+    assert bdseq is not None
+
+    t_stop = time.time()
+    plane_a_node.stop_delivery()
+    ndeath = spb_bus.wait_for("NDEATH", after_ts=t_stop, timeout=90)
+    assert bdseq_of(ndeath["payload"]) == bdseq, "NDEATH gracioso com bdSeq da sessao errado"
+
+    time.sleep(10)   # janela para um eventual LWT atrasado
+    deaths = [e for e in spb_bus.snapshot("NDEATH") if e["ts_recv"] >= t_stop]
+    assert len(deaths) == 1, (
+        f"esperava 1 NDEATH (explicito); vieram {len(deaths)} (Will em duplicidade?)"
+    )
+
+    plane_a_node.start_delivery()   # restaura o no para o resto da suite
