@@ -38,7 +38,8 @@ CREATE TABLE IF NOT EXISTS edge_manifests (
 """
 
 
-def build_config(broker_host: str, broker_port: int, modbus_host: str, modbus_port: int) -> dict:
+def build_config(broker_host: str, broker_port: int, modbus_host: str, modbus_port: int,
+                 scan_rate_ms: int = 1000) -> dict:
     return {
         "plant": {
             "enterprise": "Enterprise",
@@ -52,7 +53,7 @@ def build_config(broker_host: str, broker_port: int, modbus_host: str, modbus_po
                                     "enabled": True,
                                     "connection": {
                                         "protocol": "modbus_tcp",
-                                        "scan_rate_ms": 1000,
+                                        "scan_rate_ms": scan_rate_ms,
                                         "host": modbus_host,
                                         "port": modbus_port,
                                         "unit_id": 1,
@@ -128,9 +129,12 @@ def main() -> None:
     ap.add_argument("--broker-port", default=1883, type=int)
     ap.add_argument("--modbus-host", default="plc-sim")
     ap.add_argument("--modbus-port", default=5020, type=int)
+    ap.add_argument("--scan-rate-ms", default=1000, type=int,
+                    help="cadencia de leitura Modbus (o T1A.7 usa um valor baixo p/ juntar >256 msgs rapido)")
     args = ap.parse_args()
 
-    cfg = build_config(args.broker_host, args.broker_port, args.modbus_host, args.modbus_port)
+    cfg = build_config(args.broker_host, args.broker_port, args.modbus_host, args.modbus_port,
+                       scan_rate_ms=args.scan_rate_ms)
     db = seed(args.data_dir, args.gateway_id, cfg)
     print(f"seeded {db} :: gateway_id={args.gateway_id} broker={args.broker_host}:{args.broker_port}")
 

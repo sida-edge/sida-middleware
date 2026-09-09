@@ -157,11 +157,14 @@ class PlaneANode:
             assert proc.returncode == 0, f"`compose {' '.join(args)}` falhou:\n{proc.stderr}"
         return proc
 
+    SCAN_RATE_MS = 300   # rapido: junta >256 mensagens (T1A.7) em ~80s
+
     def seed(self):
         proc = subprocess.run(
             ["python3", str(SEED_SCRIPT), "--data-dir", str(self.data_dir),
              "--gateway-id", self.GATEWAY_ID,
-             "--broker-host", "mosquitto", "--modbus-host", "plc-sim"],
+             "--broker-host", "mosquitto", "--modbus-host", "plc-sim",
+             "--scan-rate-ms", str(self.SCAN_RATE_MS)],
             capture_output=True, text=True, timeout=30,
         )
         assert proc.returncode == 0, f"seed do sida_config.db falhou:\n{proc.stderr}"

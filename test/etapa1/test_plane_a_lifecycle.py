@@ -294,3 +294,37 @@ def test_ndeath_gracioso(plane_a_node, spb_bus):
     )
 
     plane_a_node.start_delivery()   # restaura o no para o resto da suite
+
+
+# --------------------------------------------------------------------------- T1A.7
+def test_contabilidade_seq(plane_a_node, spb_bus):
+    """seq da sessao e continuo mod 256 (NBIRTH=0 -> +1 por mensagem publicada,
+    rolagem 255->0 sem salto nem reuso); nao ha rebirth no meio."""
+    t = time.time()
+    plane_a_node.restart_delivery()
+    nbirth = spb_bus.wait_for("NBIRTH", after_ts=t, timeout=180)
+    t_nb = nbirth["ts_recv"]
+
+    # junta > 256 mensagens Sparkplug desta sessao, na ordem de chegada
+    deadline = time.time() + 300
+    seq_events: list[dict] = []
+    while time.time() < deadline:
+        seq_events = [e for e in spb_bus.snapshot()
+                      if e["ts_recv"] >= t_nb and e["kind"] in ("NBIRTH", "DBIRTH", "DDATA")]
+        if len(seq_events) > 260:
+            break
+        time.sleep(3)
+    assert len(seq_events) > 256, f"coletou so {len(seq_events)} mensagens da sessao"
+
+    seqs = [e["payload"].seq for e in seq_events]
+    assert seqs[0] == 0, f"1a mensagem da sessao (NBIRTH) deveria ter seq=0, veio {seqs[0]}"
+    for i in range(1, len(seqs)):
+        assert seqs[i] == (seqs[i - 1] + 1) % 256, (
+            f"quebra de seq no indice {i}: ...{seqs[max(0, i - 2):i + 1]}"
+        )
+    assert any(seqs[i - 1] == 255 and seqs[i] == 0 for i in range(1, len(seqs))), (
+        "seq nao rolou 255->0 na janela coletada"
+    )
+    assert sum(1 for e in seq_events if e["kind"] == "NBIRTH") == 1, (
+        "houve um rebirth no meio da sessao (seq/bdSeq nao estaveis)"
+    )
