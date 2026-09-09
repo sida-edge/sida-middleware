@@ -257,6 +257,17 @@ class PlaneBFleet:
         p = self._dc("logs", "--no-color", self.CORE[node], timeout=30, check=False)
         return p.stdout + p.stderr
 
+    def db_path(self, node) -> Path:
+        return COMPOSE_TEST.parent / "_data" / f"edge{node}" / "sida_config.db"
+
+    def db_query(self, node, sql: str, params=()):
+        import sqlite3
+        con = sqlite3.connect(f"file:{self.db_path(node)}?mode=ro", uri=True, timeout=5)
+        try:
+            return con.execute(sql, params).fetchall()
+        finally:
+            con.close()
+
     def wait_http(self, node, path="/api/system/info", timeout=120) -> bool:
         import requests
         url = f"http://localhost:{self.HTTP_PORT[node]}{path}"

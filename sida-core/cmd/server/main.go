@@ -68,6 +68,18 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	// Plano B: tabela `controllers` no mesmo sida_config.db (WAL). Persiste o
+	// registro deste nó a cada boot para retomada apos restart.
+	peerRepo, err := repository.NewSQLitePeerRepository(db)
+	if err != nil {
+		log.Fatal("SQLite (controllers) fatal error:", err)
+	}
+	if controllerReg.ControllerID != "" {
+		if err := peerRepo.Save(context.Background(), controllerReg); err != nil {
+			log.Printf("nao consegui persistir o Controller Register: %v", err)
+		}
+	}
 	log.Println("Database connected.")
 
 	zmqPub, err := services.NewZMQPublisher("0.0.0.0:5556")

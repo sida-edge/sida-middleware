@@ -45,3 +45,37 @@ def test_registro_carrega_de_env(plane_b_fleet):
     assert "peer register: 0 pares" in logs0, (
         f"esperava 'peer register: 0 pares' com PEERS vazio:\n{logs0[-2000:]}"
     )
+
+
+# --------------------------------------------------------------------------- T1B.2
+def test_persistencia_controllers(plane_b_fleet):
+    """A tabela `controllers` existe no sida_config.db (WAL) e guarda o
+    Controller Register deste no; `docker restart` preserva o registro."""
+    import json as _json
+
+    f = plane_b_fleet
+    f.up(1)
+    assert f.wait_http(1), "edge1-core nao subiu"
+    time.sleep(1)
+
+    tables = {r[0] for r in f.db_query(1, "SELECT name FROM sqlite_master WHERE type='table'")}
+    assert "controllers" in tables, f"tabela `controllers` ausente: {sorted(tables)}"
+
+    jmode = f.db_query(1, "PRAGMA journal_mode")[0][0]
+    assert str(jmode).lower() == "wal", f"journal_mode={jmode!r} (esperado wal)"
+
+    row = f.db_query(
+        1, "SELECT connected_controllers, probe_interval_ms FROM controllers WHERE controller_id=?",
+        ("edge_001",),
+    )
+    assert row, "registro de edge_001 nao persistido"
+    assert len(_json.loads(row[0][0])) == 2, f"esperava 2 pares persistidos: {row[0][0]}"
+
+    # docker restart preserva o registro
+    f.restart(1)
+    assert f.wait_http(1), "edge1-core nao voltou apos restart"
+    time.sleep(1)
+    row2 = f.db_query(
+        1, "SELECT connected_controllers FROM controllers WHERE controller_id=?", ("edge_001",),
+    )
+    assert row2 and len(_json.loads(row2[0][0])) == 2, "registro de pares perdido apos restart"
