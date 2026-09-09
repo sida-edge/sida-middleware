@@ -3,7 +3,7 @@
 Sprint S4, tasks T4.3–T4.6:
 - test_frota_integra_e_injecao  -> T4.3 (passos 1–2: t0 nos dois planos + derrubada em t1)
 - test_deteccao_dois_planos     -> T4.4 (passos 3–5: NDEATH/LWT casado, pares `down`, sobreviventes sem perda)
-- test_religamento              -> T4.5 (passo 6: edge_002 volta, novo NBIRTH com bdSeq maior)
+- test_religamento              -> T4.5 (passo 6: edge_002 volta, novo NBIRTH com bdSeq incrementado)
 - test_report_e_aceite          -> T4.6 (passo 7: cenário completo + test/etapa1/report.json)
 
 Todos [heavy]: usam a fixture `full_fleet` (3 nós completos + Mosquitto isolado).
@@ -247,12 +247,12 @@ def test_religamento(full_fleet, sniffer):
     assert f.wait_http(2), "edge_002 nao voltou"
     nb_b = sniffer.wait("NBIRTH", GW[2], after=t2, timeout=150)
     bd_b = _bdseq(nb_b["pb"])
-    # religamento => NOVO NBIRTH de sessao (seq=0, com metrica bdSeq). Por SDD
-    # 5.1.1 o bdSeq vive so no contexto do fluxo em memoria: reinicio de
-    # container reinicia a contagem em 0 (aceitavel) — daí `>=`, não `>`.
+    # religamento => NOVO NBIRTH de sessao com bdSeq INCREMENTADO (SDD 3.1.6).
+    # O bdSeq e persistido em /tmp/.ipc (volume nomeado), entao sobrevive ao
+    # restart do container.
     assert nb_b["seq"] == 0, f"NBIRTH do religamento com seq={nb_b['seq']}"
-    assert bd_b is not None and bd_b >= 0, "NBIRTH do religamento sem metrica bdSeq"
-    assert bd_a is not None
+    assert bd_a is not None and bd_b is not None
+    assert bd_b > bd_a, f"bdSeq nao incrementou no religamento: {bd_a} -> {bd_b}"
 
     # pares voltam a alive
     deadline = time.time() + 40
@@ -306,7 +306,7 @@ def test_report_e_aceite(full_fleet, sniffer):
     f.start_node(2)
     assert f.wait_http(2)
     nb_b = sniffer.wait("NBIRTH", GW[2], after=t2, timeout=150)
-    religou = nb_b["seq"] == 0 and _bdseq(nb_b["pb"]) is not None
+    religou = nb_b["seq"] == 0 and _bdseq(nb_b["pb"]) is not None and _bdseq(nb_b["pb"]) > bdseq2
 
     report = {
         "cenario": "SDD 3.1 — injeção de falha na frota de 3 nós",
@@ -316,7 +316,7 @@ def test_report_e_aceite(full_fleet, sniffer):
         "probe_interval_ms": 1000,
         "peer_down_after_misses": 3,
         "perdas_ddata_sobreviventes": perdas,
-        "religamento_novo_nbirth": bool(religou),
+        "religamento_bdseq_incrementado": bool(religou),
         "religamento_bdseq": _bdseq(nb_b["pb"]),
         "overhead": {
             name: st for name, st in sorted(stats_t0.items())
@@ -334,8 +334,8 @@ def test_report_e_aceite(full_fleet, sniffer):
     assert REPORT.is_file()
     r = json.loads(REPORT.read_text(encoding="utf-8"))
     for k in ("t_ndeath_s", "t_peer_detect_s", "perdas_ddata_sobreviventes",
-              "religamento_novo_nbirth", "aceite"):
+              "religamento_bdseq_incrementado", "aceite"):
         assert k in r, f"report.json sem a chave {k!r}"
     assert r["perdas_ddata_sobreviventes"] == {GW[1]: 0, GW[3]: 0}, r["perdas_ddata_sobreviventes"]
-    assert r["religamento_novo_nbirth"] is True
+    assert r["religamento_bdseq_incrementado"] is True
     assert r["aceite"] is True, r

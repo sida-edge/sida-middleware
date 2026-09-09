@@ -541,6 +541,9 @@ module.exports = {
      */
     functionGlobalContext: {
         // os:require('os'),
+        // `fs` para persistir o bdSeq de sessao Sparkplug B em /tmp/.ipc
+        // (volume nomeado): sobrevive a restart de container, some no `down -v`.
+        fs: require('fs'),
     },
 
     /** The maximum number of messages nodes will buffer internally as part of their

@@ -151,7 +151,8 @@ def spb_bus(require_paho, spb_pb2, plane_a_node):
 # --------------------------------------------------------------------------- T1A.2
 def test_bdseq_sessao_no_lwt(plane_a_node, spb_bus):
     """O LWT (NDEATH que o broker publica numa morte abrupta) carrega o bdSeq
-    da sessao, igual ao do NBIRTH daquela sessao, e incrementa a cada sessao.
+    da sessao, igual ao do NBIRTH daquela sessao, e incrementa a cada sessao —
+    inclusive atravessando restart de container (bdSeq persistido em /tmp/.ipc).
 
     NBIRTH nao e retido -> para observa-lo desde o inicio da sessao forcamos
     uma reconexao/religamento do delivery em vez de contar com o startup da
@@ -182,7 +183,18 @@ def test_bdseq_sessao_no_lwt(plane_a_node, spb_bus):
     assert bdseq_of(ndeath_b["payload"]) == bdseq_b, (
         f"bdSeq do LWT ({bdseq_of(ndeath_b['payload'])}) != NBIRTH da sessao B ({bdseq_b})"
     )
-    plane_a_node.start_delivery()   # restaura o no para os testes seguintes
+
+    # --- sessao C: restart de CONTAINER — o bdSeq e persistido em /tmp/.ipc
+    #     (volume nomeado), entao continua monotonico mesmo assim. ---
+    plane_a_node.start_delivery()
+    t_c = time.time()
+    plane_a_node.restart_delivery()
+    nbirth_c = spb_bus.wait_for("NBIRTH", after_ts=t_c, timeout=180)
+    bdseq_c = bdseq_of(nbirth_c["payload"])
+    assert bdseq_c is not None and bdseq_c > bdseq_b, (
+        f"bdSeq nao sobreviveu ao restart de container: {bdseq_b} -> {bdseq_c}"
+    )
+    plane_a_node.start_delivery()   # garante que o no fica no ar para os testes seguintes
 
 
 # --------------------------------------------------------------------------- T1A.3
