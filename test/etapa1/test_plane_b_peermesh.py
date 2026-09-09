@@ -119,3 +119,59 @@ def test_troca_mensagem_mesh(plane_b_fleet):
             got_back = True
             break
     assert got_back, f"edge_001 nao recebeu {nonce2!r} de volta"
+
+
+# --------------------------------------------------------------------------- T1B.4
+def _peer_state(fleet, node, peer_id):
+    for p in fleet.peers_api(node)["peers"]:
+        if p["id"] == peer_id:
+            return p
+    return None
+
+
+def test_probe_e_liveness(plane_b_fleet):
+    """Frota de 3 nos (probe 1000ms / down apos 3): t0 todos alive; ao derrubar
+    edge_002, edge_001 e edge_003 o reportam `down` (via suspect) em ~3s, com
+    missed/last_ack_ms coerentes; a queda e LOCAL (edge_001<->edge_003 seguem)."""
+    f = plane_b_fleet
+    f.up(1, 2, 3)
+    for n in (1, 2, 3):
+        assert f.wait_http(n), f"edge{n}-core nao subiu"
+
+    # convergencia inicial para alive
+    deadline = time.time() + 30
+    while time.time() < deadline:
+        if (_peer_state(f, 1, "edge_002")["state"] == "alive"
+                and _peer_state(f, 1, "edge_003")["state"] == "alive"
+                and _peer_state(f, 3, "edge_002")["state"] == "alive"):
+            break
+        time.sleep(1)
+    else:
+        pytest.fail(f"pares nao convergiram para alive: e1={f.peers_api(1)}")
+
+    # derruba edge_002
+    f.stop(2)
+    t_ref = time.time()
+
+    down_at = {}
+    deadline = time.time() + 12
+    while time.time() < deadline and len(down_at) < 2:
+        for node in (1, 3):
+            if node not in down_at and _peer_state(f, node, "edge_002")["state"] == "down":
+                down_at[node] = time.time() - t_ref
+        time.sleep(0.5)
+
+    assert 1 in down_at and 3 in down_at, (
+        f"edge_002 nao ficou down em edge_001/edge_003: e1={f.peers_api(1)} e3={f.peers_api(3)}"
+    )
+    assert max(down_at.values()) <= 6.0, f"deteccao lenta demais: {down_at}"
+
+    p2 = _peer_state(f, 1, "edge_002")
+    assert p2["missed"] >= 3, f"missed incoerente: {p2}"
+    assert p2["last_ack_ms"] >= 2500, f"last_ack_ms incoerente: {p2}"
+
+    # a queda e local: edge_001 <-> edge_003 seguem alive entre si
+    assert _peer_state(f, 1, "edge_003")["state"] == "alive"
+    assert _peer_state(f, 3, "edge_001")["state"] == "alive"
+
+    f.start(2)  # restaura para o resto da suite

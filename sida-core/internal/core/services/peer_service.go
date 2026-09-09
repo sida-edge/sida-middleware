@@ -1,9 +1,12 @@
 package services
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"log"
+	"net"
+	"strings"
 	"sync"
 	"time"
 
@@ -11,6 +14,40 @@ import (
 
 	"sida-core/internal/core/domain"
 )
+
+func init() {
+	// Mais de uma thread de I/O do ZeroMQ: assim, um DEALER preso num
+	// getaddrinfo lento (par fora do ar, DNS falhando ~5s) não congela o
+	// ROUTER nem os DEALERs dos outros pares. Precisa rodar antes de
+	// qualquer socket ser criado.
+	_ = zmq4.SetIoThreads(4)
+}
+
+// resolvePeerEndpoint troca o host de um endpoint "tcp://host:port" pelo IP
+// resolvido em Go (com timeout curto), para o libzmq nunca fazer DNS
+// bloqueante. Se não resolver, devolve o endpoint original.
+func resolvePeerEndpoint(ep string) string {
+	const pfx = "tcp://"
+	if !strings.HasPrefix(ep, pfx) {
+		return ep
+	}
+	hostPort := ep[len(pfx):]
+	i := strings.LastIndex(hostPort, ":")
+	if i <= 0 {
+		return ep
+	}
+	host, port := hostPort[:i], hostPort[i+1:]
+	if net.ParseIP(host) != nil {
+		return ep
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+	ips, err := net.DefaultResolver.LookupHost(ctx, host)
+	if err != nil || len(ips) == 0 {
+		return ep
+	}
+	return pfx + ips[0] + ":" + port
+}
 
 // Tipos de frame trocados na malha leste-oeste (plano B / InterEdge).
 const (
@@ -100,10 +137,16 @@ func (s *PeerService) Start() error {
 		if err := d.SetIdentity(s.self); err != nil {
 			return err
 		}
+		// HWM baixo: um par fora do ar não deve acumular um backlog gigante
+		// que despeja tudo de uma vez quando ele voltar.
+		_ = d.SetSndhwm(16)
+		_ = d.SetLinger(0)
 		// Connect é assíncrono/lazy no ZeroMQ: um par ainda fora do ar não é
-		// erro — o socket reconecta sozinho quando ele subir.
-		if err := d.Connect(p.Endpoint); err != nil {
-			log.Printf("peer-mesh: connect DEALER -> %s (%s) adiado: %v", p.ID, p.Endpoint, err)
+		// erro — o socket reconecta sozinho quando ele subir. Resolvemos o
+		// host para IP aqui para o libzmq não fazer DNS bloqueante depois.
+		endpoint := resolvePeerEndpoint(p.Endpoint)
+		if err := d.Connect(endpoint); err != nil {
+			log.Printf("peer-mesh: connect DEALER -> %s (%s) adiado: %v", p.ID, endpoint, err)
 		}
 		s.dealers[p.ID] = d
 	}
@@ -136,10 +179,18 @@ func (s *PeerService) run() {
 		case <-s.stop:
 			s.closeSockets()
 			return
-		case out := <-s.outbox:
-			s.sendVia(out)
-			continue
 		default:
+		}
+
+		// Drena todo o outbox pendente (envios não-bloqueantes).
+		draining := true
+		for draining {
+			select {
+			case out := <-s.outbox:
+				s.sendVia(out)
+			default:
+				draining = false
+			}
 		}
 
 		sockets, err := poller.Poll(100 * time.Millisecond)
@@ -148,11 +199,15 @@ func (s *PeerService) run() {
 			continue
 		}
 		for range sockets {
-			frames, err := s.router.RecvMessage(0)
-			if err != nil || len(frames) < 3 {
-				continue
+			for {
+				frames, err := s.router.RecvMessage(zmq4.DONTWAIT)
+				if err != nil {
+					break // EAGAIN: fila do ROUTER vazia
+				}
+				if len(frames) >= 3 {
+					s.handle(frames[0], frames[1], frames[2])
+				}
 			}
-			s.handle(frames[0], frames[1], frames[2])
 		}
 	}
 }
@@ -163,8 +218,12 @@ func (s *PeerService) sendVia(out outFrame) {
 		log.Printf("peer-mesh: sem DEALER para %q, descartando frame %s", out.peerID, out.parts[0])
 		return
 	}
-	if _, err := d.SendMessage(out.parts); err != nil {
-		log.Printf("peer-mesh: erro enviando para %q: %v", out.peerID, err)
+	// DONTWAIT: um par fora do ar (DEALER sem conexão) faria o SendMessage
+	// bloquear e travar o único goroutine da malha. EAGAIN -> descarta o
+	// frame. PROBE se recupera sozinho; MSG de dados não tem failover nesta
+	// etapa (T1B.6, opcional).
+	if _, err := d.SendMessageDontwait(out.parts); err != nil {
+		log.Printf("peer-mesh: frame %s para %q descartado (%v)", out.parts[0], out.peerID, err)
 	}
 }
 
@@ -241,14 +300,20 @@ func (s *PeerService) closeSockets() {
 	}
 }
 
-// probeLoop envia um PROBE a cada par no ProbeInterval. A FSM completa de
-// liveness (suspect/down por PEER_DOWN_AFTER_MISSES) é do T1B.4; aqui o loop
-// já mantém as conexões DEALER quentes e marca `alive` quem responde.
+// probeLoop envia um PROBE a cada par no ProbeInterval e, a cada tick, reavalia
+// a FSM de liveness (SDD 5.2.2): alive -> suspect após 1 intervalo sem ACK ->
+// down após PEER_DOWN_AFTER_MISSES intervalos sem ACK. Qualquer PROBE_ACK
+// devolve o par a alive. Medição em relógio monotônico local (time.Since).
 func (s *PeerService) probeLoop() {
 	interval := time.Duration(s.probeIntervalMs) * time.Millisecond
 	if interval <= 0 {
 		interval = time.Second
 	}
+	misses := s.peerDownAfterMisses
+	if misses <= 0 {
+		misses = 3
+	}
+
 	ticker := time.NewTicker(interval)
 	defer ticker.Stop()
 
@@ -257,10 +322,48 @@ func (s *PeerService) probeLoop() {
 		case <-s.stop:
 			return
 		case <-ticker.C:
+			s.evaluateLiveness(interval, misses)
 			ping := fmt.Sprintf(`{"from":%q,"ts":%d}`, s.self, time.Now().UnixMilli())
 			for _, p := range s.peers {
 				s.enqueue(p.ID, frameProbe, ping)
 			}
+		}
+	}
+}
+
+// evaluateLiveness recomputa o estado de cada par a partir de quanto tempo
+// (em intervalos) faz desde o último ACK. Sem ACK ainda => down.
+func (s *PeerService) evaluateLiveness(interval time.Duration, downAfterMisses int) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	for _, p := range s.peers {
+		lv := s.liveness[p.ID]
+		if lv == nil {
+			lv = &peerLiveness{State: domain.PeerDown}
+			s.liveness[p.ID] = lv
+		}
+
+		if lv.LastAckAgo.IsZero() {
+			lv.Missed = downAfterMisses
+			lv.State = domain.PeerDown
+			continue
+		}
+
+		// Meio-intervalo de folga absorve jitter de RTT: só conta como
+		// "perdido" o silêncio que passa de 1.5, 2.5, ... intervalos.
+		missed := int((time.Since(lv.LastAckAgo) - interval/2) / interval)
+		if missed < 0 {
+			missed = 0
+		}
+		lv.Missed = missed
+		switch {
+		case missed <= 0:
+			lv.State = domain.PeerAlive
+		case missed >= downAfterMisses:
+			lv.State = domain.PeerDown
+		default:
+			lv.State = domain.PeerSuspect
 		}
 	}
 }
