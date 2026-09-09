@@ -47,6 +47,7 @@ release notes/
 MEMORY.md
 historico.md
 SDD_SIDA_Etapa1_Ciclo_V3.md
+SDD_SIDA_Etapa2_Ciclo_V3.md
 .claude/settings.local.json
 
 # Dados efêmeros da frota de teste da Etapa 1 (semeados por seed_node_config.py)
