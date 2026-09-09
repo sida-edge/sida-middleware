@@ -42,3 +42,6 @@ sida-core/sida-core
 *.njsproj
 *.sln
 *.sw?
+
+release notes/
+MEMORY.md
