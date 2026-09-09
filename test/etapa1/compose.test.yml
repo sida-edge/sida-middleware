@@ -1,0 +1,258 @@
+# =============================================================================
+# Frota LOCAL e ISOLADA para os testes da Etapa 1 do Ciclo V3.0.
+#
+#   docker compose -f test/etapa1/compose.test.yml up -d --build
+#
+# 3 nós (edge_001..003), cada um com a pilha completa do SIDA
+# (core + ingestion + context + delivery), + 1 Mosquitto local + 1 simulador
+# Modbus compartilhado (oitc/modbus-server, imagem publica). NENHUMA relação
+# com o broker de produção (GCP).
+#
+# Topologia de rede (necessária porque os flows Node-RED endereçam o core pelo
+# nome fixo `sida-core` e por `tcp://sida-core:5556` — NÃO tocados nesta etapa):
+#   - edgeN_net  : rede interna do nó N; o core do nó tem o alias `sida-core`,
+#                  então os 3 Node-RED do nó falam com o SEU core.
+#   - uns_net    : Mosquitto + os 3 delivery + o simulador (plano de dados).
+#   - mesh_net   : os 3 `*-core` entre si (plano leste-oeste / peer-mesh, S3).
+#
+# NOTA (T0.4): o smoke da baseline (test_baseline_v2_pipeline) exige que o
+# sida_config.db de cada nó já tenha um manifesto com: plant (enterprise/site),
+# ao menos 1 device Modbus e 1 receiver mqtt -> mqtt://mosquitto:1883.
+# O seed é feito por test/etapa1/seed_node_config.py (montado em /app/data).
+# =============================================================================
+
+networks:
+  edge1_net:
+  edge2_net:
+  edge3_net:
+  uns_net:
+  mesh_net:
+
+volumes:
+  edge1_ipc:
+  edge2_ipc:
+  edge3_ipc:
+
+x-nodered-build: &nodered-build
+  context: ../..
+  dockerfile: ./infra/Dockerfile
+
+x-core-env: &core-common-env
+  GROUP_ID: Enterprise_Site
+  BROKER_URL: mqtt://mosquitto:1883
+  EDGE_ENGINEER_PIN: "000000"
+  PEER_PORT: "5557"
+  PROBE_INTERVAL_MS: "1000"
+  PEER_DOWN_AFTER_MISSES: "3"
+
+services:
+
+  # --------------------------------------------------------------- broker + sim
+  mosquitto:
+    image: eclipse-mosquitto:2
+    container_name: e1-mosquitto
+    command: ["mosquitto", "-c", "/mosquitto/config/mosquitto.conf"]
+    volumes:
+      - ./mosquitto.test.conf:/mosquitto/config/mosquitto.conf:ro
+    ports:
+      - "18831:1883"          # exposto ao host para o pytest (paho / mosquitto_sub)
+    networks: [uns_net]
+
+  plc-sim:
+    # Simulador Modbus TCP publico e headless (Docker Hub, sem auth).
+    # Registradores holding pre-carregados em modbus.test.json (40001 -> temp,
+    # 40002 -> running). initializeUndefinedRegisters faz qualquer outro
+    # endereco responder 0x0000 em vez de excecao.
+    image: oitc/modbus-server:latest
+    container_name: e1-plc-sim
+    volumes:
+      - ./modbus.test.json:/app/modbus_server.json:ro
+    ports:
+      - "55020:5020"
+    networks: [uns_net]
+    restart: unless-stopped
+
+  # ============================================================ NÓ edge_001 ===
+  edge1-core:
+    build: ../../sida-core
+    container_name: e1-edge1-core
+    environment:
+      <<: *core-common-env
+      EDGE_GATEWAY_ID: sida_edge_001
+      CONTROLLER_ID: edge_001
+      PEERS: edge_002@edge2-core:5557,edge_003@edge3-core:5557
+    volumes:
+      # _data/edgeN/ e semeado no host por seed_node_config.py ANTES do `up`
+      # (o sida_config.db precisa de plant + device Modbus + receiver mqtt).
+      - ./_data/edge1:/app/data
+    ports:
+      - "18001:8000"
+      - "15571:5557"
+    networks:
+      edge1_net:
+        aliases: [sida-core]
+      mesh_net:
+        aliases: [edge1-core]
+
+  edge1-ingestion:
+    build:
+      <<: *nodered-build
+      args: [PROJECT_DIR=./core/ingestion]
+    container_name: e1-edge1-ingestion
+    environment: { TZ: America/Recife, FLOWS: flows.json }
+    volumes:
+      - ../../core/ingestion:/data
+      - edge1_ipc:/tmp/.ipc
+    networks: [edge1_net, uns_net]
+    depends_on: [edge1-core, plc-sim]
+
+  edge1-context:
+    build:
+      <<: *nodered-build
+      args: [PROJECT_DIR=./core/context]
+    container_name: e1-edge1-context
+    environment: { TZ: America/Recife, FLOWS: flows.json }
+    volumes:
+      - ../../core/context:/data
+      - edge1_ipc:/tmp/.ipc
+    networks: [edge1_net]
+    depends_on: [edge1-core]
+
+  edge1-delivery:
+    build:
+      <<: *nodered-build
+      args: [PROJECT_DIR=./core/delivery]
+    container_name: e1-edge1-delivery
+    environment:
+      TZ: America/Recife
+      FLOWS: flows.json
+      EDGE_GATEWAY_ID: sida_edge_001
+      GROUP_ID: Enterprise_Site
+      BROKER_URL: mqtt://mosquitto:1883
+    volumes:
+      - ../../core/delivery:/data
+      - edge1_ipc:/tmp/.ipc
+    networks: [edge1_net, uns_net]
+    depends_on: [edge1-core]
+
+  # ============================================================ NÓ edge_002 ===
+  edge2-core:
+    build: ../../sida-core
+    container_name: e1-edge2-core
+    environment:
+      <<: *core-common-env
+      EDGE_GATEWAY_ID: sida_edge_002
+      CONTROLLER_ID: edge_002
+      PEERS: edge_001@edge1-core:5557,edge_003@edge3-core:5557
+    volumes:
+      - ./_data/edge2:/app/data
+    ports:
+      - "18002:8000"
+      - "15572:5557"
+    networks:
+      edge2_net:
+        aliases: [sida-core]
+      mesh_net:
+        aliases: [edge2-core]
+
+  edge2-ingestion:
+    build:
+      <<: *nodered-build
+      args: [PROJECT_DIR=./core/ingestion]
+    container_name: e1-edge2-ingestion
+    environment: { TZ: America/Recife, FLOWS: flows.json }
+    volumes:
+      - ../../core/ingestion:/data
+      - edge2_ipc:/tmp/.ipc
+    networks: [edge2_net, uns_net]
+    depends_on: [edge2-core, plc-sim]
+
+  edge2-context:
+    build:
+      <<: *nodered-build
+      args: [PROJECT_DIR=./core/context]
+    container_name: e1-edge2-context
+    environment: { TZ: America/Recife, FLOWS: flows.json }
+    volumes:
+      - ../../core/context:/data
+      - edge2_ipc:/tmp/.ipc
+    networks: [edge2_net]
+    depends_on: [edge2-core]
+
+  edge2-delivery:
+    build:
+      <<: *nodered-build
+      args: [PROJECT_DIR=./core/delivery]
+    container_name: e1-edge2-delivery
+    environment:
+      TZ: America/Recife
+      FLOWS: flows.json
+      EDGE_GATEWAY_ID: sida_edge_002
+      GROUP_ID: Enterprise_Site
+      BROKER_URL: mqtt://mosquitto:1883
+    volumes:
+      - ../../core/delivery:/data
+      - edge2_ipc:/tmp/.ipc
+    networks: [edge2_net, uns_net]
+    depends_on: [edge2-core]
+
+  # ============================================================ NÓ edge_003 ===
+  edge3-core:
+    build: ../../sida-core
+    container_name: e1-edge3-core
+    environment:
+      <<: *core-common-env
+      EDGE_GATEWAY_ID: sida_edge_003
+      CONTROLLER_ID: edge_003
+      PEERS: edge_001@edge1-core:5557,edge_002@edge2-core:5557
+    volumes:
+      - ./_data/edge3:/app/data
+    ports:
+      - "18003:8000"
+      - "15573:5557"
+    networks:
+      edge3_net:
+        aliases: [sida-core]
+      mesh_net:
+        aliases: [edge3-core]
+
+  edge3-ingestion:
+    build:
+      <<: *nodered-build
+      args: [PROJECT_DIR=./core/ingestion]
+    container_name: e1-edge3-ingestion
+    environment: { TZ: America/Recife, FLOWS: flows.json }
+    volumes:
+      - ../../core/ingestion:/data
+      - edge3_ipc:/tmp/.ipc
+    networks: [edge3_net, uns_net]
+    depends_on: [edge3-core, plc-sim]
+
+  edge3-context:
+    build:
+      <<: *nodered-build
+      args: [PROJECT_DIR=./core/context]
+    container_name: e1-edge3-context
+    environment: { TZ: America/Recife, FLOWS: flows.json }
+    volumes:
+      - ../../core/context:/data
+      - edge3_ipc:/tmp/.ipc
+    networks: [edge3_net]
+    depends_on: [edge3-core]
+
+  edge3-delivery:
+    build:
+      <<: *nodered-build
+      args: [PROJECT_DIR=./core/delivery]
+    container_name: e1-edge3-delivery
+    environment:
+      TZ: America/Recife
+      FLOWS: flows.json
+      EDGE_GATEWAY_ID: sida_edge_003
+      GROUP_ID: Enterprise_Site
+      BROKER_URL: mqtt://mosquitto:1883
+    volumes:
+      - ../../core/delivery:/data
+      - edge3_ipc:/tmp/.ipc
+    networks: [edge3_net, uns_net]
+    depends_on: [edge3-core]

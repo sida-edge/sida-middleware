@@ -7,18 +7,18 @@
     "2. este arquivo marca a task 'concluida' (status, updated, commit)",
     "3. UM commit na branch interedge: '<tipo>(<escopo>): <descricao> [<ID>]'"
   ],
-  "updated": "2026-09-09T18:05:43Z",
-  "sprint_atual": "S1",
+  "updated": "2026-09-09T18:21:04Z",
+  "sprint_atual": "S2",
   "tasks": [
     {
       "sprint": "S1",
       "id": "T0.4",
       "descricao": "Harness de frota local (test/etapa1/compose.test.yml, 3 nos + Mosquitto isolado) e smoke da baseline v2.0",
-      "status": "em_andamento",
-      "updated": "2026-09-09T18:20:00Z",
-      "commit": null,
+      "status": "concluida",
+      "updated": "2026-09-09T18:21:04Z",
+      "commit": "test(etapa1): harness de frota local + smoke da baseline v2.0 [T0.4]",
       "teste_funcional": "test/etapa1/test_s1_foundation.py::test_baseline_v2_pipeline [heavy]",
-      "nota": "Artefatos redigidos e validados estaticamente (compose.test.yml 14 servicos/5 redes YAML OK; seed_node_config.py executado OK; py_compile OK). Checkpoint BLOQUEADO: daemon Docker inalcancavel nesta sessao (ver T3.1). Ao rodar, esperar 1-2 ajustes: aliasing de rede por no (flows fixam sida-core:8000 e tcp://sida-core:5556) e mapa de registradores do simulador vs. o manifesto semeado (40001/40002)."
+      "nota": "Checkpoint PESADO verde (1 passed em 183.57s): seed do sida_config.db -> `docker compose -f compose.test.yml up -d --build` (mosquitto, plc-sim, edge1 core+ingestion+context+delivery) -> pipeline v2.0 (Modbus -> ISA-95 -> Sparkplug B) chega ao Mosquitto isolado (localhost:18831) como NBIRTH/DBIRTH + DDATA em spBv1.0/#; `down -v` limpa. Simulador Modbus trocado de `ghcr.io/sida-edge/simulador:latest` (privado, sem credencial) para `oitc/modbus-server:latest` (Docker Hub, publico, headless) + `test/etapa1/modbus.test.json`; a chave N do holdingRegister e servida no endereco de fio N-1 (pymodbus zero_mode=False), entao 40001/40002 -> chaves 1/2 = 235 (23.5 C) e 1 (Running=true). `seed_node_config.py`: Temperature virou int16 (1 registrador) para evitar decodificacao float ambigua. Valores estaticos bastam: DeliveryProcessor emite DDATA a cada ciclo, sem report-by-exception."
     },
     {
       "sprint": "S1",
