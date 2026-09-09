@@ -99,6 +99,20 @@ def require_protoc() -> list[str]:
     return cmd
 
 
+def reset_fleet_data(*nodes: int):
+    """Apaga test/etapa1/_data/edgeN antes de re-semear. Os containers rodam
+    como root e deixam o sida_config.db root:root no bind mount -> o seed do
+    host (usuario comum) falharia com 'readonly database'. Um container
+    descartavel apaga como root."""
+    data = COMPOSE_TEST.parent / "_data"
+    targets = " ".join(f"/d/edge{n}" for n in (nodes or (1, 2, 3)))
+    subprocess.run(
+        ["docker", "run", "--rm", "-v", f"{data}:/d", "alpine",
+         "sh", "-c", f"rm -rf {targets}"],
+        capture_output=True, text=True, timeout=60,
+    )
+
+
 @pytest.fixture(scope="session")
 def require_paho():
     try:
@@ -162,6 +176,7 @@ class PlaneANode:
     SCAN_RATE_MS = 300   # rapido: junta >256 mensagens (T1A.7) em ~80s
 
     def seed(self):
+        reset_fleet_data(1)
         proc = subprocess.run(
             ["python3", str(SEED_SCRIPT), "--data-dir", str(self.data_dir),
              "--gateway-id", self.GATEWAY_ID,
@@ -331,6 +346,138 @@ def plane_b_fleet(require_compose):
     """Frota do plano B; cada teste sobe os nós de que precisa (`fleet.up(1,2)`)."""
     fleet = PlaneBFleet(require_compose, project="sida_e1_planeb")
     fleet.down()
+    try:
+        yield fleet
+    finally:
+        fleet.down()
+
+
+# --------------------------------------------------------------------------- frota completa (S4)
+_FLEET_SERVICES_OF = {
+    n: [f"edge{n}-core", f"edge{n}-ingestion", f"edge{n}-context", f"edge{n}-delivery"]
+    for n in (1, 2, 3)
+}
+_FLEET_ALL_SERVICES = ["mosquitto", "plc-sim"] + [
+    s for lst in _FLEET_SERVICES_OF.values() for s in lst
+]
+
+
+class FullFleet:
+    """Frota COMPLETA de 3 nós da compose.test.yml (cada nó = core + ingestion +
+    context + delivery) + Mosquitto isolado + simulador Modbus. Base dos testes
+    de frota (T3.2/T3.3) e da injeção de falha / teste de aceite (T4.3-T4.6)."""
+
+    MQTT_HOST, MQTT_PORT = "localhost", 18831
+    HTTP_PORT = {1: 18001, 2: 18002, 3: 18003}
+    CONTROLLER_ID = {1: "edge_001", 2: "edge_002", 3: "edge_003"}
+    GATEWAY_ID = {1: "sida_edge_001", 2: "sida_edge_002", 3: "sida_edge_003"}
+    DEVICE_ID = "Area_1_Line_1_Pump_01"
+    SITE = "Enterprise_Site"
+    SCAN_RATE_MS = 500
+    SERVICES_OF = _FLEET_SERVICES_OF
+    ALL_SERVICES = _FLEET_ALL_SERVICES
+
+    def __init__(self, compose: list[str], project: str):
+        self._compose = compose
+        self._project = ["-p", project]
+
+    def _dc(self, *args, timeout=1800, check=True):
+        proc = subprocess.run(
+            [*self._compose, "-f", str(COMPOSE_TEST), *self._project, *args],
+            capture_output=True, text=True, timeout=timeout, cwd=COMPOSE_TEST.parent,
+        )
+        if check:
+            assert proc.returncode == 0, (
+                f"`compose {' '.join(args)}` falhou:\n{proc.stderr}\n{proc.stdout[-2000:]}"
+            )
+        return proc
+
+    def seed_all(self):
+        reset_fleet_data(1, 2, 3)
+        for n in (1, 2, 3):
+            p = subprocess.run(
+                ["python3", str(SEED_SCRIPT),
+                 "--data-dir", str(COMPOSE_TEST.parent / "_data" / f"edge{n}"),
+                 "--gateway-id", self.GATEWAY_ID[n],
+                 "--broker-host", "mosquitto", "--modbus-host", "plc-sim",
+                 "--scan-rate-ms", str(self.SCAN_RATE_MS)],
+                capture_output=True, text=True, timeout=30,
+            )
+            assert p.returncode == 0, f"seed edge{n} falhou:\n{p.stderr}"
+
+    def down(self):
+        self._dc("down", "-v", "--remove-orphans", timeout=240, check=False)
+
+    def up(self, timeout=2400):
+        self.seed_all()
+        self._dc("up", "-d", "--build", *self.ALL_SERVICES, timeout=timeout)
+
+    def stop_node(self, n, timeout=90):
+        self._dc("stop", "-t", "10", *self.SERVICES_OF[n], timeout=timeout)
+
+    def start_node(self, n, timeout=180):
+        self._dc("start", *self.SERVICES_OF[n], timeout=timeout)
+
+    def logs(self, service, tail="all") -> str:
+        p = self._dc("logs", "--no-color", "--tail", str(tail), service, timeout=40, check=False)
+        return p.stdout + p.stderr
+
+    def wait_http(self, node, path="/api/system/info", timeout=180) -> bool:
+        import requests
+        url = f"http://localhost:{self.HTTP_PORT[node]}{path}"
+        deadline = time.time() + timeout
+        while time.time() < deadline:
+            try:
+                if requests.get(url, timeout=3).status_code == 200:
+                    return True
+            except requests.RequestException:
+                pass
+            time.sleep(2)
+        return False
+
+    def peers_api(self, node, timeout=5) -> dict:
+        import requests
+        r = requests.get(
+            f"http://localhost:{self.HTTP_PORT[node]}/api/system/peers", timeout=timeout
+        )
+        r.raise_for_status()
+        return r.json()
+
+    def _container_ids(self) -> list[str]:
+        p = self._dc("ps", "-q", timeout=30, check=False)
+        return [x for x in p.stdout.split() if x]
+
+    def docker_stats(self) -> dict:
+        """Amostra única de docker stats (cpu %, mem) dos containers DESTA frota."""
+        ids = self._container_ids()
+        if not ids:
+            return {}
+        p = subprocess.run(
+            ["docker", "stats", "--no-stream", "--format",
+             "{{.Name}};{{.CPUPerc}};{{.MemUsage}}", *ids],
+            capture_output=True, text=True, timeout=60,
+        )
+        out = {}
+        for line in p.stdout.splitlines():
+            parts = line.split(";")
+            if len(parts) != 3:
+                continue
+            name, cpu, mem = parts
+            try:
+                cpu_v = float(cpu.strip().rstrip("%"))
+            except ValueError:
+                cpu_v = None
+            out[name] = {"cpu_pct": cpu_v, "mem": mem.split("/")[0].strip()}
+        return out
+
+
+@pytest.fixture(scope="session")
+def full_fleet(require_compose):
+    """Sobe a frota completa de 3 nós uma vez por sessão; derruba no fim."""
+    fleet = FullFleet(require_compose, project="sida_e1_fleet")
+    fleet.down()
+    fleet.up()
+    time.sleep(3)
     try:
         yield fleet
     finally:

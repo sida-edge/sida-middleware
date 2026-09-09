@@ -69,3 +69,55 @@ def test_frota_3_nos(plane_b_fleet):
     else:
         pytest.fail(f"frota nao convergiu para alive: "
                     f"{[f.peers_api(n) for n in (1, 2, 3)]}")
+
+
+# --------------------------------------------------------------------------- T3.3
+def test_compose_test_isolado(full_fleet, require_paho):
+    """`docker compose -f compose.test.yml up -d` sobe a frota completa + o
+    Mosquitto isolado; o broker recebe trafego Sparkplug dos 3 nos em
+    spBv1.0/#; nenhuma referencia a um broker de producao/GCP."""
+    mqtt = require_paho
+    f = full_fleet
+
+    for n in (1, 2, 3):
+        assert f.wait_http(n), f"edge{n}-core nao subiu"
+
+    topics: list[str] = []
+    cli = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2, client_id="t33-sniffer")
+    cli.on_message = lambda c, u, m: topics.append(m.topic)
+    for _ in range(30):
+        try:
+            cli.connect(f.MQTT_HOST, f.MQTT_PORT, keepalive=30)
+            break
+        except OSError:
+            time.sleep(2)
+    else:
+        pytest.fail(f"nao conectou ao Mosquitto isolado em {f.MQTT_HOST}:{f.MQTT_PORT}")
+    cli.subscribe("spBv1.0/#", qos=0)
+    cli.loop_start()
+
+    seen_by_node = {}
+    deadline = time.time() + 240
+    while time.time() < deadline:
+        for gid in f.GATEWAY_ID.values():
+            if gid not in seen_by_node and any(f"/{gid}" in t for t in topics):
+                seen_by_node[gid] = True
+        if len(seen_by_node) == 3:
+            break
+        time.sleep(3)
+    cli.loop_stop()
+    cli.disconnect()
+
+    faltando = set(f.GATEWAY_ID.values()) - set(seen_by_node)
+    assert not faltando, (
+        f"sem trafego Sparkplug dos nos {faltando}. topicos: {sorted(set(topics))[:20]}"
+    )
+
+    # nenhuma referencia a broker de producao no compose de teste
+    txt = COMPOSE_TEST.read_text(encoding="utf-8")
+    for bad in ("8883", "mqtts://", "amazonaws", "googleapis", "hivemq", "emqx.io"):
+        assert bad not in txt, f"compose.test.yml referencia algo de producao: {bad!r}"
+    # o unico 'GCP' aceitavel e no comentario de isolamento
+    for line in txt.splitlines():
+        if "gcp" in line.lower():
+            assert line.strip().startswith("#"), f"referencia a GCP fora de comentario: {line}"

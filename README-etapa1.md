@@ -54,6 +54,10 @@ pytest test/etapa1                 # checkpoints leves (config, proto)
 pytest test/etapa1 --run-heavy     # inclui os que sobem containers
 ```
 
+A frota de teste embute `PEER_MESH_TEST=1`, que liga hooks de diagnóstico da
+malha (`POST /api/system/peers/test/send`, `GET .../test/inbox`) usados pelos
+testes do plano B — desligados por padrão fora da `compose.test.yml`.
+
 Cada task tem um checkpoint funcional (SDD 3.3.1) que libera seu commit `[T…]`:
 
 | Sprint | Task | Teste |
@@ -61,12 +65,27 @@ Cada task tem um checkpoint funcional (SDD 3.3.1) que libera seu commit `[T…]`
 | S1 | `T0.4`  | `test_s1_foundation.py::test_baseline_v2_pipeline` *(heavy)* |
 | S1 | `T1A.1` | `test_s1_foundation.py::test_sparkplug_proto_valido` |
 | S1 | `T3.1`  | `test_s1_foundation.py::test_compose_parametrizado` |
-| S2 | `T1A.2`–`T1A.7` | `test_plane_a_lifecycle.py` |
-| S3 | `T1B.1`–`T1B.5` | `test_plane_b_peermesh.py` |
-| S4 | `T3.2`–`T4.6`   | `test_fleet.py`, `test_fault_injection.py` |
+| S2 | `T1A.2`–`T1A.7` | `test_plane_a_lifecycle.py` *(heavy)* |
+| S3 | `T1B.1`–`T1B.5` | `test_plane_b_peermesh.py` *(heavy)* |
+| S4 | `T3.2`–`T4.6`   | `test_fleet.py`, `test_fault_injection.py` *(heavy)* |
+
+Rodar por arquivo (as fixtures de frota usam nomes de container fixos e não
+devem coexistir na mesma sessão):
+
+```bash
+pytest test/etapa1/test_plane_a_lifecycle.py --run-heavy
+pytest test/etapa1/test_plane_b_peermesh.py  --run-heavy
+pytest test/etapa1/test_fleet.py             --run-heavy
+pytest test/etapa1/test_fault_injection.py   --run-heavy
+```
 
 ## Ferramentas necessárias
 
 `docker` + `docker compose` v2, `python3` (3.10+), e as libs de
-`test/etapa1/requirements.txt`. Para o teste do `.proto` (`T1A.1`):
-`protobuf-compiler` (`protoc`) **ou** `pip install grpcio-tools`.
+`test/etapa1/requirements.txt` (`paho-mqtt`, `requests`, `PyYAML`, `protobuf`,
+`pyzmq`). Para o teste do `.proto` (`T1A.1`): `protobuf-compiler` (`protoc`)
+**ou** `pip install grpcio-tools`.
+
+O `sida-core` (plano B, Go + CGO + ZeroMQ) é compilado e testado **dentro de um
+contêiner `golang:alpine`** pelos próprios testes — não é preciso Go nem
+`libzmq` no host.
