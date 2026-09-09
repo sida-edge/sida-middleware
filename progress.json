@@ -1,0 +1,63 @@
+{
+  "sdd": "SDD_SIDA_Etapa1_Ciclo_V3.md",
+  "branch": "interedge",
+  "contrato": "SDD secao 3.4 — atualizado no mesmo checkpoint do commit da task (secao 3.3.1)",
+  "checkpoint_por_task": [
+    "1. teste funcional da task (tabela 3.3.2) verde + testes anteriores verdes",
+    "2. este arquivo marca a task 'concluida' (status, updated, commit)",
+    "3. UM commit na branch interedge: '<tipo>(<escopo>): <descricao> [<ID>]'"
+  ],
+  "updated": "2026-09-09T17:35:38Z",
+  "sprint_atual": "S1",
+  "tasks": [
+    {
+      "sprint": "S1",
+      "id": "T0.4",
+      "descricao": "Harness de frota local (test/etapa1/compose.test.yml, 3 nos + Mosquitto isolado) e smoke da baseline v2.0",
+      "status": "em_andamento",
+      "updated": "2026-09-09T17:35:38Z",
+      "commit": null,
+      "teste_funcional": "test/etapa1/test_s1_foundation.py::test_baseline_v2_pipeline",
+      "nota": "Artefatos redigidos (compose.test.yml, seed, teste). Checkpoint pendente de ferramentas: docker, docker compose, mosquitto-clients/paho-mqtt, pytest. Seed do sida_config.db precisa de uma iteracao ao vivo contra o Docker."
+    },
+    {
+      "sprint": "S1",
+      "id": "T1A.1",
+      "descricao": "schemas/sparkplug_b.proto (Sparkplug B v3.0.0 da Eclipse) + schemas/README.md apontando para ele",
+      "status": "concluida",
+      "updated": "2026-09-09T18:05:00Z",
+      "commit": "feat(schemas): sparkplug_b.proto v3.0.0 como fonte da verdade [T1A.1]",
+      "teste_funcional": "test/etapa1/test_s1_foundation.py::test_sparkplug_proto_valido",
+      "nota": "Checkpoint verde: protoc 3.21.12 compila o .proto; Payload/Metric/Template presentes; README referencia o arquivo. 1 passed."
+    },
+    {
+      "sprint": "S1",
+      "id": "T3.1",
+      "descricao": "docker-compose.yml parametrizado por ${VAR} (identidade/pares/broker/PIN em sida-core e poc-delivery, porta ${PEER_PORT} publicada) + .env.example + deploy/fleet/edge_001.env",
+      "status": "em_andamento",
+      "updated": "2026-09-09T17:35:38Z",
+      "commit": null,
+      "teste_funcional": "test/etapa1/test_s1_foundation.py::test_compose_parametrizado",
+      "nota": "docker-compose.yml parametrizado; .env.example e deploy/fleet/*.env redigidos. Checkpoint pendente de: docker compose."
+    },
+    { "sprint": "S2", "id": "T1A.2", "descricao": "bdSeq de sessao no contexto do fluxo + injecao no LWT (setupConnectors)", "status": "pendente", "updated": "2026-09-09T17:35:38Z", "commit": null, "teste_funcional": "test/etapa1/test_plane_a_lifecycle.py::test_bdseq_sessao_no_lwt" },
+    { "sprint": "S2", "id": "T1A.3", "descricao": "Metrica bdSeq no NBIRTH + reset de alias_map/born_devices/seq e node_state=birthed a cada NBIRTH", "status": "pendente", "updated": "2026-09-09T17:35:38Z", "commit": null, "teste_funcional": "test/etapa1/test_plane_a_lifecycle.py::test_nbirth_bdseq_e_reset" },
+    { "sprint": "S2", "id": "T1A.4", "descricao": "DBIRTH declara definicoes de metrica com alias inteiro (alias_map), mantendo engUnit", "status": "pendente", "updated": "2026-09-09T17:35:38Z", "commit": null, "teste_funcional": "test/etapa1/test_plane_a_lifecycle.py::test_dbirth_define_aliases" },
+    { "sprint": "S2", "id": "T1A.5", "descricao": "DDATA referencia metricas apenas por alias (sem name)", "status": "pendente", "updated": "2026-09-09T17:35:38Z", "commit": null, "teste_funcional": "test/etapa1/test_plane_a_lifecycle.py::test_ddata_por_alias" },
+    { "sprint": "S2", "id": "T1A.6", "descricao": "NDEATH gracioso em node.on('close')/SIGTERM antes de client.end()", "status": "pendente", "updated": "2026-09-09T17:35:38Z", "commit": null, "teste_funcional": "test/etapa1/test_plane_a_lifecycle.py::test_ndeath_gracioso" },
+    { "sprint": "S2", "id": "T1A.7", "descricao": "Auditoria da contabilidade de seq (NBIRTH=0 -> DBIRTH -> DDATA..., rolagem 255->0)", "status": "pendente", "updated": "2026-09-09T17:35:38Z", "commit": null, "teste_funcional": "test/etapa1/test_plane_a_lifecycle.py::test_contabilidade_seq" },
+    { "sprint": "S3", "id": "T1B.1", "descricao": "domain/controller.go (ControllerRegister, PeerRef, Envelope, LivenessState) + ports.PeerRepository; parsing de PEERS", "status": "pendente", "updated": "2026-09-09T17:35:38Z", "commit": null, "teste_funcional": "test/etapa1/test_plane_b_peermesh.py::test_registro_carrega_de_env" },
+    { "sprint": "S3", "id": "T1B.2", "descricao": "adapters/repository/sqlite_peer.go — tabela controllers no sida_config.db (WAL)", "status": "pendente", "updated": "2026-09-09T17:35:38Z", "commit": null, "teste_funcional": "test/etapa1/test_plane_b_peermesh.py::test_persistencia_controllers" },
+    { "sprint": "S3", "id": "T1B.3", "descricao": "peer_service.go — malha ZeroMQ ROUTER/DEALER em PEER_PORT + WriteMessage/RouteMessage/ReadMessage", "status": "pendente", "updated": "2026-09-09T17:35:38Z", "commit": null, "teste_funcional": "test/etapa1/test_plane_b_peermesh.py::test_troca_mensagem_mesh" },
+    { "sprint": "S3", "id": "T1B.4", "descricao": "probe loop + FSM alive/suspect/down (monotonico) + GET /api/system/peers", "status": "pendente", "updated": "2026-09-09T17:35:38Z", "commit": null, "teste_funcional": "test/etapa1/test_plane_b_peermesh.py::test_probe_e_liveness" },
+    { "sprint": "S3", "id": "T1B.5", "descricao": "Wiring em cmd/server/main.go (sobe peer_service no boot, encerra no SIGTERM), sem tocar no :5556", "status": "pendente", "updated": "2026-09-09T17:35:38Z", "commit": null, "teste_funcional": "test/etapa1/test_plane_b_peermesh.py::test_wiring_e_shutdown" },
+    { "sprint": "S4", "id": "T3.2", "descricao": "deploy/fleet/identities.md + edge_001..003.env completos (3 nos, PEERS cruzados)", "status": "pendente", "updated": "2026-09-09T17:35:38Z", "commit": null, "teste_funcional": "test/etapa1/test_fleet.py::test_frota_3_nos" },
+    { "sprint": "S4", "id": "T3.3", "descricao": "test/etapa1/compose.test.yml final (3 nos + Mosquitto isolado) + README-etapa1.md", "status": "pendente", "updated": "2026-09-09T17:35:38Z", "commit": null, "teste_funcional": "test/etapa1/test_fleet.py::test_compose_test_isolado" },
+    { "sprint": "S4", "id": "T4.1", "descricao": "Suite funcional consolidada do plano A verde na frota de teste", "status": "pendente", "updated": "2026-09-09T17:35:38Z", "commit": null, "teste_funcional": "pytest test/etapa1/test_plane_a_lifecycle.py" },
+    { "sprint": "S4", "id": "T4.2", "descricao": "Suite funcional consolidada do plano B verde na frota de teste", "status": "pendente", "updated": "2026-09-09T17:35:38Z", "commit": null, "teste_funcional": "pytest test/etapa1/test_plane_b_peermesh.py" },
+    { "sprint": "S4", "id": "T4.3", "descricao": "test_fault_injection.py — passos 1-2 de 3.1 (frota integra t0 + injecao t1)", "status": "pendente", "updated": "2026-09-09T17:35:38Z", "commit": null, "teste_funcional": "test/etapa1/test_fault_injection.py::test_frota_integra_e_injecao" },
+    { "sprint": "S4", "id": "T4.4", "descricao": "Verificacao dos dois planos sob falha (passos 3-5 de 3.1)", "status": "pendente", "updated": "2026-09-09T17:35:38Z", "commit": null, "teste_funcional": "test/etapa1/test_fault_injection.py::test_deteccao_dois_planos" },
+    { "sprint": "S4", "id": "T4.5", "descricao": "Verificacao de religamento (passo 6): novo NBIRTH com bdSeq incrementado", "status": "pendente", "updated": "2026-09-09T17:35:38Z", "commit": null, "teste_funcional": "test/etapa1/test_fault_injection.py::test_religamento" },
+    { "sprint": "S4", "id": "T4.6", "descricao": "Geracao de test/etapa1/report.json (passo 7) — fecha o teste de aceite 3.1", "status": "pendente", "updated": "2026-09-09T17:35:38Z", "commit": null, "teste_funcional": "test/etapa1/test_fault_injection.py::test_report_e_aceite" }
+  ]
+}

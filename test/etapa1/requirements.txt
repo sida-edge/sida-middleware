@@ -1,0 +1,8 @@
+# Dependencias da suite de testes da Etapa 1 do Ciclo V3.0.
+#   python3 -m venv .venv && . .venv/bin/activate && pip install -r test/etapa1/requirements.txt
+pytest>=8.0
+paho-mqtt>=2.0
+requests>=2.31
+PyYAML>=6.0
+# Opcional (fallback quando nao ha `protoc` de sistema para o teste T1A.1):
+grpcio-tools>=1.60
