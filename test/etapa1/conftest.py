@@ -7,8 +7,11 @@ teste e PULADO com uma mensagem acionavel — nunca falha por ambiente.
 """
 from __future__ import annotations
 
+import importlib
 import shutil
 import subprocess
+import sys
+import time
 from pathlib import Path
 
 import pytest
@@ -17,6 +20,8 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 ETAPA1_DIR = Path(__file__).resolve().parent
 COMPOSE_TEST = ETAPA1_DIR / "compose.test.yml"
 FLEET_DIR = REPO_ROOT / "deploy" / "fleet"
+SEED_SCRIPT = ETAPA1_DIR / "seed_node_config.py"
+PROTO = REPO_ROOT / "schemas" / "sparkplug_b.proto"
 
 
 def pytest_addoption(parser):
@@ -100,3 +105,103 @@ def require_paho():
         pytest.skip("instale paho-mqtt ('pip install paho-mqtt' ou pacote python3-paho-mqtt)")
     import paho.mqtt.client as mqtt
     return mqtt
+
+
+# --------------------------------------------------------------------------- plano A
+@pytest.fixture(scope="session")
+def spb_pb2(require_protoc, tmp_path_factory):
+    """Compila schemas/sparkplug_b.proto para um modulo Python e o importa.
+
+    Serve para os testes do plano A decodificarem os payloads Sparkplug B que
+    o delivery publica no broker de teste. Precisa do runtime `protobuf` (skip
+    acionavel se ausente)."""
+    try:
+        import google.protobuf  # noqa: F401
+    except Exception:
+        pytest.skip("instale o runtime protobuf ('pip install protobuf')")
+    out = tmp_path_factory.mktemp("spb_pb2")
+    proc = subprocess.run(
+        [*require_protoc, f"--proto_path={PROTO.parent}", f"--python_out={out}", PROTO.name],
+        capture_output=True, text=True, timeout=60,
+    )
+    assert proc.returncode == 0, f"protoc --python_out falhou:\n{proc.stderr}"
+    sys.path.insert(0, str(out))
+    mod = importlib.import_module("sparkplug_b_pb2")
+    return mod
+
+
+class PlaneANode:
+    """Controla UM no completo (core+ingestion+context+delivery) + Mosquitto
+    isolado + simulador Modbus, da compose.test.yml, para os testes do plano A."""
+
+    MQTT_HOST = "localhost"
+    MQTT_PORT = 18831            # mapeada no compose.test.yml (mosquitto 18831->1883)
+    GATEWAY_ID = "sida_edge_001"
+    SITE = "Enterprise_Site"
+    DEVICE_ID = "Area_1_Line_1_Pump_01"
+    SERVICES = ["mosquitto", "plc-sim", "edge1-core",
+                "edge1-ingestion", "edge1-context", "edge1-delivery"]
+    DELIVERY = "edge1-delivery"
+
+    def __init__(self, compose: list[str], project: str):
+        self._compose = compose
+        self._project = ["-p", project]
+        self.data_dir = COMPOSE_TEST.parent / "_data" / "edge1"
+
+    def _dc(self, *args, timeout=1200, check=True):
+        proc = subprocess.run(
+            [*self._compose, "-f", str(COMPOSE_TEST), *self._project, *args],
+            capture_output=True, text=True, timeout=timeout, cwd=COMPOSE_TEST.parent,
+        )
+        if check:
+            assert proc.returncode == 0, f"`compose {' '.join(args)}` falhou:\n{proc.stderr}"
+        return proc
+
+    def seed(self):
+        proc = subprocess.run(
+            ["python3", str(SEED_SCRIPT), "--data-dir", str(self.data_dir),
+             "--gateway-id", self.GATEWAY_ID,
+             "--broker-host", "mosquitto", "--modbus-host", "plc-sim"],
+            capture_output=True, text=True, timeout=30,
+        )
+        assert proc.returncode == 0, f"seed do sida_config.db falhou:\n{proc.stderr}"
+
+    def up(self):
+        self._dc("up", "-d", "--build", *self.SERVICES, timeout=1800)
+
+    def down(self):
+        self._dc("down", "-v", timeout=180, check=False)
+
+    def restart_delivery(self, timeout=60):
+        """Reinicia o container do delivery (novo processo Node-RED)."""
+        self._dc("restart", "-t", "10", self.DELIVERY, timeout=timeout)
+
+    def restart_broker(self, timeout=60):
+        """Bounce do Mosquitto: forca uma reconexao MQTT do delivery SEM
+        matar o processo (o contexto do fluxo, e o bdSeq, sobrevivem)."""
+        self._dc("restart", "-t", "5", "mosquitto", timeout=timeout)
+
+    def stop_delivery(self, timeout=45):
+        """SIGTERM no delivery (encerramento limpo -> NDEATH gracioso)."""
+        self._dc("stop", "-t", "20", self.DELIVERY, timeout=timeout)
+
+    def kill_delivery(self, timeout=30):
+        """SIGKILL no delivery (morte abrupta -> LWT pelo broker)."""
+        self._dc("kill", "-s", "SIGKILL", self.DELIVERY, timeout=timeout, check=False)
+
+    def start_delivery(self, timeout=60):
+        self._dc("start", self.DELIVERY, timeout=timeout)
+
+
+@pytest.fixture(scope="session")
+def plane_a_node(require_compose):
+    """Sobe a frota do plano A uma vez por sessao de teste; derruba no fim."""
+    node = PlaneANode(require_compose, project="sida_e1_planea")
+    node.down()          # limpa resto de execucao anterior
+    node.seed()
+    node.up()
+    time.sleep(3)
+    try:
+        yield node
+    finally:
+        node.down()
