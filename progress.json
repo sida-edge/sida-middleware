@@ -7,8 +7,9 @@
     "2. este arquivo marca a task 'concluida' (status, updated, commit)",
     "3. UM commit na branch interedge: '<tipo>(<escopo>): <descricao> [<ID>]'"
   ],
-  "updated": "2026-09-09T20:07:00Z",
+  "updated": "2026-09-09T21:15:00Z",
   "sprint_atual": "S4",
+  "estado": "TODAS as 22 tasks concluidas e commitadas na branch interedge (S1..S4). Teste de aceite 3.1 verde (test_fault_injection.py 4/4; report.json com perdas==0 nos sobreviventes).",
   "tasks": [
     {
       "sprint": "S1",
