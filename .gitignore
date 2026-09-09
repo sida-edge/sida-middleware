@@ -52,4 +52,5 @@ SDD_SIDA_Etapa1_Ciclo_V3.md
 # Dados efêmeros da frota de teste da Etapa 1 (semeados por seed_node_config.py)
 test/etapa1/_data/
 test/etapa1/.venv/
+test/etapa1/report.json
 __pycache__/

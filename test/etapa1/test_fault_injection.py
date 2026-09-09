@@ -264,3 +264,78 @@ def test_religamento(full_fleet, sniffer):
         time.sleep(1)
     else:
         pytest.fail("edge_002 nao voltou a alive nos observadores")
+
+
+# --------------------------------------------------------------------------- T4.6
+def test_report_e_aceite(full_fleet, sniffer):
+    """Passo 7: roda o cenário 3.1 ponta a ponta e emite test/etapa1/report.json
+    com t_ndeath, t_peer_detect por observador, perdas (==0) e overhead de
+    CPU/RAM por container."""
+    f = full_fleet
+    for n in (1, 2, 3):
+        assert f.wait_http(n)
+
+    # t0: frota íntegra, sessões frescas
+    nb2, _, _ = _fresh_cycle(f, sniffer, 2)
+    bdseq2 = _bdseq(nb2["pb"])
+    for n in (1, 3):
+        _fresh_cycle(f, sniffer, n)
+    time.sleep(6)
+
+    stats_t0 = f.docker_stats()
+
+    # t1: injeção (kill -> LWT)
+    t1 = time.time()
+    f.kill_node(2)
+
+    nd = sniffer.wait("NDEATH", GW[2], after=t1, timeout=90)
+    t_ndeath = round(nd["ts"] - t1, 3)
+    assert _bdseq(nd["pb"]) == bdseq2
+
+    t_peer_detect = {}
+    for obs in (1, 3):
+        d = _peer_down_at(f, obs, "edge_002", t1, timeout=15)
+        assert d is not None, f"edge_00{obs} nao detectou edge_002 down"
+        t_peer_detect[f"edge_00{obs}"] = round(d, 3)
+
+    time.sleep(10)
+    perdas = {GW[n]: _ddata_losses(sniffer, GW[n], t1, time.time()) for n in (1, 3)}
+
+    # t2: religamento
+    t2 = time.time()
+    f.start_node(2)
+    assert f.wait_http(2)
+    nb_b = sniffer.wait("NBIRTH", GW[2], after=t2, timeout=150)
+    religou = nb_b["seq"] == 0 and _bdseq(nb_b["pb"]) is not None
+
+    report = {
+        "cenario": "SDD 3.1 — injeção de falha na frota de 3 nós",
+        "nos": list(GW.values()),
+        "t_ndeath_s": t_ndeath,
+        "t_peer_detect_s": t_peer_detect,
+        "probe_interval_ms": 1000,
+        "peer_down_after_misses": 3,
+        "perdas_ddata_sobreviventes": perdas,
+        "religamento_novo_nbirth": bool(religou),
+        "religamento_bdseq": _bdseq(nb_b["pb"]),
+        "overhead": {
+            name: st for name, st in sorted(stats_t0.items())
+        },
+        "aceite": (
+            all(v == 0 for v in perdas.values())
+            and religou
+            and t_ndeath is not None
+            and all(v is not None for v in t_peer_detect.values())
+        ),
+    }
+    REPORT.write_text(json.dumps(report, indent=2, ensure_ascii=False), encoding="utf-8")
+
+    # validação do schema/criterio
+    assert REPORT.is_file()
+    r = json.loads(REPORT.read_text(encoding="utf-8"))
+    for k in ("t_ndeath_s", "t_peer_detect_s", "perdas_ddata_sobreviventes",
+              "religamento_novo_nbirth", "aceite"):
+        assert k in r, f"report.json sem a chave {k!r}"
+    assert r["perdas_ddata_sobreviventes"] == {GW[1]: 0, GW[3]: 0}, r["perdas_ddata_sobreviventes"]
+    assert r["religamento_novo_nbirth"] is True
+    assert r["aceite"] is True, r
