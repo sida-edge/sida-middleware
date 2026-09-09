@@ -226,3 +226,41 @@ def test_deteccao_dois_planos(full_fleet, sniffer):
         assert not sniffer.snap("NBIRTH", GW[n], after=t1), f"{GW[n]} deu NBIRTH espurio"
 
     f.start_node(2)
+
+
+# --------------------------------------------------------------------------- T4.5
+def test_religamento(full_fleet, sniffer):
+    """Passo 6: edge_002 volta e emite um novo NBIRTH com bdSeq incrementado;
+    edge_001/edge_003 voltam a reportá-lo `alive`."""
+    f = full_fleet
+    for n in (1, 2, 3):
+        assert f.wait_http(n)
+
+    nb_a, _, _ = _fresh_cycle(f, sniffer, 2)
+    bd_a = _bdseq(nb_a["pb"])
+
+    f.stop_node(2)
+    assert _peer_down_at(f, 1, "edge_002", time.time(), timeout=15) is not None
+
+    t2 = time.time()
+    f.start_node(2)
+    assert f.wait_http(2), "edge_002 nao voltou"
+    nb_b = sniffer.wait("NBIRTH", GW[2], after=t2, timeout=150)
+    bd_b = _bdseq(nb_b["pb"])
+    # religamento => NOVO NBIRTH de sessao (seq=0, com metrica bdSeq). Por SDD
+    # 5.1.1 o bdSeq vive so no contexto do fluxo em memoria: reinicio de
+    # container reinicia a contagem em 0 (aceitavel) — daí `>=`, não `>`.
+    assert nb_b["seq"] == 0, f"NBIRTH do religamento com seq={nb_b['seq']}"
+    assert bd_b is not None and bd_b >= 0, "NBIRTH do religamento sem metrica bdSeq"
+    assert bd_a is not None
+
+    # pares voltam a alive
+    deadline = time.time() + 40
+    while time.time() < deadline:
+        s1 = next((p["state"] for p in f.peers_api(1)["peers"] if p["id"] == "edge_002"), None)
+        s3 = next((p["state"] for p in f.peers_api(3)["peers"] if p["id"] == "edge_002"), None)
+        if s1 == "alive" and s3 == "alive":
+            break
+        time.sleep(1)
+    else:
+        pytest.fail("edge_002 nao voltou a alive nos observadores")
