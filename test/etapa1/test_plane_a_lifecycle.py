@@ -167,3 +167,36 @@ def test_bdseq_sessao_no_lwt(plane_a_node, spb_bus):
         f"bdSeq do LWT ({bdseq_of(ndeath_b['payload'])}) != NBIRTH da sessao B ({bdseq_b})"
     )
     plane_a_node.start_delivery()   # restaura o no para os testes seguintes
+
+
+# --------------------------------------------------------------------------- T1A.3
+def test_nbirth_bdseq_e_reset(plane_a_node, spb_bus):
+    """A cada NBIRTH o estado de sessao e zerado: apos uma reconexao MQTT o
+    DBIRTH do device ativo e reemitido (born_devices/alias_map limpos) e o
+    NBIRTH sai com seq=0 e a metrica bdSeq da sessao."""
+    dev = plane_a_node.DEVICE_ID
+
+    # sessao A
+    t_a = time.time()
+    plane_a_node.restart_delivery()
+    nbirth_a = spb_bus.wait_for("NBIRTH", after_ts=t_a, timeout=180)
+    spb_bus.wait_for("DBIRTH", after_ts=t_a, timeout=120,
+                     predicate=lambda e: e["device"] == dev)
+    bdseq_a = bdseq_of(nbirth_a["payload"])
+    assert bdseq_a is not None, "NBIRTH sem metrica bdSeq"
+    assert nbirth_a["payload"].seq == 0, "NBIRTH nao saiu com seq=0"
+
+    # reconexao MQTT (bounce do broker): nova sessao, mesmos devices
+    t_b = time.time()
+    plane_a_node.restart_broker()
+    time.sleep(2)
+    nbirth_b = spb_bus.wait_for(
+        "NBIRTH", after_ts=t_b, timeout=180,
+        predicate=lambda e: bdseq_of(e["payload"]) is not None and bdseq_of(e["payload"]) > bdseq_a,
+    )
+    dbirth_b = spb_bus.wait_for("DBIRTH", after_ts=t_b, timeout=120,
+                                predicate=lambda e: e["device"] == dev)
+
+    assert dbirth_b["ts_recv"] >= t_b, "DBIRTH nao foi reemitido apos a reconexao (mapas nao limpos)"
+    assert nbirth_b["payload"].seq == 0
+    assert bdseq_of(nbirth_b["payload"]) >= bdseq_a + 1
