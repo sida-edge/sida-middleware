@@ -20,6 +20,8 @@ import (
 	"sida-core/internal/api"
 
 	"github.com/gin-gonic/gin"
+	"github.com/gin-gonic/gin/binding"
+	"github.com/go-playground/validator/v10"
 	"github.com/joho/godotenv"
 )
 
@@ -110,6 +112,12 @@ func main() {
 	peerHandler := handler.NewPeerHandler(peerSvc)
 
 	gin.SetMode(gin.ReleaseMode)
+
+	// Validacao por protocolo do Connection (inclui o novo `interedge` da Etapa 2).
+	if v, ok := binding.Validator.Engine().(*validator.Validate); ok {
+		domain.RegisterConnectionValidation(v)
+	}
+
 	router := gin.Default()
 
 	api.SetupRoutes(router, manifestHandler, authHandler, systemHandler, authService, bufferHandler, peerHandler)

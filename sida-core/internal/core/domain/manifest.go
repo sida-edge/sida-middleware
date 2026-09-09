@@ -44,15 +44,19 @@ type Device struct {
 }
 
 type Connection struct {
-	Protocol   string `json:"protocol" binding:"required,oneof=modbus_tcp modbus_rtu opc_ua s7"`
-	ScanRateMs int    `json:"scan_rate_ms" binding:"required,min=50"`
-	
-	Host       string `json:"host" binding:"required_unless=Protocol opc_ua,omitempty,ip|hostname"`
-	Port       int    `json:"port" binding:"required_unless=Protocol opc_ua,omitempty,min=1,max=65535"`
+	// interedge (Etapa 2): dispositivo Classe 0/1 sem CLP que EMPURRA leituras
+	// pelo broker de ingestao — nao e sondado, entao nao exige
+	// host/port/scan_rate_ms/register_type. As exigencias por protocolo estao
+	// em connectionStructLevel (registrado via RegisterConnectionValidation).
+	Protocol   string `json:"protocol" binding:"required,oneof=modbus_tcp modbus_rtu opc_ua s7 interedge"`
+	ScanRateMs int    `json:"scan_rate_ms" binding:"omitempty,min=50"`
+
+	Host       string `json:"host" binding:"omitempty,ip|hostname"`
+	Port       int    `json:"port" binding:"omitempty,min=1,max=65535"`
 	UnitID     *int   `json:"unit_id" binding:"omitempty,gte=0,lte=255"` // Ponteiro para permitir valor 0
 	ByteOrder  string `json:"byte_order" binding:"omitempty,oneof=ABCD CDAB BADC DCBA"`
 
-	EndpointURL    string `json:"endpoint_url" binding:"required_if=Protocol opc_ua"`
+	EndpointURL    string `json:"endpoint_url" binding:"omitempty"`
 	SecurityPolicy string `json:"security_policy" binding:"omitempty,oneof=None Basic128Rsa15 Basic256 Basic256Sha256"`
 	SecurityMode   string `json:"security_mode" binding:"omitempty,oneof=None Sign SignAndEncrypt"`
 	AuthUsername   string `json:"auth_username" binding:"omitempty"`

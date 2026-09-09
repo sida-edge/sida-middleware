@@ -1,0 +1,142 @@
+# =============================================================================
+# Frota LOCAL e ISOLADA para os testes da Etapa 2 do Ciclo V3.0.
+#
+#   docker compose -f test/etapa2/compose.test.yml up -d --build
+#
+# UM no completo do SIDA (core + ingestion + context + delivery) + DOIS brokers
+# distintos + duas fontes:
+#   - mosquitto-uns : broker do UNS de SAIDA (spBv1.0/#), isolado do GCP.
+#   - mqtt-ingest   : broker de INGESTAO (sida/ingest/#), dispositivo -> RPi.
+#   - plc-sim       : simulador Modbus TCP (oitc/modbus-server) — caminho v2.0.
+#   - esp32-sim     : mock de dispositivo Classe 1 (T2.SIM) — caminho `interedge`.
+#
+# Prefixo de container `e2-` (nao colide com a frota da Etapa 1, `e1-`).
+# =============================================================================
+
+networks:
+  edge_net:      # rede do no; o core tem o alias `sida-core` (os flows Node-RED o endereçam por nome fixo)
+  uns_net:       # mosquitto-uns + delivery
+  ingest_net:    # mqtt-ingest + ingestion + esp32-sim
+
+volumes:
+  edge_ipc:
+
+x-nodered-build: &nodered-build
+  context: ../..
+  dockerfile: ./infra/Dockerfile
+
+services:
+
+  # --------------------------------------------------------------- brokers + fontes
+  mosquitto-uns:
+    image: eclipse-mosquitto:2
+    container_name: e2-mosquitto-uns
+    command: ["mosquitto", "-c", "/mosquitto/config/mosquitto.conf"]
+    volumes:
+      - ./mosquitto.uns.conf:/mosquitto/config/mosquitto.conf:ro
+    ports:
+      - "18832:1883"           # UNS exposto ao host para o pytest
+    networks: [uns_net]
+
+  mqtt-ingest:
+    image: eclipse-mosquitto:2
+    container_name: e2-mqtt-ingest
+    command: ["mosquitto", "-c", "/mosquitto/config/mosquitto.conf"]
+    volumes:
+      - ./mosquitto.ingest.conf:/mosquitto/config/mosquitto.conf:ro
+    ports:
+      - "18841:1883"           # broker de ingestao exposto ao host para o pytest
+    networks: [ingest_net]
+
+  plc-sim:
+    image: oitc/modbus-server:latest
+    container_name: e2-plc-sim
+    volumes:
+      - ./modbus.test.json:/app/modbus_server.json:ro
+    ports:
+      - "55021:5020"
+    networks: [edge_net]
+    restart: unless-stopped
+
+  esp32-sim:
+    image: python:3.12-slim
+    container_name: e2-esp32-sim
+    command: >
+      sh -c "pip install --no-cache-dir -q paho-mqtt>=2.0 && python /sim/esp32_sim.py"
+    environment:
+      DEVICE_ID: esp32_a
+      INGEST_BROKER_HOST: mqtt-ingest
+      INGEST_BROKER_PORT: "1883"
+      INGEST_TOPIC_ROOT: sida/ingest
+      INTERVAL_MS: "1000"
+    volumes:
+      - ./esp32_sim.py:/sim/esp32_sim.py:ro
+    networks: [ingest_net]
+    depends_on: [mqtt-ingest]
+    restart: unless-stopped
+
+  # ------------------------------------------------------------------------ o NO
+  edge-core:
+    build: ../../sida-core
+    container_name: e2-edge-core
+    environment:
+      EDGE_GATEWAY_ID: sida_edge_e2
+      GROUP_ID: Enterprise_Site
+      BROKER_URL: mqtt://mosquitto-uns:1883
+      EDGE_ENGINEER_PIN: "000000"
+      CONTROLLER_ID: edge_e2
+      PEER_PORT: "5557"
+    volumes:
+      - ./_data/edge:/app/data
+    ports:
+      - "18011:8000"
+      - "15511:5556"
+    networks:
+      edge_net:
+        aliases: [sida-core]
+
+  edge-ingestion:
+    build:
+      <<: *nodered-build
+      args: [PROJECT_DIR=./core/ingestion]
+    container_name: e2-edge-ingestion
+    environment:
+      TZ: America/Recife
+      FLOWS: flows.json
+      INGEST_BROKER_HOST: mqtt-ingest
+      INGEST_BROKER_PORT: "1883"
+      INGEST_TOPIC_ROOT: sida/ingest
+    volumes:
+      - ../../core/ingestion:/data
+      - edge_ipc:/tmp/.ipc
+    networks: [edge_net, ingest_net]
+    depends_on: [edge-core, plc-sim, mqtt-ingest]
+
+  edge-context:
+    build:
+      <<: *nodered-build
+      args: [PROJECT_DIR=./core/context]
+    container_name: e2-edge-context
+    environment: { TZ: America/Recife, FLOWS: flows.json }
+    volumes:
+      - ../../core/context:/data
+      - edge_ipc:/tmp/.ipc
+    networks: [edge_net]
+    depends_on: [edge-core]
+
+  edge-delivery:
+    build:
+      <<: *nodered-build
+      args: [PROJECT_DIR=./core/delivery]
+    container_name: e2-edge-delivery
+    environment:
+      TZ: America/Recife
+      FLOWS: flows.json
+      EDGE_GATEWAY_ID: sida_edge_e2
+      GROUP_ID: Enterprise_Site
+      BROKER_URL: mqtt://mosquitto-uns:1883
+    volumes:
+      - ../../core/delivery:/data
+      - edge_ipc:/tmp/.ipc
+    networks: [edge_net, uns_net]
+    depends_on: [edge-core]
