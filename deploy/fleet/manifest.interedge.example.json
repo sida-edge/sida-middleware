@@ -1,0 +1,70 @@
+{
+  "gateway_id": "sida_edge_001",
+  "config": {
+    "plant": {
+      "enterprise": "Enterprise",
+      "site": "Site",
+      "areas": {
+        "Area_1": {
+          "lines": {
+            "Line_1": {
+              "devices": {
+                "pump_01": {
+                  "enabled": true,
+                  "connection": {
+                    "protocol": "modbus_tcp",
+                    "scan_rate_ms": 1000,
+                    "host": "plc-sim",
+                    "port": 5020,
+                    "unit_id": 1,
+                    "byte_order": "ABCD"
+                  },
+                  "asset_context": {
+                    "standard": "ISA-95",
+                    "path": [
+                      { "type": "area", "id": "Area_1" },
+                      { "type": "line", "id": "Line_1" },
+                      { "type": "equipment", "id": "Pump_01" }
+                    ]
+                  },
+                  "metrics_mapping": {
+                    "40001": { "register_type": "holding", "name": "Temperature", "scale_factor": 0.1, "unit": "°C", "data_type": "int16" },
+                    "40002": { "register_type": "holding", "name": "Running", "scale_factor": 1.0, "unit": "", "data_type": "bool" }
+                  }
+                },
+
+                "esp32_a": {
+                  "_comment": "Dispositivo Classe 1 SEM CLP (Etapa 2). protocol='interedge': o dispositivo EMPURRA leituras pelo broker de ingestao (sida/ingest/esp32_a/telemetry), entao NAO ha host/port/scan_rate_ms/register_type. As chaves do metrics_mapping sao os nomes logicos do `readings` que o dispositivo publica. O asset_context ISA-95 mapeia o ESP32 na hierarquia (prova do nivel organizacional para fonte sem CLP).",
+                  "enabled": true,
+                  "connection": { "protocol": "interedge" },
+                  "asset_context": {
+                    "standard": "ISA-95",
+                    "path": [
+                      { "type": "area", "id": "Area_1" },
+                      { "type": "line", "id": "Line_1" },
+                      { "type": "equipment", "id": "ESP32_A" }
+                    ]
+                  },
+                  "metrics_mapping": {
+                    "temperature": { "name": "Temperature", "scale_factor": 1.0, "unit": "°C", "data_type": "float" },
+                    "running":     { "name": "Running",     "scale_factor": 1.0, "unit": "",   "data_type": "bool" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "receivers": {
+      "uns": {
+        "protocol": "mqtt",
+        "host": "mosquitto-uns",
+        "port": 1883,
+        "endpoint": "",
+        "username": "",
+        "password": ""
+      }
+    }
+  }
+}
