@@ -128,6 +128,5 @@ func (h *SystemHandler) GetTelemetry(c *gin.Context) {
 		return
 	}
 
-	fmt.Printf("Telemetria recebida: %v", telemetry)
 	c.JSON(http.StatusOK, telemetry)
 }

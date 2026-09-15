@@ -122,7 +122,6 @@ func (p *ZMQService) SubscribeToUpdates(topic string) error {
 }
 
 func (p *ZMQService) ReceiveUpdate() (string, error) {
-	fmt.Println("Aguardando mensagens do ZMQ...")
 	msg, err := p.subSocket.RecvMessage(zmq4.DONTWAIT)
 	if err != nil {
 		fmt.Printf("Erro ao receber mensagem do ZMQ: %v", err)
@@ -134,10 +133,8 @@ func (p *ZMQService) ReceiveUpdate() (string, error) {
 		return "error", err
 	}
 
-	topic := msg[0]
 	payload := msg[1]
 
-	fmt.Printf("Mensagem recebida no tópico %s: %s", topic, payload)
 	return payload, nil
 }
 
