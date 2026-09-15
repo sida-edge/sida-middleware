@@ -1,6 +1,7 @@
 export default function DeviceCard({
   deviceId,
   device, 
+  telemetry,
   isEngineeringMode = false,
   onToggle,
   onEdit,

@@ -41,15 +41,15 @@ func main() {
 		log.Fatal("SQLite fatal error:", err)
 	}
 
-	zmqPub, err := services.NewZMQPublisher("0.0.0.0:5556")
+	zmqService, err := services.NewZMQService("0.0.0.0:5556", "0.0.0.0:5557", "")
 	if err != nil {
 		log.Fatal("Erro fatal ao iniciar ZeroMQ:", err)
 	}
 
 	authService := services.NewAuthService()
 	authHandler := handler.NewAuthHandler(authService)
-	systemHandler := handler.NewSystemHandler()
-	manifestHandler := handler.NewManifestHandler(manifestRepo, zmqPub)
+	systemHandler := handler.NewSystemHandler(zmqService)
+	manifestHandler := handler.NewManifestHandler(manifestRepo, zmqService)
 
 	gin.SetMode(gin.ReleaseMode)
 	router := gin.Default()
@@ -81,7 +81,7 @@ func main() {
 		log.Fatal("Desligamento forçado do servidor:", err)
 	}
 
-	if err := zmqPub.Close(); err != nil {
+	if err := zmqService.Close(); err != nil {
 		log.Println("Erro ao fechar socket ZMQ:", err)
 	}
 

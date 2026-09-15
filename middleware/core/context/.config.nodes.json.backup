@@ -1,7 +1,7 @@
 {
     "node-red": {
         "name": "node-red",
-        "version": "4.1.11",
+        "version": "4.1.14",
         "local": false,
         "user": false,
         "nodes": {
@@ -424,6 +424,27 @@
                 "user": false,
                 "module": "node-red",
                 "file": "/usr/src/node-red/node_modules/@node-red/nodes/core/storage/23-watch.js"
+            }
+        }
+    },
+    "node-red-contrib-zeromq": {
+        "name": "node-red-contrib-zeromq",
+        "version": "0.0.10",
+        "local": false,
+        "user": false,
+        "nodes": {
+            "zeromq": {
+                "name": "zeromq",
+                "types": [
+                    "zeromq in",
+                    "zeromq out",
+                    "zeromq request"
+                ],
+                "enabled": true,
+                "local": false,
+                "user": false,
+                "module": "node-red-contrib-zeromq",
+                "file": "/usr/src/node-red/node_modules/node-red-contrib-zeromq/zeromq.js"
             }
         }
     }

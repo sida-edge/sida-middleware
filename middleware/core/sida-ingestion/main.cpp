@@ -60,6 +60,33 @@ bool PerformHttpGet(const std::string& url, std::string& response_data) {
     }
 }
 
+void ZmqConfigPublisher() {
+    zmq::context_t ctx(1);
+    zmq::socket_t pub(ctx, zmq::socket_type::pub);
+
+    try {
+        pub.connect("tcp://sida-core:5557");
+        std::cout << "[CONFIG] Publicando atualizacoes no topico 'sida/telemetry'...\n";
+    } catch (...) {
+        std::cerr << "[CONFIG] Erro ao conectar no canal de publicacao.\n";
+        return; 
+    }
+
+    while (system_running) {
+        std::string topic = "sida/telemetry";
+        zmq::message_t topic_msg(topic.c_str(), topic.size());
+        // send json
+        nlohmann::json payload_json;
+        payload_json["service"] = "ingestion";
+        payload_json["data"] = "testando";
+        std::string payload_str = payload_json.dump();
+        zmq::message_t payload_msg(payload_str.c_str(), payload_str.size());
+        pub.send(topic_msg, zmq::send_flags::sndmore);
+        pub.send(payload_msg, zmq::send_flags::none);
+        std::this_thread::sleep_for(std::chrono::seconds(1));
+    }
+}
+
 void ZmqConfigSubscriber() {
     zmq::context_t ctx(1);
     zmq::socket_t sub(ctx, zmq::socket_type::sub);
@@ -105,6 +132,7 @@ int main() {
     }
 
     std::thread config_thread(ZmqConfigSubscriber);
+    std::thread publisher_thread(ZmqConfigPublisher);
 
     while (system_running) {
         if (reload_manifest) {
@@ -208,6 +236,7 @@ int main() {
     curl_global_cleanup();
     system_running = false;
     config_thread.join();
+    publisher_thread.join();
 
     return 0;
 }

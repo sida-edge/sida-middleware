@@ -1,8 +1,9 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import DeviceForm from './DeviceForm'
 import DeviceCard from './DeviceCard' 
 import ConnectorCard from './ConnectorCard'
 import ConnectorForm from './ConnectorForm'
+import ServiceCard from './ServiceCard'
 
 export default function Dashboard({ config, onSave, gatewayId, token, setToken }) {
   const [deviceTarget, setDeviceTarget] = useState(null)
@@ -15,6 +16,9 @@ export default function Dashboard({ config, onSave, gatewayId, token, setToken }
   const [modalConfig, setModalConfig] = useState({ isOpen: false, type: null })
   const [modalInput, setModalInput] = useState('')
   const [modalSelectArea, setModalSelectArea] = useState('')
+
+  const [telemetryData, setTelemetryData] = useState({})
+  const [telemetryTarget, setTelemetryTarget] = useState(null)
 
   const [connectorTarget, setConnectorTarget] = useState(null)
   const [deleteConnectorTarget, setDeleteConnectorTarget] = useState(null)
@@ -118,6 +122,35 @@ export default function Dashboard({ config, onSave, gatewayId, token, setToken }
     setDeleteTarget(null)
   }
 
+  const getTelemetry = async () => {
+    try {
+      const res = await fetch('/internal/telemetry')
+      if (res.ok) {
+        const payload = await res.json()
+        
+        const formattedData = {}
+        
+        if (Array.isArray(payload)) {
+          payload.forEach(item => {
+            formattedData[item.service] = item.data
+          })
+        }  else if (payload && payload.service) {
+          formattedData[payload.service] = payload.data
+        }
+
+        setTelemetryData(formattedData)
+      }
+    } catch (error) {
+      console.error("Error fetching telemetry:", error)
+    }
+  }
+
+  useEffect(() => {
+    getTelemetry();
+    const interval = setInterval(getTelemetry, 2000); 
+    return () => clearInterval(interval);
+  }, []);
+
   const colors = {
     sidebarBg: '#0f172a', sidebarHover: '#1e293b', bg: '#f8fafc', card: '#ffffff',
     border: '#e2e8f0', primary: '#2563eb', warning: '#f59e0b', success: '#10b981', danger: '#ef4444',
@@ -202,6 +235,7 @@ export default function Dashboard({ config, onSave, gatewayId, token, setToken }
           <div style={{ padding: '0 24px', fontSize: '11px', color: '#64748b', fontWeight: 'bold', textTransform: 'uppercase', marginBottom: '10px' }}>Visão Geral</div>
           <div className={`sida-nav-item ${activeTab === 'all' ? 'active' : ''}`} style={styles.navItem(activeTab === 'all')} onClick={() => setActiveTab('all')}>Planta Completa</div>
           <div className={`sida-nav-item ${activeTab === 'connectors' ? 'active' : ''}`} style={styles.navItem(activeTab === 'connectors')} onClick={() => setActiveTab('connectors')}>External Connectors</div>
+          <div className={`sida-nav-item ${activeTab === 'services' ? 'active' : ''}`} style={styles.navItem(activeTab === 'services')} onClick={() => setActiveTab('services')}>Telemetria de Serviços</div>
           <div style={{ padding: '20px 24px 10px', fontSize: '11px', color: '#64748b', fontWeight: 'bold', textTransform: 'uppercase' }}>Áreas Operacionais</div>
           {Object.keys(plantModel.areas || {}).map((areaId) => (
             <div key={areaId} className={`sida-nav-item ${activeTab === areaId ? 'active' : ''}`} style={styles.navItem(activeTab === areaId)} onClick={() => setActiveTab(areaId)}>
@@ -240,7 +274,29 @@ export default function Dashboard({ config, onSave, gatewayId, token, setToken }
         )}
 
         <div style={styles.content} className="sida-content">
-          {activeTab === 'connectors' ? (
+          {activeTab === 'services' ? (
+            <div>
+              <div style={{ marginBottom: '30px' }}>
+                <h1 style={{ margin: '0 0 5px 0', fontSize: '28px', color: colors.textMain }}>Serviços do Edge</h1>
+                <p style={{ margin: 0, color: colors.textMuted, fontSize: '14px' }}>Monitoramento interno dos microserviços.</p>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '20px' }}>
+                {Object.keys(telemetryData).length > 0 ? (
+                  Object.keys(telemetryData).map(serviceId => (
+                    <div key={serviceId} style={{ backgroundColor: 'white', padding: '20px', borderRadius: '12px', border: `1px solid ${colors.border}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div style={{ fontWeight: 'bold', color: colors.textMain, fontSize: '16px' }}>{serviceId}</div>
+                      <button onClick={() => setTelemetryTarget(serviceId)} style={styles.btnOutline}>
+                        Ver Telemetria
+                      </button>
+                    </div>
+                  ))
+                ) : (
+                  <div style={{ padding: '20px', color: colors.textMuted }}>Nenhum serviço reportando telemetria no momento.</div>
+                )}
+              </div>
+            </div>
+          ) : activeTab === 'connectors' ? (
             <div>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '30px' }} className="sida-header-flex">
                 <div>
@@ -333,7 +389,7 @@ export default function Dashboard({ config, onSave, gatewayId, token, setToken }
                               <DeviceCard 
                                 key={id} 
                                 deviceId={id} 
-                                device={device} 
+                                device={device}
                                 isEngineeringMode={isEngineeringMode}
                                 onToggle={(devId, status) => handleDeviceToggle(areaId, lineId, devId, status)}
                                 onEdit={() => setDeviceTarget({ areaId, lineId, deviceId: id, device })}
@@ -357,6 +413,14 @@ export default function Dashboard({ config, onSave, gatewayId, token, setToken }
           )}
         </div>
       </div>
+      
+      {telemetryTarget && (
+        <ServiceCard
+          serviceId={telemetryTarget}
+          telemetry={telemetryData[telemetryTarget]}
+          onClose={() => setTelemetryTarget(null)}
+        />
+      )}
 
       {deviceTarget && (
         <DeviceForm 
@@ -380,7 +444,14 @@ export default function Dashboard({ config, onSave, gatewayId, token, setToken }
             onSave(newConfig) 
             setDeviceTarget(null)
           }} 
-          onCancel={() => setDeviceTarget(null)} 
+          onCancel={() => setDeviceTarget(null)}
+        />
+      )}
+      {telemetryTarget && (
+        <ServiceCard
+          serviceId={telemetryTarget}
+          telemetry={telemetryData[telemetryTarget]}
+          onClose={() => setTelemetryTarget(null)}
         />
       )}
     </div>

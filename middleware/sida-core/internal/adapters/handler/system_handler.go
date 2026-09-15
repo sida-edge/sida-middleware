@@ -5,15 +5,23 @@ import (
 	"net/http"
 	"os"
 	"time"
+	"encoding/json"
 
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
+	"sida-core/internal/core/services"
+	"sida-core/internal/core/domain"
 )
 
-type SystemHandler struct{}
+type SystemHandler struct{
+	zmq *services.ZMQService
+}
 
-func NewSystemHandler() *SystemHandler {
-	return &SystemHandler{}
+
+func NewSystemHandler(zmq *services.ZMQService) *SystemHandler {
+	return &SystemHandler{
+		zmq: zmq,
+	}
 }
 
 type ProvisionPayload struct {
@@ -70,4 +78,56 @@ func (h *SystemHandler) HealthCheck(c *gin.Context) {
 		"service":  "sida-core",
 		"timestamp": time.Now().Format(time.RFC3339),
 	})
+}
+
+func (h *SystemHandler) GetTelemetry(c *gin.Context) {
+	payload, err := h.zmq.ReceiveUpdate()
+	if err != nil {
+		if payload == "timeout" {
+			c.JSON(http.StatusOK, gin.H{
+				"message": "Nenhuma telemetria disponível no momento.",
+			})
+			return
+		} else if payload == "failed" {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": "Falha ao receber telemetria.",
+				"details": err.Error(),
+			})
+			return
+		} else if payload == "error" {
+			fmt.Printf("Erro ao receber telemetria: %v", err)
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": "Erro ao receber telemetria.",
+				"details": err.Error(),
+			})
+			return
+		}
+		fmt.Printf("Erro ao receber telemetria: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "Erro ao receber telemetria.",
+			"details": err.Error(),
+		})
+		return
+	}
+
+	if payload == "" {
+		c.JSON(http.StatusOK, gin.H{
+			"message": "Nenhuma telemetria disponível no momento.",
+		})
+		return
+	}
+	
+	var telemetry domain.Telemetry
+	err = json.Unmarshal([]byte(payload), &telemetry)
+	if err != nil {
+		fmt.Printf("Erro ao processar telemetria: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "Erro ao processar telemetria.",
+			"details": err.Error(),
+		})
+		return
+	}
+
+	fmt.Printf("Telemetria recebida: %v", telemetry)
+	c.JSON(http.StatusOK, telemetry)
 }

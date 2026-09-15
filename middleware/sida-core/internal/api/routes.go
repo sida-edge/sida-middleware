@@ -48,10 +48,12 @@ func SetupRoutes(router *gin.Engine,
 
 		// System routes
 		apiConfig.GET("/info", systemHandler.GetSystemInfo)
-		apiConfig.POST("/setup", systemHandler.SetupEdgeGateway)
 		apiConfig.GET("/health", systemHandler.HealthCheck)
-
+		apiConfig.GET("/telemetry", systemHandler.GetTelemetry)
+		apiConfig.POST("/setup", systemHandler.SetupEdgeGateway)
+		
 		// Auth routes
 		apiConfig.POST("/unlock", authHandler.Unlock)
+
 	}
 }

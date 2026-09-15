@@ -1,7 +1,7 @@
 {
     "node-red": {
         "name": "node-red",
-        "version": "4.1.11",
+        "version": "4.1.14",
         "local": false,
         "user": false,
         "nodes": {
@@ -429,7 +429,7 @@
     },
     "node-red-contrib-mqtt-sparkplug-plus": {
         "name": "node-red-contrib-mqtt-sparkplug-plus",
-        "version": "2.2.3",
+        "version": "2.2.4",
         "local": false,
         "user": false,
         "nodes": {
@@ -452,8 +452,8 @@
     "node-red-contrib-zeromq": {
         "name": "node-red-contrib-zeromq",
         "version": "0.0.10",
-        "local": true,
-        "user": true,
+        "local": false,
+        "user": false,
         "nodes": {
             "zeromq": {
                 "name": "zeromq",
@@ -463,10 +463,10 @@
                     "zeromq request"
                 ],
                 "enabled": true,
-                "local": true,
+                "local": false,
                 "user": false,
                 "module": "node-red-contrib-zeromq",
-                "file": "/data/node_modules/node-red-contrib-zeromq/zeromq.js"
+                "file": "/usr/src/node-red/node_modules/node-red-contrib-zeromq/zeromq.js"
             }
         }
     }
