@@ -11,7 +11,7 @@ RUN npm run build
 
 FROM golang:alpine AS builder
 
-RUN apk add --no-cache gcc musl-dev pkgconfig zeromq-dev
+RUN apk add --no-cache gcc musl-dev pkgconfig zeromq-dev 
 
 WORKDIR /app
 
@@ -19,6 +19,9 @@ COPY go.mod go.sum ./
 RUN go mod download
 
 COPY . .
+
+RUN go mod tidy
+
 RUN CGO_ENABLED=1 GOOS=linux go build -ldflags="-s -w" -o sida-core cmd/server/main.go
 
 ##
