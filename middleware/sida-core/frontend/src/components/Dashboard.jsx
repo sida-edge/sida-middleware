@@ -18,7 +18,6 @@ export default function Dashboard({ config, onSave, gatewayId, token, setToken }
   const [modalSelectArea, setModalSelectArea] = useState('')
 
   const [telemetryData, setTelemetryData] = useState({})
-  // Removido: const [telemetryTarget, setTelemetryTarget] = useState(null) - Não precisamos mais do modal
 
   const [connectorTarget, setConnectorTarget] = useState(null)
   const [deleteConnectorTarget, setDeleteConnectorTarget] = useState(null)
@@ -132,19 +131,19 @@ export default function Dashboard({ config, onSave, gatewayId, token, setToken }
           const newData = { ...prevData }
           const currentTime = new Date().toLocaleTimeString()
           
-          if (Array.isArray(payload)) {
+          if (Array.isArray(  )) {
             payload.forEach(item => {
               if (item.service) {
                 newData[item.service] = {
                   data: item.data,
-                  timestamp: currentTime
+                  timestamp: item.timestamp || currentTime
                 }
               }
             })
           } else if (payload && payload.service) {
             newData[payload.service] = {
               data: payload.data,
-              timestamp: currentTime
+              timestamp: payload.timestamp || currentTime
             }
           }
 

@@ -78,7 +78,10 @@ void ZmqConfigPublisher() {
         // send json
         nlohmann::json payload_json;
         payload_json["service"] = "ingestion";
-        payload_json["data"] = "testando";
+        payload_json["data"] = "testando";\
+        payload_json["timestamp"] = std::chrono::duration_cast<std::chrono::milliseconds>(
+            std::chrono::system_clock::now().time_since_epoch()
+        ).count();
         std::string payload_str = payload_json.dump();
         zmq::message_t payload_msg(payload_str.c_str(), payload_str.size());
         pub.send(topic_msg, zmq::send_flags::sndmore);

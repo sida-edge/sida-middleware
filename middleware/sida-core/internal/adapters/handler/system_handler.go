@@ -83,26 +83,6 @@ func (h *SystemHandler) HealthCheck(c *gin.Context) {
 func (h *SystemHandler) GetTelemetry(c *gin.Context) {
 	payload, err := h.zmq.ReceiveUpdate()
 	if err != nil {
-		if payload == "timeout" {
-			c.JSON(http.StatusOK, gin.H{
-				"message": "Nenhuma telemetria disponível no momento.",
-			})
-			return
-		} else if payload == "failed" {
-			c.JSON(http.StatusInternalServerError, gin.H{
-				"error": "Falha ao receber telemetria.",
-				"details": err.Error(),
-			})
-			return
-		} else if payload == "error" {
-			fmt.Printf("Erro ao receber telemetria: %v", err)
-			c.JSON(http.StatusInternalServerError, gin.H{
-				"error": "Erro ao receber telemetria.",
-				"details": err.Error(),
-			})
-			return
-		}
-		fmt.Printf("Erro ao receber telemetria: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": "Erro ao receber telemetria.",
 			"details": err.Error(),

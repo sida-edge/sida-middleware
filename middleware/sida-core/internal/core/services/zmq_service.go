@@ -4,7 +4,6 @@ import (
 	"log"
 	"encoding/json"
 	"time"
-	"fmt"
 
 	"syscall"
 
@@ -42,7 +41,6 @@ func NewZMQService(pubPath string, subPath string, topic string) (*ZMQService, e
 	}
 
 	monitorAddr := "inproc://monitor-sub"
-	// Monitora eventos de conexão aceita (quando um publisher conecta no seu bind) e desconexões
 	if err := subSocket.Monitor(monitorAddr, zmq4.EVENT_ACCEPTED|zmq4.EVENT_DISCONNECTED); err != nil {
 		log.Printf("Aviso: Falha ao iniciar monitor do ZMQ: %v", err)
 	} else {
@@ -62,10 +60,9 @@ func NewZMQService(pubPath string, subPath string, topic string) (*ZMQService, e
 			log.Println("Monitoramento de rede ZMQ (SUB) ativado.")
 
 			for {
-				// RecvEvent decodifica automaticamente a estrutura interna de eventos do ZMQ
 				event, addr, value, err := monSock.RecvEvent(0)
 				if err != nil {
-					break // Encerra o loop se o socket principal for fechado
+					break
 				}
 
 				switch event {
@@ -124,13 +121,12 @@ func (p *ZMQService) SubscribeToUpdates(topic string) error {
 func (p *ZMQService) ReceiveUpdate() (string, error) {
 	msg, err := p.subSocket.RecvMessage(zmq4.DONTWAIT)
 	if err != nil {
-		fmt.Printf("Erro ao receber mensagem do ZMQ: %v", err)
 		if (zmq4.AsErrno(err) == zmq4.Errno(syscall.ETIMEDOUT)) {
-			return "timeout", nil
+			return "", nil
 		} else if (zmq4.AsErrno(err) == zmq4.Errno(syscall.EAGAIN)) {
-			return "failed", nil
+			return "", nil
 		}
-		return "error", err
+		return "", err
 	}
 
 	payload := msg[1]
