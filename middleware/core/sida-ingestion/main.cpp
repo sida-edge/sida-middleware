@@ -41,7 +41,6 @@ bool PerformHttpGet(const std::string& url, std::string& response_data) {
     CURL* curl = curl_easy_init();
     if (!curl) return false;
 
-    // Limpa a string de resposta para evitar sujeira de requisições anteriores
     response_data.clear(); 
 
     curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
@@ -75,10 +74,10 @@ void ZmqConfigPublisher() {
     while (system_running) {
         std::string topic = "sida/telemetry";
         zmq::message_t topic_msg(topic.c_str(), topic.size());
-        // send json
+
         nlohmann::json payload_json;
         payload_json["service"] = "ingestion";
-        payload_json["data"] = "testando";\
+        payload_json["data"] = "Dispositivos ativos: 0";
         payload_json["timestamp"] = std::chrono::duration_cast<std::chrono::milliseconds>(
             std::chrono::system_clock::now().time_since_epoch()
         ).count();
