@@ -1,22 +1,22 @@
 package handler
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"os"
 	"time"
-	"encoding/json"
+
+	"sida-core/internal/core/domain"
+	"sida-core/internal/core/services"
 
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
-	"sida-core/internal/core/services"
-	"sida-core/internal/core/domain"
 )
 
-type SystemHandler struct{
+type SystemHandler struct {
 	zmq *services.ZMQService
 }
-
 
 func NewSystemHandler(zmq *services.ZMQService) *SystemHandler {
 	return &SystemHandler{
@@ -53,7 +53,7 @@ func (h *SystemHandler) SetupEdgeGateway(c *gin.Context) {
 	_ = godotenv.Load(envPath)
 
 	c.JSON(http.StatusOK, gin.H{
-		"message": "Edge provisionado!",
+		"message":    "Edge provisionado!",
 		"gateway_id": os.Getenv("EDGE_GATEWAY_ID"),
 	})
 }
@@ -68,14 +68,14 @@ func (h *SystemHandler) GetSystemInfo(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, gin.H{
 		"provisioned": true,
-		"gateway_id": gatewayID,
+		"gateway_id":  gatewayID,
 	})
 }
 
 func (h *SystemHandler) HealthCheck(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
-		"status": 	"UP",
-		"service":  "sida-core",
+		"status":    "UP",
+		"service":   "sida-core",
 		"timestamp": time.Now().Format(time.RFC3339),
 	})
 }
@@ -84,7 +84,7 @@ func (h *SystemHandler) GetTelemetry(c *gin.Context) {
 	payload, err := h.zmq.ReceiveUpdate()
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Erro ao receber telemetria.",
+			"error":   "Erro ao receber telemetria.",
 			"details": err.Error(),
 		})
 		return
@@ -96,17 +96,30 @@ func (h *SystemHandler) GetTelemetry(c *gin.Context) {
 		})
 		return
 	}
-	
+
 	var telemetry domain.Telemetry
 	err = json.Unmarshal([]byte(payload), &telemetry)
 	if err != nil {
 		fmt.Printf("Erro ao processar telemetria: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Erro ao processar telemetria.",
+			"error":   "Erro ao processar telemetria.",
 			"details": err.Error(),
 		})
 		return
 	}
 
 	c.JSON(http.StatusOK, telemetry)
+}
+
+func (h *SystemHandler) GetMiddlewareStats(c *gin.Context) {
+	stats, err := services.GetSystemStats()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error":   "Erro ao obter estatísticas do sistema.",
+			"details": err.Error(),
+		})
+		return
+	}
+	fmt.Printf("Middleware Stats: %+v\n", stats)
+	c.JSON(http.StatusOK, stats)
 }

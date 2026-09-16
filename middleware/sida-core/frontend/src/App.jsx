@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import EdgeProvisioning from './components/EdgeProvisioning'
 import SetupWizard from './components/SetupWizard'
 import Dashboard from './components/Dashboard'
+import MainApp from './components/MainApp'
 
 function App() {
   const [appState, setAppState] = useState('booting') 
@@ -90,18 +91,18 @@ function App() {
     }
   }
 
-  if (appState === 'booting') return <div style={{ padding: '50px', textAlign: 'center' }}>A carregar...</div>
-  if (appState === 'error') return <div style={{ padding: '50px', textAlign: 'center' }}>Falha na API.</div>
+  if (appState === 'booting') return <LoadingScreen />;
+  if (appState === 'error') return <ErrorScreen message="Erro ao inicializar o aplicativo." />;
   if (appState === 'unprovisioned') return <EdgeProvisioning onProvisioned={handleProvisioned} />
 
   const isSetup = !config.plant;
 
   return (
-    <div style={{ flex: 1, width: '100%', backgroundColor: '#f1f5f9', display: 'flex', flexDirection: 'column' }}>
+    <div style={{ height: '100vh', width: '100vw' }}>
       {isSetup ? (
         <SetupWizard currentConfig={config} onSave={saveManifest} />
       ) : (
-        <Dashboard 
+        <MainApp 
           config={config} 
           onSave={saveManifest} 
           gatewayId={gatewayId} 
@@ -112,5 +113,8 @@ function App() {
     </div>
   )
 }
+
+const LoadingScreen = () => <div style={{ padding: '50px', textAlign: 'center' }}>A carregar...</div>;
+const ErrorScreen = () => <div style={{ padding: '50px', textAlign: 'center' }}>Falha na API.</div>;
 
 export default App
