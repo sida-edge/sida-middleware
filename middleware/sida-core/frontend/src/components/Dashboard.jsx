@@ -4,6 +4,7 @@ import DeviceCard from './DeviceCard'
 import ConnectorCard from './ConnectorCard'
 import ConnectorForm from './ConnectorForm'
 import ServiceCard from './ServiceCard'
+import { useTelemetries } from '../hooks/useTelemetries'
 
 export default function Dashboard({ config, onSave, gatewayId, token, setToken }) {
   const [deviceTarget, setDeviceTarget] = useState(null)
@@ -16,14 +17,15 @@ export default function Dashboard({ config, onSave, gatewayId, token, setToken }
   const [modalConfig, setModalConfig] = useState({ isOpen: false, type: null })
   const [modalInput, setModalInput] = useState('')
   const [modalSelectArea, setModalSelectArea] = useState('')
-
-  const [telemetryData, setTelemetryData] = useState({})
-
+  
+  
   const [connectorTarget, setConnectorTarget] = useState(null)
   const [deleteConnectorTarget, setDeleteConnectorTarget] = useState(null)
-
+  
   const plantModel = config.plant || { enterprise: '', site: '', areas: {} }
   const isEngineeringMode = token !== null
+  
+  const { telemetries } = useTelemetries();
 
   const formatName = (id) => id ? id.replace(/_/g, ' ').toUpperCase() : ''
 
@@ -120,46 +122,6 @@ export default function Dashboard({ config, onSave, gatewayId, token, setToken }
     await onSave(newConfig)
     setDeleteTarget(null)
   }
-
-  const getTelemetry = async () => {
-    try {
-      const res = await fetch('/internal/telemetry')
-      if (res.ok) {
-        const payload = await res.json()
-        
-        setTelemetryData(prevData => {
-          const newData = { ...prevData }
-          const currentTime = new Date().toLocaleTimeString()
-          
-          if (Array.isArray(  )) {
-            payload.forEach(item => {
-              if (item.service) {
-                newData[item.service] = {
-                  data: item.data,
-                  timestamp: item.timestamp || currentTime
-                }
-              }
-            })
-          } else if (payload && payload.service) {
-            newData[payload.service] = {
-              data: payload.data,
-              timestamp: payload.timestamp || currentTime
-            }
-          }
-
-          return newData
-        })
-      }
-    } catch (error) {
-      console.error("Error fetching telemetry:", error)
-    }
-  }
-
-  useEffect(() => {
-    getTelemetry();
-    const interval = setInterval(getTelemetry, 2000); 
-    return () => clearInterval(interval);
-  }, []);
 
   const colors = {
     sidebarBg: '#0f172a', sidebarHover: '#1e293b', bg: '#f8fafc', card: '#ffffff',
@@ -292,8 +254,8 @@ export default function Dashboard({ config, onSave, gatewayId, token, setToken }
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '20px' }}>
-                {Object.keys(telemetryData).length > 0 ? (
-                  Object.entries(telemetryData).map(([serviceId, info]) => (
+                {Object.keys(telemetries).length > 0 ? (
+                  Object.entries(telemetries).map(([serviceId, info]) => (
                     <ServiceCard
                       key={serviceId}
                       serviceId={serviceId}
