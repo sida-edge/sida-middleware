@@ -8,8 +8,7 @@ import { useSystemStats } from '../hooks/useSystemStats';
 export default function MainApp({ config, saveManifest, gatewayId, token, updateToken }) {
   const [activeView, setActiveView] = useState('dashboard');
 
-  const { systemStats } = useSystemStats();
-  console.log('System Stats in MainApp:', systemStats);
+  const { stats } = useSystemStats();
 
   const renderContent = () => {
     switch (activeView) {
@@ -29,7 +28,7 @@ export default function MainApp({ config, saveManifest, gatewayId, token, update
     <MainLayout 
       activeView={activeView} 
       onNavigate={(view) => setActiveView(view)}
-      stats={systemStats}
+      stats={stats}
     >
       {renderContent()}
     </MainLayout>

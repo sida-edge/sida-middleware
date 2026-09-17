@@ -120,6 +120,6 @@ func (h *SystemHandler) GetMiddlewareStats(c *gin.Context) {
 		})
 		return
 	}
-	fmt.Printf("Middleware Stats: %+v\n", stats)
+	
 	c.JSON(http.StatusOK, stats)
 }

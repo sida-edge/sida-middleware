@@ -46,11 +46,11 @@ type Device struct {
 type Connection struct {
 	Protocol   string `json:"protocol" binding:"required,oneof=modbus_tcp modbus_rtu opc_ua s7"`
 	ScanRateMs int    `json:"scan_rate_ms" binding:"required,min=50"`
-	
-	Host       string `json:"host" binding:"required_unless=Protocol opc_ua,omitempty,ip|hostname"`
-	Port       int    `json:"port" binding:"required_unless=Protocol opc_ua,omitempty,min=1,max=65535"`
-	UnitID     *int   `json:"unit_id" binding:"omitempty,gte=0,lte=255"` // Ponteiro para permitir valor 0
-	ByteOrder  string `json:"byte_order" binding:"omitempty,oneof=ABCD CDAB BADC DCBA"`
+
+	Host      string `json:"host" binding:"required_unless=Protocol opc_ua,omitempty,ip|hostname"`
+	Port      int    `json:"port" binding:"required_unless=Protocol opc_ua,omitempty,min=1,max=65535"`
+	UnitID    *int   `json:"unit_id" binding:"omitempty,gte=0,lte=255"` // Ponteiro para permitir valor 0
+	ByteOrder string `json:"byte_order" binding:"omitempty,oneof=ABCD CDAB BADC DCBA"`
 
 	EndpointURL    string `json:"endpoint_url" binding:"required_if=Protocol opc_ua"`
 	SecurityPolicy string `json:"security_policy" binding:"omitempty,oneof=None Basic128Rsa15 Basic256 Basic256Sha256"`
@@ -74,8 +74,8 @@ type MetricMapping struct {
 	ScaleFactor float64 `json:"scale_factor" binding:"required"`
 	Unit        string  `json:"unit" binding:"required"`
 	DataType    string  `json:"data_type" binding:"required,oneof=float int16 int32 uint16 bool string"`
-	
+
 	RegisterType string `json:"register_type,omitempty" binding:"omitempty,oneof=holding input coil discrete"`
 
-	NodeID       string `json:"node_id,omitempty"`
+	NodeID string `json:"node_id,omitempty"`
 }

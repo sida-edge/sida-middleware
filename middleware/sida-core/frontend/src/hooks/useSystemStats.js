@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 
 export function useSystemStats() {
-  const [stats, setStats] = useState({ cpu: '0.0', ram: '0.0', isConnected: false });
+  const [stats, setStats] = useState();
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -11,7 +11,6 @@ export function useSystemStats() {
         if (!res.ok) throw new Error('Falha na comunicação com o Middleware.');
         const data = await res.json();
         setStats(data);
-        console.log('Middleware Stats:', data);
       } catch (error) {
         console.error('Falha na comunicação com o Middleware:', error);
         setStats(prev => ({ ...prev, isConnected: false }));
