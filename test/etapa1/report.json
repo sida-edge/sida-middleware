@@ -1,0 +1,80 @@
+{
+  "cenario": "SDD 3.1 — injeção de falha na frota de 3 nós",
+  "nos": [
+    "sida_edge_001",
+    "sida_edge_002",
+    "sida_edge_003"
+  ],
+  "t_ndeath_s": 0.095,
+  "t_peer_detect_s": {
+    "edge_001": 3.47,
+    "edge_003": 3.471
+  },
+  "probe_interval_ms": 1000,
+  "peer_down_after_misses": 3,
+  "perdas_ddata_sobreviventes": {
+    "sida_edge_001": 0,
+    "sida_edge_003": 0
+  },
+  "religamento_bdseq_incrementado": true,
+  "religamento_bdseq": 6,
+  "overhead": {
+    "e1-edge1-context": {
+      "cpu_pct": 4.57,
+      "mem": "48.07MiB"
+    },
+    "e1-edge1-core": {
+      "cpu_pct": 0.13,
+      "mem": "6.328MiB"
+    },
+    "e1-edge1-delivery": {
+      "cpu_pct": 0.31,
+      "mem": "51MiB"
+    },
+    "e1-edge1-ingestion": {
+      "cpu_pct": 4.49,
+      "mem": "74.31MiB"
+    },
+    "e1-edge2-context": {
+      "cpu_pct": 0.28,
+      "mem": "41.52MiB"
+    },
+    "e1-edge2-core": {
+      "cpu_pct": 0.15,
+      "mem": "5.551MiB"
+    },
+    "e1-edge2-delivery": {
+      "cpu_pct": 0.22,
+      "mem": "51.54MiB"
+    },
+    "e1-edge2-ingestion": {
+      "cpu_pct": 0.21,
+      "mem": "70.2MiB"
+    },
+    "e1-edge3-context": {
+      "cpu_pct": 5.05,
+      "mem": "53.14MiB"
+    },
+    "e1-edge3-core": {
+      "cpu_pct": 0.12,
+      "mem": "15.11MiB"
+    },
+    "e1-edge3-delivery": {
+      "cpu_pct": 11.72,
+      "mem": "50.96MiB"
+    },
+    "e1-edge3-ingestion": {
+      "cpu_pct": 4.72,
+      "mem": "78.27MiB"
+    },
+    "e1-mosquitto": {
+      "cpu_pct": 0.06,
+      "mem": "11.29MiB"
+    },
+    "e1-plc-sim": {
+      "cpu_pct": 0.33,
+      "mem": "38.2MiB"
+    }
+  },
+  "aceite": true
+}
