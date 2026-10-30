@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sida/schemas/interedge_ingest.schema.json",
+  "title": "SIDA InterEdge ingest — telemetry message",
+  "description": "Mensagem publicada por um dispositivo Classe 0/1 em sida/ingest/{device_id}/telemetry (Etapa 2).",
+  "type": "object",
+  "required": ["device_id", "readings"],
+  "additionalProperties": true,
+  "properties": {
+    "device_id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Identidade do dispositivo. Deve existir no manifesto do nó."
+    },
+    "ts": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Epoch em ms no relógio do dispositivo (opcional)."
+    },
+    "readings": {
+      "type": "object",
+      "minProperties": 1,
+      "description": "Leituras correntes. Chave = nome lógico da métrica (deve constar do metrics_mapping do device).",
+      "additionalProperties": {
+        "type": ["number", "boolean", "string"]
+      }
+    }
+  }
+}

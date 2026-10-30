@@ -6,9 +6,15 @@ Como a arquitetura é poliglota e altamente distribuída, é vital que todos os 
 
 ## 📂 O que você encontra aqui:
 
-1.  **Arquivos Protobuf (`.proto`):** O schema oficial do **Sparkplug B** da Eclipse Foundation (`sparkplug_b.proto`).
+1.  **`sparkplug_b.proto`** — schema normativo do **Sparkplug B Payload** (Eclipse Sparkplug 3.0.0 / projeto Eclipse Tahu), cópia *verbatim* do upstream. É a **fonte única da verdade** do contrato Sparkplug B do SIDA (SDD Etapa 1 do Ciclo V3.0, tarefa `T1A.1`).
 2.  **Modelos ISA-95:** Arquivos JSON documentando a estrutura de semântica imposta na Camada 2 (Contextualização) sobre os dados brutos de chão de fábrica.
 <!-- 3.  **Contratos de Controle:** Definições dos payloads de Comando (`DCMD`, `NCMD`) para o controle reverso da Borda. -->
+
+### Sobre o `sparkplug_b.proto`
+
+- **Uso:** referência para revisão/validação e para consumidores que precisam decodificar o payload (inclusive o **plano B** em Go). **Não** é carregado em runtime pelo Node-RED — a lib `sparkplug-payload` já embute o schema equivalente.
+- **Upstream:** `github.com/eclipse-sparkplug/sparkplug` — `specification/src/main/protobuf/sparkplug_b.proto` (Eclipse Public License 2.0).
+- **Não editar** para adaptar a um consumidor: se o formato precisar mudar, discutir o contrato aqui antes de qualquer *deploy*.
 
 ## ⚠️ Regra de Desenvolvimento
 

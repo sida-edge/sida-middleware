@@ -95,7 +95,10 @@ export class SidaStore {
 
   // ---- reducer (SDD 5.2) ------------------------------------------------
   applyMessage(msg) {
-    if (!msg || !msg.messageType) {console.error("Erro de tipo")} return;
+    if (!msg || !msg.messageType) {
+        console.error("[state] mensagem inválida descartada:", msg);
+        return;
+        } 
     const { groupId, nodeId, deviceId, messageType } = msg;
     const key = nodeKey(groupId, nodeId);
 

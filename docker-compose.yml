@@ -4,10 +4,23 @@ networks:
 
 services:
   sida-core:
-    build: ./sida-core  
+    build: ./sida-core
     container_name: sida-core
     ports:
       - "8000:8000"
+      - "${PEER_PORT:-5557}:${PEER_PORT:-5557}"
+    environment:
+      # --- Identidade do nó (Etapa 1 / Ciclo V3.0) — origem única: .env do nó ---
+      - EDGE_GATEWAY_ID=${EDGE_GATEWAY_ID:-}
+      - EDGE_ENGINEER_PIN=${EDGE_ENGINEER_PIN:-}
+      - GROUP_ID=${GROUP_ID:-}
+      - BROKER_URL=${BROKER_URL:-}
+      # --- Malha controller-to-controller (plano B) ---
+      - CONTROLLER_ID=${CONTROLLER_ID:-}
+      - PEER_PORT=${PEER_PORT:-5557}
+      - PEERS=${PEERS:-}
+      - PROBE_INTERVAL_MS=${PROBE_INTERVAL_MS:-1000}
+      - PEER_DOWN_AFTER_MISSES=${PEER_DOWN_AFTER_MISSES:-3}
     volumes:
       - ./sida-core/data:/app/data
       - sida_ipc:/tmp/.ipc
@@ -101,8 +114,13 @@ services:
         - PROJECT_DIR=./core/delivery
     container_name: sida-poc-delivery
     environment:
-      - TZ=America/Recife
+      - TZ=${TZ:-America/Recife}
       - FLOWS=flows.json
+      # --- Identidade do nó (Etapa 1 / Ciclo V3.0) — plano norte A ---
+      - EDGE_GATEWAY_ID=${EDGE_GATEWAY_ID:-}
+      - GROUP_ID=${GROUP_ID:-}
+      - BROKER_URL=${BROKER_URL:-}
+      - EDGE_ENGINEER_PIN=${EDGE_ENGINEER_PIN:-}
     ports:
       - "1883:1880"
     volumes:

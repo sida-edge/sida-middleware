@@ -1,0 +1,23 @@
+{
+  "_comment": "Simulador Modbus TCP da frota de teste da Etapa 1 (imagem oitc/modbus-server). Montado em /app/modbus_server.json. IMPORTANTE: a chave N do holdingRegister e servida no endereco de fio N-1 (pymodbus, zero_mode=False). O flow de ingestao le 40001 -> endereco 0 e 40002 -> endereco 1, logo as chaves aqui sao 1 e 2.",
+  "server": {
+    "listenerAddress": "0.0.0.0",
+    "listenerPort": 5020,
+    "protocol": "TCP",
+    "tlsParams": { "privateKey": null, "certificate": null },
+    "logging": {
+      "format": "%(asctime)-15s %(levelname)-8s %(message)s",
+      "logLevel": "INFO"
+    }
+  },
+  "registers": {
+    "initializeUndefinedRegisters": true,
+    "discreteInput": {},
+    "coils": {},
+    "holdingRegister": {
+      "1": 235,
+      "2": 1
+    },
+    "inputRegister": {}
+  }
+}

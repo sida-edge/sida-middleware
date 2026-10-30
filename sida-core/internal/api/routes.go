@@ -32,7 +32,8 @@ func SetupRoutes(router *gin.Engine,
 				authHandler *handler.AuthHandler,
 				systemHandler *handler.SystemHandler,
 				authService *services.AuthService,
-				bufferHandler *handler.BufferHandler) {
+				bufferHandler *handler.BufferHandler,
+				peerHandler *handler.PeerHandler) {
 
 	router.Static("/assets", "./public/assets")
 	router.StaticFile("/", "./public/index.html")
@@ -57,6 +58,9 @@ func SetupRoutes(router *gin.Engine,
 	{
 		apiSystem.GET("/info", systemHandler.GetSystemInfo)
 		apiSystem.POST("/setup", systemHandler.SetupEdgeGateway)
+		apiSystem.GET("/peers", peerHandler.GetPeers)
+		apiSystem.POST("/peers/test/send", peerHandler.TestSend)
+		apiSystem.GET("/peers/test/inbox", peerHandler.TestInbox)
 	}
 
 	apiBuffer := router.Group("/api/buffer")
